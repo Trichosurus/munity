@@ -50,6 +50,7 @@
      <Compile Include="Assets\Scripts\gameController.cs" />
      <Compile Include="Assets\Scripts\Map.cs" />
      <Compile Include="Assets\Scripts\MapSegment.cs" />
+     <Compile Include="Assets\Scripts\mouselook.cs" />
      <Compile Include="Assets\Scripts\platformController.cs" />
      <Compile Include="Assets\Scripts\playerController.cs" />
      <Compile Include="Assets\Scripts\startGame.cs" />
