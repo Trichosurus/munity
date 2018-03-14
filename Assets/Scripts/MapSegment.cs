@@ -69,11 +69,17 @@ public class MapSegment : MonoBehaviour {
 
 	public void makePlatformObjects() {
 		Vector3 pHeight = height;
+		Vector3 splitPoint = new Vector3(height.x, 
+										platform.MinimumHeight + (platform.MaximumHeight - platform.MinimumHeight)/2,
+										height.z); 
+		// Debug.Log(platform.MaximumHeight);
+		// Debug.Log(platform.MinimumHeight);
+		// Debug.Log(platform.MinimumHeight + (platform.MaximumHeight - platform.MinimumHeight)/2);
 		List<Vector3> PlatVertices = new List<Vector3>(vertices);
 		PlatVertices.Reverse();
 		bool split = platform.ComesFromFloor && platform.ComesFromCeiling;
 		if (split) {
-			pHeight.y = pHeight.y/2;
+			pHeight.y = splitPoint.y;
 		}
 		if (platform.ComesFromFloor) {
 			platform.lowerPlatform =  new GameObject("lowerPlatform");
@@ -81,6 +87,10 @@ public class MapSegment : MonoBehaviour {
 			makePolygon(true, PlatVertices, pHeight, platform.lowerPlatform);
 			makePolygon(false, PlatVertices, pHeight, platform.lowerPlatform);
 		}
+		if (split) {
+			pHeight.y = height.y - splitPoint.y;
+		}
+
 		if (platform.ComesFromCeiling) {
 			platform.upperPlatform =  new GameObject("upperPlatform");
 			platform.upperPlatform.transform.parent = gameObject.transform;
@@ -107,10 +117,15 @@ public class MapSegment : MonoBehaviour {
 				
 			
 			if (platform.ComesFromFloor) {
+				if (split) {
+				addWallPart(point1, point2, splitPoint, new Vector3(0,0,0), wall.lowerMaterial, wall.lowerOffset, platform.lowerPlatform);
+				} else {
 				addWallPart(point1, point2, pHeight, new Vector3(0,0,0), wall.lowerMaterial, wall.lowerOffset, platform.lowerPlatform);
+				}
 			}
 			if (platform.ComesFromCeiling) {
 				addWallPart(point1, point2, pHeight, new Vector3(0,0,0), wall.upperMaterial, wall.upperOffset, platform.upperPlatform);
+				
 			}
 		}
 
@@ -126,7 +141,7 @@ public class MapSegment : MonoBehaviour {
 		}
 
 		if (split) {
-			platform.upperPlatform.transform.position += pHeight;
+			platform.upperPlatform.transform.position += splitPoint;
 		}
 
 	}

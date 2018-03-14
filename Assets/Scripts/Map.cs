@@ -44,6 +44,7 @@ public class Map : MonoBehaviour {
 		// Debug.Log(Level.Environment);
 		
 		makeWorldFromMarathonMap(Level);
+		spawnEntitiesFromMarathonMap(Level);
 
 	}
 	
@@ -102,10 +103,11 @@ public class Map : MonoBehaviour {
 	}
 
 	void makeWorldFromMarathonMap(Weland.Level Level) {
-		
+		//marathon maps have y +/- directions swapped so fix that
 		for (int i = 0; i < Level.Endpoints.Count; i++) {
 			Level.Endpoints[i] = new Point(Level.Endpoints[i].X, (short)(0-Level.Endpoints[i].Y));
 		}
+		//now we can generate mapsegment objects from each map polygon
 		for (int p = 0; p < Level.Polygons.Count; p++) {
 		//for (int p = 0; p < 2; p++) {
 			GameObject pol = Instantiate(polygon);
@@ -289,6 +291,31 @@ public class Map : MonoBehaviour {
 		// }
 
 	}
+
+
+	void spawnEntitiesFromMarathonMap(Weland.Level Level) {
+		bool playerSpawned = false;
+		foreach (MapObject obj in Level.Objects) {
+			if (obj.Type == ObjectType.Player) {
+				playerSpawned = true;
+				Debug.Log(obj.X);
+				Debug.Log(obj.Y);
+				Debug.Log(obj.Z);
+				Debug.Log(obj.Facing);
+			
+				Vector3 pos = new Vector3(pos.x = (float)obj.X/1024f,
+										pos.y = (float)obj.Z/1024f,
+										pos.z = 0f-(float)obj.Y/1024f
+										);			
+				Debug.Log(pos);
+
+				Quaternion facing = Quaternion.Euler(0, (float)obj.Facing+90, 0);
+				GameObject player = Instantiate(Resources.Load<GameObject>("player"), pos, facing);
+			}
+
+		}
+	}
+
 
 	Material getTexture(Weland.ShapeDescriptor texture) {
 		int retval = 0;

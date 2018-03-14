@@ -15,13 +15,13 @@ public class platformController : MonoBehaviour {
 		}
 
 		Vector3 height = gameObject.transform.parent.GetComponent<MapSegment>().height;
-		Debug.Log(platform.MaximumHeight);
-		Debug.Log(platform.MinimumHeight);
-		Debug.Log(height);
+		// Debug.Log(platform.MaximumHeight);
+		// Debug.Log(platform.MinimumHeight);
+		// Debug.Log(height);
 
 		if (platform.ComesFromCeiling == true && platform.ComesFromFloor == true) {
 			hasPartner = true;
-			height.y = height.y/2;
+			height.y = getMidVector().y;
 		}
 		
 		if (gameObject.name == "upperPlatform") {
@@ -32,7 +32,7 @@ public class platformController : MonoBehaviour {
 				min = getMinVector();
 			}
 			max = getMaxVector();
-		} else {
+		} else { //lower platform
 
 			if (hasPartner) {
 				max = getMidVector();
@@ -50,11 +50,16 @@ public class platformController : MonoBehaviour {
 		if (platform.InitiallyExtended) {
 			if (fromTop) {
 				gameObject.transform.localPosition = min;
-				//gameObject.transform.localPosition = new Vector3(0,0.2f,0);
-
 			} else {
 				gameObject.transform.localPosition = max;
 			}
+		} else {
+			if (fromTop) {
+				gameObject.transform.localPosition = max;
+			} else {
+				gameObject.transform.localPosition = min;
+			}
+	
 		}
 	}
 
@@ -70,7 +75,7 @@ public class platformController : MonoBehaviour {
 	}
 	Vector3 getMidVector() {
 		Vector3 relativePos = new Vector3(0,0,0);
-		relativePos = (getMaxVector() - getMinVector()) * 0.5f;
+		relativePos = (getMaxVector() - getMinVector()) * 0.5f + getMinVector();
 		return relativePos;
 	}
 
