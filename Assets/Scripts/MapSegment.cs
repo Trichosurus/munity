@@ -68,10 +68,16 @@ public class MapSegment : MonoBehaviour {
 	}
 
 	public void makePlatformObjects() {
+		if (id == 32) {
+			Debug.Log(height);
+			Debug.Log(platform.MaximumHeight);
+			Debug.Log(platform.MinimumHeight);
+		}
 		Vector3 pHeight = height;
 		Vector3 splitPoint = new Vector3(height.x, 
 										platform.MinimumHeight + (platform.MaximumHeight - platform.MinimumHeight)/2,
 										height.z); 
+		splitPoint.y -= gameObject.transform.position.y;
 		// Debug.Log(platform.MaximumHeight);
 		// Debug.Log(platform.MinimumHeight);
 		// Debug.Log(platform.MinimumHeight + (platform.MaximumHeight - platform.MinimumHeight)/2);
@@ -88,7 +94,7 @@ public class MapSegment : MonoBehaviour {
 			makePolygon(false, PlatVertices, pHeight, platform.lowerPlatform);
 		}
 		if (split) {
-			pHeight.y = height.y - splitPoint.y;
+			pHeight.y = height.y - (splitPoint.y);
 		}
 
 		if (platform.ComesFromCeiling) {
@@ -132,17 +138,19 @@ public class MapSegment : MonoBehaviour {
 		if (platform.upperPlatform != null) {
 			platform.upperPlatform.transform.position = gameObject.transform.position;
 			platform.upperPlatform.AddComponent<platformController>();
-
+			generateColliders(platform.upperPlatform);
 		}
 		if (platform.lowerPlatform != null) {
 			platform.lowerPlatform.transform.position = gameObject.transform.position;
 			platform.lowerPlatform.AddComponent<platformController>();
+			generateColliders(platform.lowerPlatform);
 
 		}
 
 		if (split) {
 			platform.upperPlatform.transform.position += splitPoint;
 		}
+
 
 	}
 
@@ -154,9 +162,13 @@ public class MapSegment : MonoBehaviour {
 		for (int i = 0; i < vertices.Count; i++) {
 			makeWall(i);
 		}
+		generateColliders(gameObject);
+
 		
-		foreach(Transform child in gameObject.transform) {
-			
+	}
+
+	public void generateColliders (GameObject obj){
+		foreach(Transform child in obj.transform) {
 			if (child.gameObject.name == "polygonElement(Clone)") {
 				MeshCollider mc = child.gameObject.AddComponent<MeshCollider>();
 				Rigidbody rb = child.gameObject.AddComponent<Rigidbody>();
@@ -164,10 +176,9 @@ public class MapSegment : MonoBehaviour {
 				rb.useGravity = false;	
 				rb.isKinematic = true;			
 			}
-
 		}
-
 	}
+
 
 
 	Vector3 calculateCenterPoint ( List<Vector3> points) {

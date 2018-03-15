@@ -473,11 +473,7 @@ TextMesh:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 657997132}
-  m_Text: 'moo moo moo
-
-    sdfsdfsfs
-
-    sdfsdfsdfsdf'
+  m_Text: /path/to/sounds
   m_OffsetZ: 0
   m_CharacterSize: 0.07
   m_LineSpacing: 1
@@ -1118,11 +1114,7 @@ TextMesh:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1241462457}
-  m_Text: 'moo moo moo moo moo moo moo moo moo moo moo
-
-    sdfsdfsfs
-
-    sdfsdfsdfsdf'
+  m_Text: /path/to/shapes
   m_OffsetZ: 0
   m_CharacterSize: 0.07
   m_LineSpacing: 1
@@ -1604,11 +1596,7 @@ TextMesh:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1658382191}
-  m_Text: 'moo moo moo
-
-    sdfsdfsfs
-
-    sdfsdfsdfsdf'
+  m_Text: /path/to/maps
   m_OffsetZ: 0
   m_CharacterSize: 0.07
   m_LineSpacing: 1
@@ -1879,11 +1867,7 @@ TextMesh:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 2099402025}
-  m_Text: 'moo moo moo
-
-    sdfsdfsfs
-
-    sdfsdfsdfsdf'
+  m_Text: /path/to/physics
   m_OffsetZ: 0
   m_CharacterSize: 0.07
   m_LineSpacing: 1
