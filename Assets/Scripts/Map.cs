@@ -65,12 +65,12 @@ public class Map : MonoBehaviour {
 			ShapeDescriptor d = new ShapeDescriptor();
 			d.CLUT = 0;
 			d.Collection = (byte) col;
-			int textureSize = 64;
-
+			//int textureSize = 64;
 			for (byte i = 0; i < coll.BitmapCount; ++i) {
 				d.Bitmap = i;
 				
 				Texture2D bitmap = shapes.GetShape(d);
+				// if (col == 20) {Debug.Log(d.GetType().);}
 				// if (landscape) {
 				// 	int W = 192;
 				// 	int H = (int) Math.Round((double) bitmap.height * W / bitmap.width);
@@ -139,6 +139,26 @@ public class Map : MonoBehaviour {
 					}
 				}
 			}
+			if (Level.Polygons[p].MediaIndex >= 0) {
+				seg.liquid = new Liquid();
+				Debug.Log(Level.Polygons[p].MediaIndex);
+				Media media = Level.Medias[Level.Polygons[p].MediaIndex];
+				seg.liquid.currentSpeed = (float)media.CurrentMagnitude/1024f;
+				seg.liquid.currentDirectioin = Quaternion.Euler(0, (float)media.Direction+90, 0);
+				seg.liquid.high = (float)media.High/1024f;
+				seg.liquid.low = (float)media.Low/1024f;
+				// media.
+				//?? where is the liquid data stored???
+				//switch (media.Type) {
+					// case MediaType.Goo: 
+					// 		seg.liquid.
+							
+
+					// 		Shapes.	
+				//}
+				//media.Type =
+			}
+			
 			List<Vector3> points = new List<Vector3>();
 
 			int zPt = 0;
@@ -232,6 +252,7 @@ public class Map : MonoBehaviour {
 				} else if (Line[currentLine].CounterclockwisePolygonSideIndex >= 0 ) {
 					side = Level.Sides[Line[currentLine].CounterclockwisePolygonSideIndex];
 				}
+if (p == 1) {Debug.Log(side.Primary.Texture.Collection);}
 					mss.upperMaterial = getTexture(side.Primary.Texture);
 					mss.lowerMaterial = getTexture(side.Secondary.Texture);
 					mss.middeMaterial = getTexture(side.Transparent.Texture);
@@ -296,7 +317,7 @@ public class Map : MonoBehaviour {
 	void spawnEntitiesFromMarathonMap(Weland.Level Level) {
 		bool playerSpawned = false;
 		foreach (MapObject obj in Level.Objects) {
-			if (obj.Type == ObjectType.Player) {
+			if (obj.Type == ObjectType.Player && !playerSpawned) {
 				playerSpawned = true;
 				Debug.Log(obj.X);
 				Debug.Log(obj.Y);

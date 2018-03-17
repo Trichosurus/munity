@@ -19,6 +19,7 @@ public class MapSegment : MonoBehaviour {
 	
 
 	public List<GameObject> levelSegments;
+	public Liquid liquid = null;
 	// Use this for initialization
 	void Start () {
 
@@ -90,8 +91,8 @@ public class MapSegment : MonoBehaviour {
 		if (platform.ComesFromFloor) {
 			platform.lowerPlatform =  new GameObject("lowerPlatform");
 			platform.lowerPlatform.transform.parent = gameObject.transform;
-			makePolygon(true, PlatVertices, pHeight, platform.lowerPlatform);
-			makePolygon(false, PlatVertices, pHeight, platform.lowerPlatform);
+			makePolygon(true, PlatVertices, pHeight, platform.lowerPlatform, Ceiling.upperMaterial, Ceiling.upperOffset);
+			makePolygon(false, PlatVertices, pHeight, platform.lowerPlatform, Floor.upperMaterial, Floor.upperOffset);
 		}
 		if (split) {
 			pHeight.y = height.y - (splitPoint.y);
@@ -162,9 +163,9 @@ public class MapSegment : MonoBehaviour {
 		for (int i = 0; i < vertices.Count; i++) {
 			makeWall(i);
 		}
+		generateLiquidVolumes();
 		generateColliders(gameObject);
 
-		
 	}
 
 	public void generateColliders (GameObject obj){
@@ -179,6 +180,36 @@ public class MapSegment : MonoBehaviour {
 		}
 	}
 
+	public void generateLiquidVolumes (){
+		if (liquid != null) {
+			liquid.volume = new GameObject("liquid");
+			liquid.volume.transform.parent = gameObject.transform;
+			List<Vector3> liquidVertices = new List<Vector3>(vertices);
+			liquidVertices.Reverse();
+			Vector3 liquidHeight = new Vector3(0,
+												liquid.high - centerPoint.y,
+												0);
+			makePolygon(true, liquidVertices, liquidHeight, liquid.volume, Resources.Load("texture") as Material);
+			makePolygon(false, liquidVertices, liquidHeight, liquid.volume, Resources.Load("texture") as Material);
+
+			for (int i = 0; i < vertices.Count; i++) {
+
+				Vector3 point1, point2;
+				point2 = liquidVertices[i];
+				if (i+1 < liquidVertices.Count) {
+					point1 = liquidVertices[i+1];
+				} else {
+					point1 = liquidVertices[0];
+				}
+				//MapSegmentSide wall = new MapSegmentSide();
+				addWallPart(point1, point2, liquidHeight, 
+							new Vector3(0,0,0), liquid.surface, 
+							new Vector2(0,0), liquid.volume);
+			}
+			liquid.volume.transform.position = gameObject.transform.position;
+		}
+
+	}
 
 
 	Vector3 calculateCenterPoint ( List<Vector3> points) {
@@ -190,24 +221,26 @@ public class MapSegment : MonoBehaviour {
 		return center;
 	}
 
-	void makePolygon(bool isBase, List<Vector3> vertices, Vector3 polHeight, GameObject parent) {
+	void makePolygon(bool isBase, List<Vector3> vertices, Vector3 polHeight, GameObject parent, Material mat = null, Vector2 matOffset = default(Vector2)) {
 		List<Vector3> _vertices = new List<Vector3>(vertices);
 		GameObject meshItem = Instantiate(Resources.Load<GameObject>("polygonElement"), parent.transform.position, parent.transform.rotation);
 		meshItem.transform.parent = parent.transform;
 		MeshFilter meshfilter = meshItem.GetComponent<MeshFilter>();
 		Mesh mesh = new Mesh();
         meshfilter.mesh = mesh;
-		Vector2 matOffset = new Vector2(0,0);
+		//matOffset = new Vector2(0,0);
 		//Material mat = Resources.Load("stripes") as Material;
 		//Material mat = GameObject.Find("gameController").GetComponent<Map>().materials[1];
 		//meshItem.GetComponent<MeshRenderer>().material = mat;
-		Material mat;
-		if (isBase) {
-			mat = Floor.upperMaterial;
-			matOffset = Floor.upperOffset + new Vector2(centerPoint.z, centerPoint.x);
-		} else {
-			mat = Ceiling.upperMaterial;
-			matOffset = Ceiling.upperOffset + new Vector2(centerPoint.z, centerPoint.x);
+		// Material mat;
+		if (mat == null) {
+			if (isBase) {
+				mat = Floor.upperMaterial;
+				matOffset = Floor.upperOffset + new Vector2(centerPoint.z, centerPoint.x);
+			} else {
+				mat = Ceiling.upperMaterial;
+				matOffset = Ceiling.upperOffset + new Vector2(centerPoint.z, centerPoint.x);
+			}
 		}
 		if (mat == null) {mat = Resources.Load("texture") as Material;}
 		meshItem.GetComponent<MeshRenderer>().material = mat;
@@ -438,3 +471,17 @@ public class Platform {
 	public GameObject lowerPlatform = null;
 	public GameObject upperPlatform = null;
 }
+
+public class Liquid {
+	public float currentSpeed = 0;
+	public Quaternion currentDirectioin = new Quaternion();
+	public float high = 0;
+	public float low = 0;
+	public Material tint = new Material(Shader.Find("Standard"));
+	public Material surface = new Material(Shader.Find("Standard"));
+	public float damage = 0;
+
+	public GameObject volume = null;
+
+}
+
