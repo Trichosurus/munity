@@ -17,7 +17,6 @@ public class MapSegment : MonoBehaviour {
 	public MapSegmentFloorCeiling Ceiling = new MapSegmentFloorCeiling();
 	public MapSegmentFloorCeiling Floor = new MapSegmentFloorCeiling();
 	
-
 	public List<GameObject> levelSegments;
 	public Liquid liquid = null;
 	// Use this for initialization
@@ -69,19 +68,19 @@ public class MapSegment : MonoBehaviour {
 	}
 
 	public void makePlatformObjects() {
-		if (id == 32) {
-			Debug.Log(height);
-			Debug.Log(platform.MaximumHeight);
-			Debug.Log(platform.MinimumHeight);
-		}
+		// if (id == 32) {
+		// 	Debug.Log(height);
+		// 	Debug.Log(platform.maximumHeight);
+		// 	Debug.Log(platform.minimumHeight);
+		// }
 		Vector3 pHeight = height;
 		Vector3 splitPoint = new Vector3(height.x, 
-										platform.MinimumHeight + (platform.MaximumHeight - platform.MinimumHeight)/2,
+										platform.minimumHeight + (platform.maximumHeight - platform.minimumHeight)/2,
 										height.z); 
 		splitPoint.y -= gameObject.transform.position.y;
-		// Debug.Log(platform.MaximumHeight);
-		// Debug.Log(platform.MinimumHeight);
-		// Debug.Log(platform.MinimumHeight + (platform.MaximumHeight - platform.MinimumHeight)/2);
+		// Debug.Log(platform.maximumHeight);
+		// Debug.Log(platform.minimumHeight);
+		// Debug.Log(platform.minimumHeight + (platform.maximumHeight - platform.minimumHeight)/2);
 		List<Vector3> PlatVertices = new List<Vector3>(vertices);
 		PlatVertices.Reverse();
 		bool split = platform.ComesFromFloor && platform.ComesFromCeiling;
@@ -171,11 +170,13 @@ public class MapSegment : MonoBehaviour {
 	public void generateColliders (GameObject obj){
 		foreach(Transform child in obj.transform) {
 			if (child.gameObject.name == "polygonElement(Clone)") {
-				MeshCollider mc = child.gameObject.AddComponent<MeshCollider>();
-				Rigidbody rb = child.gameObject.AddComponent<Rigidbody>();
-				mc.sharedMesh = child.GetComponent<MeshFilter>().mesh;
-				rb.useGravity = false;	
-				rb.isKinematic = true;			
+				if (child.gameObject.GetComponent<MeshRenderer>().enabled) {
+					MeshCollider mc = child.gameObject.AddComponent<MeshCollider>();
+					Rigidbody rb = child.gameObject.AddComponent<Rigidbody>();
+					mc.sharedMesh = child.GetComponent<MeshFilter>().mesh;
+					rb.useGravity = false;	
+					rb.isKinematic = true;
+				}			
 			}
 		}
 	}
@@ -296,13 +297,14 @@ public class MapSegment : MonoBehaviour {
 		Vector3 wallHeightUpper = new Vector3(0,0,0);
 		Vector3 wallHeightLower = new Vector3(0,0,0);
 		Vector3 wallOffset = new Vector3(0, 0, 0);
+		GameObject wallPart = null;
 
 		if (wall.connection != null && 
-			(
+				(
 				wall.transparent == true || 
 				wall.connection.GetComponent<MapSegment>().platform != null ||
 				platform != null
-			)
+				)
 			){
 
 			// if (wall.connection.GetComponent<MapSegment>().id == 17){ 
@@ -324,7 +326,7 @@ public class MapSegment : MonoBehaviour {
 				&& connBottom) {
 				wallHeightLower = new Vector3(height.x, height.y, height.z);
 				wallHeightLower.y = wall.connection.transform.position.y - gameObject.transform.position.y;
-				addWallPart(point1, point2, wallHeightLower, wallOffset, wall.lowerMaterial, wall.lowerOffset, gameObject);
+				wallPart = addWallPart(point1, point2, wallHeightLower, wallOffset, wall.lowerMaterial, wall.lowerOffset, gameObject);
 			}
 
 
@@ -335,24 +337,25 @@ public class MapSegment : MonoBehaviour {
 				wallOffset.x = 0;
 				wallOffset.z = 0;
 				wallHeightUpper.y = height.y - wallOffset.y;
-				addWallPart(point1, point2, wallHeightUpper, wallOffset, wall.upperMaterial, wall.upperOffset, gameObject);
+				wallPart = addWallPart(point1, point2, wallHeightUpper, wallOffset, wall.upperMaterial, wall.upperOffset, gameObject);
 			}
 
 			Vector3 wallHeightMiddle = height - wallHeightLower - wallHeightUpper;
-			if (wall.middeMaterial != null && wallHeightMiddle.y>0) {
+			if ( wallHeightMiddle.y>0) {
 
-				addWallPart(point1, point2, 
+				wallPart = addWallPart(point1, point2, 
 							wallHeightMiddle,
 							new Vector3(0,wallHeightLower.y,0), 
 							wall.middeMaterial, wall.middleOffset, gameObject);
 			}
 		} else {
-			addWallPart(point1, point2, height, wallOffset, wall.upperMaterial, wall.upperOffset, gameObject);
+			wallPart = addWallPart(point1, point2, height, wallOffset, wall.upperMaterial, wall.upperOffset, gameObject);
 		}
+		if (wallPart != null) {sides[side].meshItem = wallPart;}
 	}
 
 
-	void addWallPart(Vector3 point1, Vector3 point2, Vector3 wallHeight, Vector3 offset, Material material, Vector2 matOffset, GameObject parent){
+	GameObject addWallPart(Vector3 point1, Vector3 point2, Vector3 wallHeight, Vector3 offset, Material material, Vector2 matOffset, GameObject parent){
 
 		GameObject meshItem = Instantiate(Resources.Load<GameObject>("polygonElement"), parent.transform.position, parent.transform.rotation);
 		meshItem.transform.parent = parent.transform;
@@ -398,10 +401,10 @@ public class MapSegment : MonoBehaviour {
 
 		} else {
 			meshItem.GetComponent<MeshRenderer>().material = new Material(Shader.Find("Standard"));
+			meshItem.GetComponent<MeshRenderer>().enabled = false;
 		}
 
-		// if (id==3) {
-		// }
+		return meshItem;
 	}
 
 
@@ -410,21 +413,41 @@ public class MapSegment : MonoBehaviour {
 		
 	}
 
+	public bool playerTouch(GameObject element) {
+		bool touched = false;
+		foreach (MapSegmentSide s in sides) {
+			if (s.controlPanel != null && s.meshItem == element) {
+		    	s.controlPanel.toggle(element, true);
+				touched = true;
+			}
+		}
+		if (platform != null) {
+			Debug.Log("platform?");
+			platform.playerTouch();
+			touched = true;
+		}
+		return touched;
+	}
+
 }
 
 
 public class MapSegmentSide {
 	public GameObject connection = null;
+	public GameObject meshItem = null;
 	public int connectionID = -1;
 	public float Opacity = 1;
 	public bool solid = true;
 	public bool transparent = false;
 	public Material upperMaterial, lowerMaterial, middeMaterial;
 	public Vector2 upperOffset, middleOffset, lowerOffset = new Vector2(0,0);
+	public ControlPanel controlPanel = null;
 
 }
 
 public class MapSegmentFloorCeiling {
+	public GameObject meshItem = null;
+
 	public GameObject conection = null;
 	public int connectionID = -1;
 	public float Opacity = 1;
@@ -432,15 +455,16 @@ public class MapSegmentFloorCeiling {
 	public bool transparent = false;
 	public Material upperMaterial, lowerMaterial, middeMaterial;
 	public Vector2 upperOffset, middleOffset, lowerOffset = new Vector2(0,0);
+	public ControlPanel controlPanel = null;
 
 }
 
 public class Platform {
-	public float Speed;
-	public float Delay;
-	public float MaximumHeight;
-	public float MinimumHeight;
-	public int Tag;
+	public float Speed = 1;
+	public float delay = 0;
+	public float maximumHeight;
+	public float minimumHeight;
+	public int tag;
 	public bool InitiallyActive = false;
 	public bool InitiallyExtended = false;
 	public bool DeactivatesAtEachLevel  = false;
@@ -459,18 +483,81 @@ public class Platform {
 	public bool ReversesDirectionWhenObstructed  = false;
 	public bool CannotBeExternallyDeactivated  = false;
 	public bool UsesNativePolygonHeights = false;
-	public bool DelaysBeforeActivation  = false;
-	public bool ActivatesAdjacentPlatformsWhenActivating = false;
-	public bool DeactivatesAdjacentPlatformsWhenActivating  = false;
-	public bool DeactivatesAdjacentPlatformsWhenDeactivating  = false;
-	public bool ContractsSlower  = false;
-	public bool ActivatesAdjacantPlatformsAtEachLevel  = false;
-	public bool IsLocked = false;
-	public bool IsSecret  = false;
-	public bool IsDoor = false;
+	public bool delaysBeforeActivation  = false;
+	public bool activatesAdjacentPlatformsWhenActivating = false;
+	public bool deactivatesAdjacentPlatformsWhenActivating  = false;
+	public bool deactivatesAdjacentPlatformsWhenDeactivating  = false;
+	public bool contractsSlower  = false;
+	public bool activatesAdjacantPlatformsAtEachLevel  = false;
+	public bool locked = false;
+	public bool secret  = false;
+	public bool door = false;
 	public GameObject lowerPlatform = null;
 	public GameObject upperPlatform = null;
+	public float upperMaxHeight = 0;
+	public float upperMinHeight = 0;
+	public float lowerMaxHeight = 0;
+	public float lowerMinHeight = 0;
+
+	public bool active = false;
+	public bool extended = true;
+	public bool extending = false;
+	//public float delayedTime = 0;
+	private bool hasActivated = false;
+
+
+	public void playerTouch() {
+		//Debug.Log("platform");
+		//element.GetComponent<Mesh>().material =
+				Debug.Log("'woo?'");
+		if (door) {
+			if (!locked) {
+				
+				activate();
+			} else {
+				//?? play locked sound??
+			}
+		}
+	}
+
+	public void activate() {
+
+		active = true;
+		extending = !extending;
+		extended = !extended;
+		if( upperPlatform != null ) {
+			upperPlatform.GetComponent<platformController>().delayedTime = 0;
+		}
+		if (lowerPlatform != null) {
+			lowerPlatform.GetComponent<platformController>().delayedTime = 0;
+		}
+		hasActivated = true;
+		
+	}
+
+	public void deActivate() {
+		bool uptransit = false;
+		bool lotransit = false;
+		if (upperPlatform != null) {
+			uptransit = upperPlatform.GetComponent<platformController>().inTransit;
+			lotransit = uptransit;
+		}
+		if (lowerPlatform != null) {
+			lotransit = lowerPlatform.GetComponent<platformController>().inTransit;
+			if (upperPlatform == null) {
+				uptransit = lotransit;
+			}
+		}
+		if (uptransit == lotransit) {
+			active = false;
+			Debug.Log("stop");
+		}
+
+
+	}
 }
+
+
 
 public class Liquid {
 	public float currentSpeed = 0;
@@ -485,3 +572,53 @@ public class Liquid {
 
 }
 
+public class ControlPanel {
+
+	public short type = 0;
+	public short permutation = 0;
+	public int controlPanelStatus = 0;
+	public bool controlPanel = false;
+	public bool repairSwitch = false;
+	public bool destructiveSwitch = false;
+	public bool active = false;
+	public int lightSwitch = -1;
+	public int platformSwitch = -1;
+	public int tagSwitch = -1;
+	public bool canBeDestroyed = false;
+	public bool canOnlyBeHitByProjectiles = false;
+	public bool dirty = false;
+	public bool savePoint = false;
+	public bool terminal = false;
+	public Material activeMat = new Material(Shader.Find("Standard"));
+	public Material inactiveMat = new Material(Shader.Find("Standard"));
+
+
+	public void toggle(GameObject wall, bool playerTouched = false) {
+		active = !active;
+		Vector2 offset = wall.GetComponent<MeshRenderer>().material.mainTextureOffset;
+		if (active) {
+			wall.GetComponent<MeshRenderer>().material = activeMat;
+			if (platformSwitch > -1) {
+				GameObject pol = wall.transform.parent.GetComponent<MapSegment>().levelSegments[platformSwitch];
+				if (pol.GetComponent<MapSegment>().platform != null) {
+					pol.GetComponent<MapSegment>().platform.activate();
+				}
+			}
+		} else {
+			wall.GetComponent<MeshRenderer>().material = inactiveMat;
+		}
+		wall.GetComponent<MeshRenderer>().material.mainTextureOffset = offset;
+	}
+    // public enum ControlPanelClass : short {
+	// Oxygen,
+	// Shield,
+	// DoubleShield,
+	// TripleShield,
+	// LightSwitch,
+	// PlatformSwitch,
+	// TagSwitch,
+	// PatternBuffer,
+	// Terminal
+    // }
+
+}

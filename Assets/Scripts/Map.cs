@@ -121,11 +121,11 @@ public class Map : MonoBehaviour {
 						seg.platform.ComesFromCeiling = pl.ComesFromCeiling;
 						seg.platform.ComesFromFloor = pl.ComesFromFloor;
 						seg.platform.InitiallyExtended = pl.InitiallyExtended;
-						seg.platform.MaximumHeight = (float)pl.MaximumHeight/1024f;
-						seg.platform.MinimumHeight = (float)pl.MinimumHeight/1024f;
-						seg.platform.Speed = (float)pl.Speed/1024f;
+						seg.platform.maximumHeight = (float)pl.MaximumHeight/1024f;
+						seg.platform.minimumHeight = (float)pl.MinimumHeight/1024f;
+						seg.platform.Speed = (float)pl.Speed/128f;
 						seg.platform.UsesNativePolygonHeights = pl.UsesNativePolygonHeights;
-						seg.platform.IsDoor = pl.IsDoor;
+						seg.platform.door = pl.IsDoor;
 						seg.platform.InitiallyActive = pl.InitiallyActive;
 						// if (p == 6 || p == 4|| p == 431) {
 						// 	Debug.Log(p);
@@ -252,7 +252,7 @@ public class Map : MonoBehaviour {
 				} else if (Line[currentLine].CounterclockwisePolygonSideIndex >= 0 ) {
 					side = Level.Sides[Line[currentLine].CounterclockwisePolygonSideIndex];
 				}
-if (p == 1) {Debug.Log(side.Primary.Texture.Collection);}
+
 					mss.upperMaterial = getTexture(side.Primary.Texture);
 					mss.lowerMaterial = getTexture(side.Secondary.Texture);
 					mss.middeMaterial = getTexture(side.Transparent.Texture);
@@ -264,6 +264,53 @@ if (p == 1) {Debug.Log(side.Primary.Texture.Collection);}
 				if (mss.lowerMaterial == null) {
 					mss.lowerMaterial = mss.upperMaterial;
 					mss.lowerOffset = mss.upperOffset;
+				}
+
+				if (side.IsControlPanel|| side.IsPlatformSwitch() || side.IsTagSwitch() ) {
+					mss.controlPanel = new ControlPanel();
+					mss.controlPanel.permutation = side.ControlPanelPermutation;
+					mss.controlPanel.type = side.ControlPanelType;
+					mss.controlPanel.controlPanel = side.IsControlPanel;
+					mss.controlPanel.platformSwitch = side.ControlPanelPermutation;
+					mss.controlPanel.tagSwitch = side.ControlPanelPermutation;
+					mss.controlPanel.inactiveMat =  mss.upperMaterial;
+					for (int t = 0 ; t < materials.Count; t++) {
+						if (materials[t] == mss.controlPanel.inactiveMat) {
+							mss.controlPanel.activeMat =  materials[t-1];
+						}
+					}
+					
+					
+					switch(side.Flags) {
+						// case SideFlags.None:
+						// 	break;
+						case SideFlags.ControlPanelStatus:
+							mss.controlPanel.controlPanelStatus = 1;//?? what is this for?
+							break;
+						case SideFlags.Dirty:
+							mss.controlPanel.dirty = true;
+							break;
+						case SideFlags.IsDestructiveSwitch:
+							mss.controlPanel.destructiveSwitch = true;
+							break;
+						case SideFlags.IsLightedSwitch:
+							mss.controlPanel.active = true;
+							break;
+						case SideFlags.IsRepairSwitch:
+							mss.controlPanel.repairSwitch = true;
+							break;
+						case SideFlags.IsControlPanel:
+							//mss.controlPanel.controlPanel = true;
+							break;
+						case SideFlags.SwitchCanBeDestroyed:
+							mss.controlPanel.canBeDestroyed = true;
+							break;
+						case SideFlags.SwitchCanOnlyBeHitByProjectiles:
+							mss.controlPanel.canOnlyBeHitByProjectiles = true;
+							break;
+					}
+					// Debug.Log(p);
+					// Debug.Log(mss.controlPanel.permutation);
 				}
 
 				seg.sides.Add(mss);
