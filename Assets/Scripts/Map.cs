@@ -17,20 +17,14 @@ public class Map : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		GlobalData.map = this;
 	    ShapesFile shapes = new ShapesFile();
 		shapes.Load(GlobalData.shapesFilePath);
-	    //shapes.Load("/home/alex/marathon/makePolys/Assets/Resources/Marathon Infinity/Shapes.shpA");
-	    //shapes.Load("/home/alex/marathon/makePolys/Assets/Resources/Marathon 2/Shapes.shpA");
-	    //shapes.Load("/home/alex/marathon/makePolys/Assets/Resources/M1A1/M1A1 Shapes.shpA");
 		makeMaterialsFromShapesFile(shapes);
 
 		// ClearLog();
 		Wadfile wadfile = new Wadfile();
 		wadfile.Load(GlobalData.mapsFilePath);
-		//wadfile.Load("/home/alex/Desktop/porting/Aleph One/Marathon Infinity/Ne Cede Malis.sceA");
-		//wadfile.Load("/home/alex/marathon/makePolys/Assets/Resources/Marathon Infinity/Map.sceA");
-		//wadfile.Load("/home/alex/marathon/makePolys/Assets/Resources/Marathon 2/Map.sceA");
-		//wadfile.Load("/home/alex/marathon/makePolys/Assets/Resources/M1A1/M1A1 Map.sceA");
 		//Wadfile	wadfile = w;
 	    foreach (var kvp in wadfile.Directory) {
 			if (kvp.Value.Chunks.ContainsKey(MapInfo.Tag)) {

@@ -13,6 +13,9 @@ public static class GlobalData
 
 	    public static string settingsFile = "settings.ini";
 
+		public static Map map = null;
+
+
 }
 
 public class gameController : MonoBehaviour {

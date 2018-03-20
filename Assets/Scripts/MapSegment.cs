@@ -19,11 +19,25 @@ public class MapSegment : MonoBehaviour {
 	
 	public List<GameObject> levelSegments;
 	public Liquid liquid = null;
+	private bool hidden = false;
 	// Use this for initialization
 	void Start () {
 
 
 	}
+
+	public void showHide(bool show = false) {
+		if ( show == hidden ) {
+			Component[] allChildren = gameObject.GetComponentsInChildren(typeof(Transform), true);
+			foreach (Transform child in allChildren) {
+				if (child.gameObject.name == "polygonElement(Clone)" || child.gameObject.name == "transparent"){
+					child.gameObject.SetActive(show);
+				}
+			} 
+			hidden = !show;
+		}
+	}
+
 	public void calculatePoints() {
 		float yIndex = centerPoint.y;
 
@@ -170,13 +184,19 @@ public class MapSegment : MonoBehaviour {
 	public void generateColliders (GameObject obj){
 		foreach(Transform child in obj.transform) {
 			if (child.gameObject.name == "polygonElement(Clone)") {
-				if (child.gameObject.GetComponent<MeshRenderer>().enabled) {
-					MeshCollider mc = child.gameObject.AddComponent<MeshCollider>();
+				MeshCollider mc = child.gameObject.AddComponent<MeshCollider>();
+				mc.sharedMesh = child.GetComponent<MeshFilter>().mesh;
+				if (child.gameObject.name != "transparent") {
 					Rigidbody rb = child.gameObject.AddComponent<Rigidbody>();
-					mc.sharedMesh = child.GetComponent<MeshFilter>().mesh;
 					rb.useGravity = false;	
 					rb.isKinematic = true;
-				}			
+
+				// } else {
+					// mc.convex = true;
+					// mc.isTrigger = true;
+					// child.gameObject.name = "transparent";
+				}
+						
 			}
 		}
 	}
@@ -356,7 +376,7 @@ public class MapSegment : MonoBehaviour {
 
 
 	GameObject addWallPart(Vector3 point1, Vector3 point2, Vector3 wallHeight, Vector3 offset, Material material, Vector2 matOffset, GameObject parent){
-
+		if (material == null) {return null;}
 		GameObject meshItem = Instantiate(Resources.Load<GameObject>("polygonElement"), parent.transform.position, parent.transform.rotation);
 		meshItem.transform.parent = parent.transform;
 		MeshFilter meshfilter = meshItem.GetComponent<MeshFilter>();
@@ -400,7 +420,8 @@ public class MapSegment : MonoBehaviour {
 			meshItem.GetComponent<MeshRenderer>().material.SetTextureOffset("_MainTex", matOffset);
 
 		} else {
-			meshItem.GetComponent<MeshRenderer>().material = new Material(Shader.Find("Standard"));
+			meshItem.GetComponent<MeshRenderer>().material = Resources.Load<Material>("transparent");
+			meshItem.name = "transparent";
 			meshItem.GetComponent<MeshRenderer>().enabled = false;
 		}
 
