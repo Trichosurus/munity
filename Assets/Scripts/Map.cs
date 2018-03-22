@@ -330,11 +330,11 @@ public class Map : MonoBehaviour {
 			int texNo = Level.Polygons[p].CeilingTexture.Bitmap;
 			// Debug.Log(collectionNo);
 			// Debug.Log(texNo);
-			seg.Ceiling.upperMaterial = getTexture(Level.Polygons[p].CeilingTexture);
-			seg.Floor.upperMaterial = getTexture(Level.Polygons[p].FloorTexture);
+			seg.ceiling.upperMaterial = getTexture(Level.Polygons[p].CeilingTexture);
+			seg.floor.upperMaterial = getTexture(Level.Polygons[p].FloorTexture);
 
-			seg.Ceiling.upperOffset = new Vector2((float)Level.Polygons[p].CeilingOrigin.X/1024f,(float)Level.Polygons[p].CeilingOrigin.Y/1024f);
-			seg.Floor.upperOffset = new Vector2((float)Level.Polygons[p].FloorOrigin.X/1024f,(float)Level.Polygons[p].FloorOrigin.Y/1024f);
+			seg.ceiling.upperOffset = new Vector2((float)Level.Polygons[p].CeilingOrigin.X/1024f,(float)Level.Polygons[p].CeilingOrigin.Y/1024f);
+			seg.floor.upperOffset = new Vector2((float)Level.Polygons[p].FloorOrigin.X/1024f,(float)Level.Polygons[p].FloorOrigin.Y/1024f);
 			seg.levelSegments = segments;
 			seg.vertices = points;
 			seg.centerPoint = new Vector3(0,(float)Level.Polygons[p].FloorHeight/1024f,0);
@@ -344,11 +344,18 @@ public class Map : MonoBehaviour {
 
 		foreach(Weland.Platform pl in Level.Platforms) {
 			segments[pl.PolygonIndex].GetComponent<MapSegment>().recalculatePlatformVolume();
-			segments[pl.PolygonIndex].GetComponent<MapSegment>().makePlatformObjects();
 		}
 		foreach(GameObject s in segments) {
 			s.GetComponent<MapSegment>().generateMeshes();
 		}
+		foreach(GameObject s in segments) {
+			s.GetComponent<MapSegment>().checkIfImpossible();
+		}
+		foreach(Weland.Platform pl in Level.Platforms) {
+			segments[pl.PolygonIndex].GetComponent<MapSegment>().makePlatformObjects();
+		}
+
+
 		// foreach(Weland.Platform pl in Level.Platforms) {
 		// }
 

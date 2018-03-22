@@ -14,14 +14,65 @@ public class MapSegment : MonoBehaviour {
 
 	public List<MapSegmentSide> sides = new List<MapSegmentSide>();
 
-	public MapSegmentFloorCeiling Ceiling = new MapSegmentFloorCeiling();
-	public MapSegmentFloorCeiling Floor = new MapSegmentFloorCeiling();
+	public MapSegmentFloorCeiling ceiling = new MapSegmentFloorCeiling();
+	public MapSegmentFloorCeiling floor = new MapSegmentFloorCeiling();
 	
 	public List<GameObject> levelSegments;
 	public Liquid liquid = null;
+	public bool impossible = false;
+	public int viewEdge = -1;
 	private bool hidden = false;
 	// Use this for initialization
 	void Start () {
+
+
+	}
+
+	public void checkIfImpossible() {
+		RaycastHit hit;
+		List<Vector3> verts = new List<Vector3>(vertices);
+		verts.Add(new Vector3(0,0,0));
+		foreach (Vector3 vert in verts) {
+			Vector3 startPoint = gameObject.transform.TransformPoint(vert);
+			// if (id == 22) {
+			// 	Debug.Log(centerPoint);
+			// }
+
+			startPoint = (startPoint-centerPoint)*0.95f + centerPoint  + (height*0.05f);
+			// if (id == 22) {
+			// 	Debug.Log(castPoint);
+			// }
+			Vector3 castPoint = gameObject.transform.TransformPoint(vert);
+			float rayCount = 3f;
+			for (int i = 0; i < rayCount; i++) {
+				castPoint = (startPoint-centerPoint)*((1f/rayCount)*(float)i) + centerPoint  + (height*0.05f);
+
+				if (Physics.Raycast(castPoint, Vector3.up, out hit, height.y)) {
+					if (hit.collider.transform.parent != null && hit.collider.transform.parent.gameObject != gameObject) {
+						if (hit.collider.transform.parent.GetComponent<MapSegment>() != null) {
+							hit.collider.transform.parent.GetComponent<MapSegment>().impossible = true;
+						}
+						impossible = true;
+						Debug.DrawRay(castPoint, Vector3.up, Color.magenta);				
+					}
+				}
+				castPoint.y -=  (height.y*0.1f);
+				if (Physics.Raycast(castPoint, Vector3.down, out hit,10)) {
+					if (hit.collider.transform.parent != null && hit.collider.transform.parent.gameObject.name == "polygon(Clone)") {
+						if (hit.collider.name != "ceiling") {
+							hit.collider.transform.parent.GetComponent<MapSegment>().impossible = true;
+							impossible = true;
+							Debug.Log(id);
+							Debug.DrawRay(castPoint, Vector3.down, Color.white);				
+
+						}
+						
+					}
+				}
+			}
+
+
+		}
 
 
 	}
@@ -30,7 +81,7 @@ public class MapSegment : MonoBehaviour {
 		if ( show == hidden ) {
 			Component[] allChildren = gameObject.GetComponentsInChildren(typeof(Transform), true);
 			foreach (Transform child in allChildren) {
-				if (child.gameObject.name == "polygonElement(Clone)" || child.gameObject.name == "transparent"){
+				if (child.gameObject.name == "floor" ||child.gameObject.name == "ceiling" || child.gameObject.name == "wall" || child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
 					child.gameObject.SetActive(show);
 				}
 			} 
@@ -104,8 +155,8 @@ public class MapSegment : MonoBehaviour {
 		if (platform.ComesFromFloor) {
 			platform.lowerPlatform =  new GameObject("lowerPlatform");
 			platform.lowerPlatform.transform.parent = gameObject.transform;
-			makePolygon(true, PlatVertices, pHeight, platform.lowerPlatform, Ceiling.upperMaterial, Ceiling.upperOffset);
-			makePolygon(false, PlatVertices, pHeight, platform.lowerPlatform, Floor.upperMaterial, Floor.upperOffset);
+			makePolygon(true, PlatVertices, pHeight, platform.lowerPlatform, ceiling.upperMaterial, ceiling.upperOffset);
+			makePolygon(false, PlatVertices, pHeight, platform.lowerPlatform, floor.upperMaterial, floor.upperOffset);
 		}
 		if (split) {
 			pHeight.y = height.y - (splitPoint.y);
@@ -183,7 +234,7 @@ public class MapSegment : MonoBehaviour {
 
 	public void generateColliders (GameObject obj){
 		foreach(Transform child in obj.transform) {
-			if (child.gameObject.name == "polygonElement(Clone)") {
+			if (child.gameObject.name == "floor" ||child.gameObject.name == "ceiling" || child.gameObject.name == "wall" || child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
 				MeshCollider mc = child.gameObject.AddComponent<MeshCollider>();
 				mc.sharedMesh = child.GetComponent<MeshFilter>().mesh;
 				if (child.gameObject.name != "transparent") {
@@ -256,11 +307,11 @@ public class MapSegment : MonoBehaviour {
 		// Material mat;
 		if (mat == null) {
 			if (isBase) {
-				mat = Floor.upperMaterial;
-				matOffset = Floor.upperOffset + new Vector2(centerPoint.z, centerPoint.x);
+				mat = floor.upperMaterial;
+				matOffset = floor.upperOffset + new Vector2(centerPoint.z, centerPoint.x);
 			} else {
-				mat = Ceiling.upperMaterial;
-				matOffset = Ceiling.upperOffset + new Vector2(centerPoint.z, centerPoint.x);
+				mat = ceiling.upperMaterial;
+				matOffset = ceiling.upperOffset + new Vector2(centerPoint.z, centerPoint.x);
 			}
 		}
 		if (mat == null) {mat = Resources.Load("texture") as Material;}
@@ -269,6 +320,9 @@ public class MapSegment : MonoBehaviour {
 
 		if (!isBase) {
 			_vertices.Reverse();
+			if (parent.GetComponent<MapSegment>()!= null && parent.GetComponent<MapSegment>().ceiling != null) {meshItem.name = "ceiling";}
+		} else {
+			if (parent.GetComponent<MapSegment>()!= null && parent.GetComponent<MapSegment>().floor != null) {meshItem.name = "floor";}
 		}
 
 		_vertices.Insert(0,new Vector3(0,0,0));
@@ -371,7 +425,10 @@ public class MapSegment : MonoBehaviour {
 		} else {
 			wallPart = addWallPart(point1, point2, height, wallOffset, wall.upperMaterial, wall.upperOffset, gameObject);
 		}
-		if (wallPart != null) {sides[side].meshItem = wallPart;}
+		if (wallPart != null) {
+			sides[side].meshItem = wallPart;
+			wallPart.name = "wall";
+		}
 	}
 
 
@@ -477,7 +534,6 @@ public class MapSegmentFloorCeiling {
 	public Material upperMaterial, lowerMaterial, middeMaterial;
 	public Vector2 upperOffset, middleOffset, lowerOffset = new Vector2(0,0);
 	public ControlPanel controlPanel = null;
-
 }
 
 public class Platform {
