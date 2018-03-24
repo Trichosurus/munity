@@ -13,7 +13,7 @@ public class Map : MonoBehaviour {
 	List<int> collectionMapping = new List<int>{};
 	List<int> transferModeMapping = new List<int> {0, 4, 5, 6, 9, 15, 16, 17, 18, 19, 20};
 	public List<Material> materials;
-	public List<GameObject> segments;
+	public List<MapSegment> segments;
 
 	// Use this for initialization
 	void Start () {
@@ -105,8 +105,8 @@ public class Map : MonoBehaviour {
 		for (int p = 0; p < Level.Polygons.Count; p++) {
 		//for (int p = 0; p < 2; p++) {
 			GameObject pol = Instantiate(polygon);
-			segments.Add(pol);
 			MapSegment seg = pol.GetComponent<MapSegment>();
+			segments.Add(seg);
 			seg.height = new Vector3(0,(float)(Level.Polygons[p].CeilingHeight - Level.Polygons[p].FloorHeight)/1024f,0);
 			if(Level.Polygons[p].Type == Weland.PolygonType.Platform) {
 				foreach (Weland.Platform pl in Level.Platforms) {
@@ -343,13 +343,13 @@ public class Map : MonoBehaviour {
 		}
 
 		foreach(Weland.Platform pl in Level.Platforms) {
-			segments[pl.PolygonIndex].GetComponent<MapSegment>().recalculatePlatformVolume();
+			segments[pl.PolygonIndex].recalculatePlatformVolume();
 		}
-		foreach(GameObject s in segments) {
-			s.GetComponent<MapSegment>().generateMeshes();
+		foreach(MapSegment s in segments) {
+			s.generateMeshes();
 		}
-		foreach(GameObject s in segments) {
-			s.GetComponent<MapSegment>().checkIfImpossible();
+		foreach(MapSegment s in segments) {
+			s.checkIfImpossible();
 		}
 		foreach(Weland.Platform pl in Level.Platforms) {
 			segments[pl.PolygonIndex].GetComponent<MapSegment>().makePlatformObjects();

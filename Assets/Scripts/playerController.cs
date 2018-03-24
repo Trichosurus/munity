@@ -15,7 +15,10 @@ public class playerController : MonoBehaviour {
 
 	public int maxView = 3;
 
-	private List<int> activePolygons = new List<int>();
+	//private List<int> activePolygons = new List<int>();
+	private bool[] activePolygons = new bool[0];
+	private	int activeCount = 0;
+	private	int processedCount = 0;
 
 	// Use this for initialization
 	void Start () {
@@ -24,7 +27,7 @@ public class playerController : MonoBehaviour {
 		// Debug.Log(currentPolygon);
 		// for(int seg = 0; seg < GlobalData.map.segments.Count; seg++) {
 		// 	if (seg != 3){
-		// 		GlobalData.map.segments[seg].GetComponent<MapSegment>().showHide(false);
+		// 		GlobalData.map.segments[seg],showHide(false);
 		// 	}
 		// }
 
@@ -36,7 +39,7 @@ public class playerController : MonoBehaviour {
 		// Update is called once per frame
 
 	void Update () {
-		transform.Find("playerCamera").GetComponent<mouselook>().lockCursor = Input.GetKey(KeyCode.LeftControl);
+		transform.Find("playerCamera").GetComponent<mouselook>().lockCursor = !Input.GetKey(KeyCode.LeftControl);
 		CharacterController cc = GetComponent<CharacterController>();
 		
 		if (Input.GetKey("w") || Input.GetKey("s")) {
@@ -144,163 +147,96 @@ public class playerController : MonoBehaviour {
 				// Debug.Log(other.)
 			}
 		}
-		// if (other.name == "transparent") {
-			
-		// 	if (other.transform.parent.GetComponent<MapSegment>().id != currentPolygon) {
-		// 		currentPolygon = other.transform.parent.GetComponent<MapSegment>().id;
-		// 	}
-		// 	Debug.Log(currentPolygon);
-		// }
 	}
 
 
 	void calculateVisibility() {
-		activePolygons.Clear();
-		List<int> processedPolys = new List<int>();
+	// Debug.Log("----------------------------------------");
+		float ms = Time.realtimeSinceStartup;
+		activePolygons = new bool[GlobalData.map.segments.Count];
+		bool[] processedPolys = new bool[GlobalData.map.segments.Count];
+		activeCount = 0;
+		processedCount = 0;
+		float[] distances = new float[GlobalData.map.segments.Count];
+
+		// List<int> processedPolys = new List<int>();
 
 		// Debug.Log(activePolygons.Count);
 		// if (activePolygons.Count == 0) {
-		if (!activePolygons.Contains(currentPolygon)){
-			activePolygons.Add(currentPolygon);
-			foreach(MapSegmentSide side in GlobalData.map.segments[currentPolygon].GetComponent<MapSegment>().sides) {
+		//if (!activePolygons.Contains(currentPolygon)){
+			activePolygons[currentPolygon] = true;activeCount++;
+			foreach(MapSegmentSide side in GlobalData.map.segments[currentPolygon].sides) {
 				if (side.meshItem == null) {
 					// GlobalData.map.segments[side.connectionID].SetActive(true);
-					if (side.connectionID >= 0 && !activePolygons.Contains(side.connectionID)){
-						// activePolygons.Add(side.connectionID);
+					//if (side.connectionID >= 0 && !activePolygons.Contains(side.connectionID)){
+						activePolygons[side.connectionID] = true;activeCount++;
 						addToPolygonList(side.connectionID);
-						GlobalData.map.segments[currentPolygon].GetComponent<MapSegment>().viewEdge = 1;
-					}
+						GlobalData.map.segments[currentPolygon].viewEdge = 1;
+					//}
 				}
 			}
-			processedPolys.Add(currentPolygon);
-		}
-		//Debug.Log(activePolygons);
-		//drawPolygonList();foreach(var item in list.ToList())
-		// //int totalAdded = 0;
-		// foreach (int i in new List<int>(activePolygons)) {
-		// 	MapSegment seg = GlobalData.map.segments[i].GetComponent<MapSegment>();
-		// 	if (seg.viewEdge == 1) {
-		// 		checkPolygonStatus(i);				
-		// 	} else{
-		// 		if (seg.viewEdge == 0){
-		// 			processedPolys.Add(i);
-		// 		}
-		// 	}
-		// }
+			processedPolys[currentPolygon] = true;processedCount++;
+		//}
 
-
-		while (processedPolys.Count < activePolygons.Count) {
+// Debug.Log((Time.realtimeSinceStartup - ms)*1000);
+// Debug.Log((Time.realtimeSinceStartup - ms)*1000);
+		while (processedCount < activeCount) {
 			float distance = 7777777;
 			int closest = -1;
 			int connections = 0;
-			foreach(int i in activePolygons) {
-				if (!processedPolys.Contains(i)){
-					float d = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.position);
-					if (d < distance) {distance = d;closest = i;}
+			for (int i = 0; i < activePolygons.Length; i++) {
+				if (activePolygons[i] && !processedPolys[i]){
+					if (distances[i] == 0 ) {
+						distances[i] = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.position);
+					}
+					if (distances[i] < distance) {
+						distance = distances[i];
+						closest = i;
+					}
 				}
 			}
-			connections = addToPolygonList(closest);
-			if (connections > 0) {
-				// GlobalData.map.segments[closest].GetComponent<MapSegment>().viewEdge = 0;
-			} 
-			processedPolys.Add(closest);
-			drawPolygonList();
-		}
+// Debug.Log((Time.realtimeSinceStartup - ms)*1000);
 
-		//Debug.Log(activePolygons.Count);
-		for(int seg = 0; seg < GlobalData.map.segments.Count; seg++) {
-			if (!activePolygons.Contains(seg)) {
-				GlobalData.map.segments[seg].GetComponent<MapSegment>().showHide(false);
+			if (closest >=0){
+				connections = addToPolygonList(closest);
+				processedPolys[closest] = true; 
+			}
+			processedCount++;
+// Debug.Log((Time.realtimeSinceStartup - ms)*1000);
+
+			drawPolygonList(true);
+// Debug.Log((Time.realtimeSinceStartup - ms)*1000);
+
+		}
+		drawPolygonList(false);
+// Debug.Log((Time.realtimeSinceStartup - ms)*1000);
+
+// Debug.Log(activeCount);
+	}
+
+	void drawPolygonList (bool showOnly) {
+		for (int i = 0; i < activePolygons.Length; i++) {
+			if (activePolygons[i] || !showOnly) {
+				GlobalData.map.segments[i].showHide(activePolygons[i]);
 			}
 		}
 	}
 
-	// void removeActivePolygon(int polygonID) {
-	// 	activePolygons.Remove(polygonID);
-		
-	// 	MapSegment seg = GlobalData.map.segments[polygonID].GetComponent<MapSegment>();
-	// 	for( int s = 0; s < seg.sides.Count; s++) {
-	// 		MapSegmentSide side = GlobalData.map.segments[polygonID].GetComponent<MapSegment>().sides[s];
-	// 		if (side.connectionID >= 0 ) {
-	// 			GlobalData.map.segments[side.connectionID].GetComponent<MapSegment>().viewEdge = maxView;
-	// 		}
-	// 	}
-	// }
-
-	void drawPolygonList () {
-		foreach (int i in activePolygons) {
-			GlobalData.map.segments[i].GetComponent<MapSegment>().showHide(true);
-		}
-	}
-
-
-	// int[] checkPolygonStatus (int PolygonID) {
-		
-	// 	bool isVisible;
-	// 	List<int> add = new List<int>();
-	// 	int connCount = 0;
-
-	// 	if (PolygonID < 0) {return add.ToArray();}
-
-	// 	// if (activePolygons.Count < 100) {
-	// 	MapSegment seg = GlobalData.map.segments[PolygonID].GetComponent<MapSegment>();
-	// 	for( int s = 0; s < seg.sides.Count; s++) {
-	// 		MapSegmentSide side = GlobalData.map.segments[PolygonID].GetComponent<MapSegment>().sides[s];
-	// 		if (side.connectionID >= 0 ) {
-	// 			bool backlink = activePolygons.Contains(side.connectionID) && GlobalData.map.segments[side.connectionID].GetComponent<MapSegment>().viewEdge == 0;
-	// 			if (!backlink) {
-	// 				connCount++;
-	// 			}
-
-	// 			Vector3 point1, point2;
-	// 			point1 = seg.vertices[s];
-	// 			if (s+1 < seg.vertices.Count) {
-	// 				point2 = seg.vertices[s+1];
-	// 			} else {
-	// 				point2 = seg.vertices[0];
-	// 			}
-	// 			point1 = GlobalData.map.segments[PolygonID].transform.TransformPoint(point1);
-	// 			point2 = GlobalData.map.segments[PolygonID].transform.TransformPoint(point2);
-
-	// 			isVisible = getRectVisibility(point1, point2, seg.height);
-
-	// 			if (isVisible) {
-	// 				if (!backlink) {
-	// 					add.Add(seg.id);
-	// 				} else {
-	// 					// GlobalData.map.segments[side.connectionID].GetComponent<MapSegment>().viewEdge = 0;
-	// 					add.Add(side.connectionID);
-	// 				}
-	// 			} else if (seg.viewEdge < maxView && !seg.impossible) {
-	// 				if (!backlink) {
-	// 					if (GlobalData.map.segments[side.connectionID].GetComponent<MapSegment>().viewEdge != seg.viewEdge+1) {
-	// 						add.Add(side.connectionID);
-	// 					}
-	// 				} else {
-	// 					add.Add(side.connectionID);
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-
-	// 	return add.ToArray();
-	// }
-	
 
 	int addToPolygonList (int PolygonID) {
-		if (PolygonID <0) {return 0;}
+		if (PolygonID < 0) {return 0;}
 		
 		bool isVisible;
 		int addCount = 0;
-		if (!activePolygons.Contains(PolygonID)) {activePolygons.Add(PolygonID);}
+		//activePolygons[PolygonID] = true; activePolygons++;
 		int connCount = 0;
 		// if (activePolygons.Count < 100) {
-		MapSegment seg = GlobalData.map.segments[PolygonID].GetComponent<MapSegment>();
+		MapSegment seg = GlobalData.map.segments[PolygonID];
 		if (seg.viewEdge < 0) {seg.viewEdge = 0;}
 		for( int s = 0; s < seg.sides.Count; s++) {
-			MapSegmentSide side = GlobalData.map.segments[PolygonID].GetComponent<MapSegment>().sides[s];
+			MapSegmentSide side = GlobalData.map.segments[PolygonID].sides[s];
 			if (side.connectionID >= 0 ) {
-				bool backlink = activePolygons.Contains(side.connectionID);
+				bool backlink = activePolygons[side.connectionID];
 				if (!backlink) {
 					connCount++;
 				}
@@ -319,18 +255,18 @@ public class playerController : MonoBehaviour {
 
 				if (isVisible) {
 					if (!backlink) {
-						activePolygons.Add(side.connectionID);
+						activePolygons[side.connectionID] = true; activeCount++;
 						seg.viewEdge = 0;
-						GlobalData.map.segments[side.connectionID].GetComponent<MapSegment>().viewEdge = 1;
+						GlobalData.map.segments[side.connectionID].viewEdge = 1;
 						addCount++;
 					} else {
-						GlobalData.map.segments[side.connectionID].GetComponent<MapSegment>().viewEdge = 0;
+						GlobalData.map.segments[side.connectionID].viewEdge = 0;
 						//seg.viewEdge = 0;
 					}
 				} else if (seg.viewEdge < maxView) {
-					if (!backlink && !GlobalData.map.segments[side.connectionID].GetComponent<MapSegment>().impossible) {
-						activePolygons.Add(side.connectionID);
-						GlobalData.map.segments[side.connectionID].GetComponent<MapSegment>().viewEdge = seg.viewEdge + 1;
+					if (!backlink && !GlobalData.map.segments[side.connectionID].impossible) {
+						activePolygons[side.connectionID] = true; activeCount++;
+						GlobalData.map.segments[side.connectionID].viewEdge = seg.viewEdge + 1;
 						addCount++;
 					}
 				}
@@ -349,15 +285,29 @@ public class playerController : MonoBehaviour {
 		GameObject camera;
 		camera = transform.Find("playerCamera").gameObject;
 
-		Vector3 midpoint, pointa, pointb, pointc, pointd;
+		Vector3[] points = new Vector3[8];
+		Vector3 p1, p2, p3, h1, h2, h3;
+		h1 = height*0.05f;
+		h2 = height*0.95f;
+		h3 = height*0.5f;
+		p1 = (point1-point2)*0.05f;
+		p2 = (point1-point2)*0.95f;
+		p3 = (point1-point2)*0.5f;
+		
 
-		midpoint = (point1-point2)/2 + point2 + (height/2);
-		pointa = (point1-point2)*0.05f + point2  + (height*0.05f);
-		pointb = (point1-point2)*0.95f + point2  + (height*0.05f);
+		Vector3 midpoint = p3 + point2 + h3;
 
-		pointc = (point1-point2)*0.05f + point2  + (height*0.95f);
-		pointd = (point1-point2)*0.95f + point2  + (height*0.95f);
+		points[0] = p1 + point2  + h1;
+		points[1] = p2 + point2  + h1;
+		points[2] = p1 + point2  + h2;
+		points[3] = p2 + point2  + h2;
+		points[4] = p3 + point2  + h2;
+		points[5] = p3 + point2  + h1;
+		points[6] = p1 + point2  + h3;
+		points[7] = p2 + point2  + h3;
 
+
+		Vector3 castPoint;
 		// if (PolygonID == 53){
 		// Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.green);
 		// Debug.DrawRay(pointa, camera.transform.position-point1, Color.red);
@@ -365,25 +315,41 @@ public class playerController : MonoBehaviour {
 		// Debug.DrawRay(pointc, camera.transform.position-pointc, Color.cyan);
 		// Debug.DrawRay(pointd, camera.transform.position-pointd, Color.magenta);
 		// }
+		//Color colour  = Random.ColorHSV();
+		float rayCount = 1f;
+		isVisible = false;
 
 		isVisible = (Physics.Raycast(midpoint, camera.transform.position-midpoint, out hit, 50)) 
-						&& hit.collider.gameObject == camera ;
-		if (!isVisible) {
-			isVisible = (Physics.Raycast(pointa, camera.transform.position-pointa, out hit, 50)) 
-						&& hit.collider.gameObject == camera;
-		}
-		if (!isVisible) {
-			isVisible = (Physics.Raycast(pointb, camera.transform.position-pointb, out hit, 50)) 
-						&& hit.collider.gameObject == camera;
+			&& hit.collider.gameObject == camera ;
+
+		for (int i = 1; i <= rayCount && !isVisible; i++) {
+			for (int p = 0; p < points.Length && !isVisible; p++){
+				castPoint = (points[p]-midpoint)*((1f/rayCount)*(float)i) + midpoint;
+				isVisible = (Physics.Raycast(castPoint, camera.transform.position-castPoint, out hit, 50)) 
+							&& hit.collider.gameObject == camera ;
+				//Debug.DrawRay(castPoint, camera.transform.position-castPoint, colour);
+				if (isVisible) {return true;}
 			}
-		if (!isVisible) {
-			isVisible = (Physics.Raycast(pointc, camera.transform.position-pointc, out hit, 50)) 
-						&& hit.collider.gameObject == camera;
 		}
-		if (!isVisible) {
-			isVisible = (Physics.Raycast(pointd, camera.transform.position-pointd, out hit, 50)) 
-						&& hit.collider.gameObject == camera;
-		}
+
+		// isVisible = (Physics.Raycast(midpoint, camera.transform.position-midpoint, out hit, 50)) 
+		// 				&& hit.collider.gameObject == camera ;
+		// if (!isVisible) {
+		// 	isVisible = (Physics.Raycast(pointa, camera.transform.position-pointa, out hit, 50)) 
+		// 				&& hit.collider.gameObject == camera;
+		// }
+		// if (!isVisible) {
+		// 	isVisible = (Physics.Raycast(pointb, camera.transform.position-pointb, out hit, 50)) 
+		// 				&& hit.collider.gameObject == camera;
+		// 	}
+		// if (!isVisible) {
+		// 	isVisible = (Physics.Raycast(pointc, camera.transform.position-pointc, out hit, 50)) 
+		// 				&& hit.collider.gameObject == camera;
+		// }
+		// if (!isVisible) {
+		// 	isVisible = (Physics.Raycast(pointd, camera.transform.position-pointd, out hit, 50)) 
+		// 				&& hit.collider.gameObject == camera;
+		// }
 
 		return isVisible;
 
@@ -392,33 +358,34 @@ public class playerController : MonoBehaviour {
 		RaycastHit hit;
 		Vector3 cameraPos;
 		// cameraPos = transform.Find("playerCamera").position;
-		cameraPos = transform.position;
+		cameraPos = transform.Find("playerCamera").transform.position;
 
 		if (Physics.Raycast(cameraPos, transform.Find("playerCamera").forward, out hit, 20)) {
 			Debug.Log(hit.collider.name);
+			Debug.DrawRay(cameraPos, transform.Find("playerCamera").forward, Color.yellow, 5f);
 
 		}
-		Vector3 point1, point2, midpoint;
-		MapSegment seg = GlobalData.map.segments[0].GetComponent<MapSegment>();
-		MapSegmentSide side = GlobalData.map.segments[0].GetComponent<MapSegment>().sides[3];
-			//if (side.connectionID >= 0 && !activePolygons.Contains(side.connectionID)) {
-				point1 = seg.vertices[3];
-				point2 = seg.vertices[4];
+// 		Vector3 point1, point2, midpoint;
+// 		MapSegment seg = GlobalData.map.segments[0].GetComponent<MapSegment>();
+// 		MapSegmentSide side = GlobalData.map.segments[0].GetComponent<MapSegment>().sides[3];
+// 			//if (side.connectionID >= 0 && !activePolygons.Contains(side.connectionID)) {
+// 				point1 = seg.vertices[3];
+// 				point2 = seg.vertices[4];
 
 
 
 
-				point1 = GlobalData.map.segments[0].transform.TransformPoint(point1);
-				point2 = GlobalData.map.segments[0].transform.TransformPoint(point2);
-		bool isVisible;		
-		midpoint = (point1-point2)/2 + point2 + (seg.height/2);
-				isVisible = (Physics.Raycast(midpoint, cameraPos-midpoint, out hit, 20)) 
-								&& hit.collider.gameObject == gameObject ;
-		Debug.Log(hit.collider.gameObject.name);
+// 				point1 = GlobalData.map.segments[0].transform.TransformPoint(point1);
+// 				point2 = GlobalData.map.segments[0].transform.TransformPoint(point2);
+// 		bool isVisible;		
+// 		midpoint = (point1-point2)/2 + point2 + (seg.height/2);
+// 				isVisible = (Physics.Raycast(midpoint, cameraPos-midpoint, out hit, 20)) 
+// 								&& hit.collider.gameObject == gameObject ;
+// 		Debug.Log(hit.collider.gameObject.name);
 
-Debug.DrawRay(point1, cameraPos-point1, Color.green);
-Debug.DrawRay(point2, cameraPos-point2, Color.green);
-Debug.DrawRay(midpoint, cameraPos-midpoint, Color.green);
+// Debug.DrawRay(point1, cameraPos-point1, Color.green);
+// Debug.DrawRay(point2, cameraPos-point2, Color.green);
+// Debug.DrawRay(midpoint, cameraPos-midpoint, Color.green);
 
 		//	}
 

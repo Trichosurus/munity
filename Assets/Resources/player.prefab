@@ -243,6 +243,7 @@ MonoBehaviour:
   accelleration: 3
   maxspeed: 7
   currentPolygon: 0
+  maxView: 3
 --- !u!136 &136584762612870910
 CapsuleCollider:
   m_ObjectHideFlags: 1

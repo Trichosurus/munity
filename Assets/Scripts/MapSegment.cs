@@ -17,7 +17,7 @@ public class MapSegment : MonoBehaviour {
 	public MapSegmentFloorCeiling ceiling = new MapSegmentFloorCeiling();
 	public MapSegmentFloorCeiling floor = new MapSegmentFloorCeiling();
 	
-	public List<GameObject> levelSegments;
+	public List<MapSegment> levelSegments;
 	public Liquid liquid = null;
 	public bool impossible = false;
 	public int viewEdge = -1;
@@ -43,7 +43,7 @@ public class MapSegment : MonoBehaviour {
 			// 	Debug.Log(castPoint);
 			// }
 			Vector3 castPoint = gameObject.transform.TransformPoint(vert);
-			float rayCount = 3f;
+			float rayCount = 4f;
 			for (int i = 0; i < rayCount; i++) {
 				castPoint = (startPoint-centerPoint)*((1f/rayCount)*(float)i) + centerPoint  + (height*0.05f);
 
@@ -109,7 +109,7 @@ public class MapSegment : MonoBehaviour {
 				s.connection = levelSegments[s.connectionID];
 			}
 			if (s.connection != null){
-				MapSegment conn = s.connection.GetComponent<MapSegment>();
+				MapSegment conn = s.connection;
 
 					// if (id == 6) {
 					// 	Debug.Log(centerPoint);
@@ -376,7 +376,7 @@ public class MapSegment : MonoBehaviour {
 		if (wall.connection != null && 
 				(
 				wall.transparent == true || 
-				wall.connection.GetComponent<MapSegment>().platform != null ||
+				wall.connection.platform != null ||
 				platform != null
 				)
 			){
@@ -388,12 +388,12 @@ public class MapSegment : MonoBehaviour {
 			// 	Debug.Log(gameObject.transform.position.y+height.y);
 
 			// 	}
-			bool connTop = (wall.connection.GetComponent<MapSegment>().platform != null &&
-							!wall.connection.GetComponent<MapSegment>().platform.ComesFromCeiling) ||
-							 wall.connection.GetComponent<MapSegment>().platform == null; 
-			bool connBottom = (wall.connection.GetComponent<MapSegment>().platform != null &&
-							!wall.connection.GetComponent<MapSegment>().platform.ComesFromFloor)||
-							wall.connection.GetComponent<MapSegment>().platform == null; 
+			bool connTop = (wall.connection.platform != null &&
+							!wall.connection.platform.ComesFromCeiling) ||
+							 wall.connection.platform == null; 
+			bool connBottom = (wall.connection.platform != null &&
+							!wall.connection.platform.ComesFromFloor)||
+							wall.connection.platform == null; 
 ; 
 		
 			if (wall.connection.transform.position.y > gameObject.transform.position.y 
@@ -404,10 +404,10 @@ public class MapSegment : MonoBehaviour {
 			}
 
 
-			if (wall.connection.transform.position.y+wall.connection.GetComponent<MapSegment>().height.y < gameObject.transform.position.y+height.y
+			if (wall.connection.transform.position.y+wall.connection.height.y < gameObject.transform.position.y+height.y
 				&& connTop) {
 				wallHeightUpper = new Vector3(height.x, height.y, height.z);
-				wallOffset = wall.connection.GetComponent<MapSegment>().height + wall.connection.transform.position - gameObject.transform.position;
+				wallOffset = wall.connection.height + wall.connection.transform.position - gameObject.transform.position;
 				wallOffset.x = 0;
 				wallOffset.z = 0;
 				wallHeightUpper.y = height.y - wallOffset.y;
@@ -511,7 +511,7 @@ public class MapSegment : MonoBehaviour {
 
 
 public class MapSegmentSide {
-	public GameObject connection = null;
+	public MapSegment connection = null;
 	public GameObject meshItem = null;
 	public int connectionID = -1;
 	public float Opacity = 1;
@@ -526,7 +526,7 @@ public class MapSegmentSide {
 public class MapSegmentFloorCeiling {
 	public GameObject meshItem = null;
 
-	public GameObject conection = null;
+	public MapSegment conection = null;
 	public int connectionID = -1;
 	public float Opacity = 1;
 	public bool solid = true;
@@ -676,9 +676,9 @@ public class ControlPanel {
 		if (active) {
 			wall.GetComponent<MeshRenderer>().material = activeMat;
 			if (platformSwitch > -1) {
-				GameObject pol = wall.transform.parent.GetComponent<MapSegment>().levelSegments[platformSwitch];
-				if (pol.GetComponent<MapSegment>().platform != null) {
-					pol.GetComponent<MapSegment>().platform.activate();
+				MapSegment pol = wall.transform.parent.GetComponent<MapSegment>().levelSegments[platformSwitch];
+				if (pol.platform != null) {
+					pol.platform.activate();
 				}
 			}
 		} else {
