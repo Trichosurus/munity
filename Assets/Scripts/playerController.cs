@@ -105,6 +105,7 @@ public class playerController : MonoBehaviour {
 
 		getCurrentPolygon();
 		if (currentPolygon >= 0) {
+			drawActivePolygons();
 			calculateVisibility();
 		}
 		if (Input.GetKey("f")){castRay();}
@@ -149,133 +150,107 @@ public class playerController : MonoBehaviour {
 		}
 	}
 
+	void drawActivePolygons() {
+		bool[] avtive = GlobalData.map.segments[currentPolygon].activePolygons;
+		for (int i = 0; i < avtive.Length; i++) {
+			if (!GlobalData.map.segments[i].impossible) {
+				GlobalData.map.segments[i].showHide(avtive[i]);
+			} else {
+				GlobalData.map.segments[i].showHide(false);
+			}
+		}
+
+
+	}
 
 	void calculateVisibility() {
 	// Debug.Log("----------------------------------------");
-		float ms = Time.realtimeSinceStartup;
 		activePolygons = new bool[GlobalData.map.segments.Count];
 		bool[] processedPolys = new bool[GlobalData.map.segments.Count];
 		activeCount = 0;
 		processedCount = 0;
 		float[] distances = new float[GlobalData.map.segments.Count];
+		for (int i = 0; i < GlobalData.map.segments.Count; i++) {
+			if (GlobalData.map.segments[i].impossible &&
+					GlobalData.map.segments[currentPolygon].activePolygons[i]) {
+				activePolygons[i] = true;
+				activeCount++;
+				GlobalData.map.segments[i].showHide(false);
+				float distance;
+				distances[i] = 7777777;
+				foreach (Vector3 v in GlobalData.map.segments[i].vertices) {
+					distance = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.TransformPoint(v));
+					if (distance < distances[i]) { distances[i] = distance;}
+				}
+				//distances[i] = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.position);
 
-		// List<int> processedPolys = new List<int>();
+			}
+		}
 
-		// Debug.Log(activePolygons.Count);
-		// if (activePolygons.Count == 0) {
-		//if (!activePolygons.Contains(currentPolygon)){
-			activePolygons[currentPolygon] = true;activeCount++;
-			foreach(MapSegmentSide side in GlobalData.map.segments[currentPolygon].sides) {
-				if (side.meshItem == null) {
-					// GlobalData.map.segments[side.connectionID].SetActive(true);
-					//if (side.connectionID >= 0 && !activePolygons.Contains(side.connectionID)){
-						activePolygons[side.connectionID] = true;activeCount++;
-						addToPolygonList(side.connectionID);
-						GlobalData.map.segments[currentPolygon].viewEdge = 1;
-					//}
+		MapSegment pol  = GlobalData.map.segments[currentPolygon];
+
+		if (pol.impossible) {
+			activePolygons[currentPolygon] = true;
+			pol.showHide(true);
+			for( int s = 0; s < pol.sides.Count; s++) {
+				if (pol.sides[s].connectionID >= 0 && 
+				GlobalData.map.segments[pol.sides[s].connectionID].impossible) {
+						GlobalData.map.segments[pol.sides[s].connectionID].showHide(true);
+						processedPolys[pol.sides[s].connectionID] = true;
+						processedCount++;
 				}
 			}
-			processedPolys[currentPolygon] = true;processedCount++;
-		//}
+		}
 
-// Debug.Log((Time.realtimeSinceStartup - ms)*1000);
-// Debug.Log((Time.realtimeSinceStartup - ms)*1000);
 		while (processedCount < activeCount) {
 			float distance = 7777777;
 			int closest = -1;
 			int connections = 0;
 			for (int i = 0; i < activePolygons.Length; i++) {
 				if (activePolygons[i] && !processedPolys[i]){
-					if (distances[i] == 0 ) {
-						distances[i] = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.position);
-					}
 					if (distances[i] < distance) {
 						distance = distances[i];
 						closest = i;
 					}
 				}
 			}
-// Debug.Log((Time.realtimeSinceStartup - ms)*1000);
-
-			if (closest >=0){
-				connections = addToPolygonList(closest);
-				processedPolys[closest] = true; 
+			activePolygons[closest] = false;
+			for( int s = 0; s < GlobalData.map.segments[closest].sides.Count; s++) {
+				if (GlobalData.map.segments[closest].sides[s].connectionID >= 0 &&
+					!GlobalData.map.segments[GlobalData.map.segments[closest].sides[s].connectionID].hidden) {
+					
+					Vector3 point1, point2;
+					point1 = GlobalData.map.segments[closest].vertices[s];
+					if (s+1 < GlobalData.map.segments[closest].vertices.Count) {
+						point2 = GlobalData.map.segments[closest].vertices[s+1];
+					} else {
+						point2 = GlobalData.map.segments[closest].vertices[0];
+					}
+					point1 = GlobalData.map.segments[closest].transform.TransformPoint(point1);
+					point2 = GlobalData.map.segments[closest].transform.TransformPoint(point2);
+					if (getRectVisibility(point1, point2, GlobalData.map.segments[closest].height)) {
+						GlobalData.map.segments[closest].showHide(true);
+						break;
+					}
+				}
 			}
-			processedCount++;
-// Debug.Log((Time.realtimeSinceStartup - ms)*1000);
 
-			drawPolygonList(true);
-// Debug.Log((Time.realtimeSinceStartup - ms)*1000);
+			processedPolys[closest] = true; 
+			processedCount++;
+
+			// drawPolygonList(true);
 
 		}
-		drawPolygonList(false);
-// Debug.Log((Time.realtimeSinceStartup - ms)*1000);
-
-// Debug.Log(activeCount);
+		// drawPolygonList(false);
 	}
 
 	void drawPolygonList (bool showOnly) {
 		for (int i = 0; i < activePolygons.Length; i++) {
-			if (activePolygons[i] || !showOnly) {
+			if (GlobalData.map.segments[i].impossible && GlobalData.map.segments[currentPolygon].activePolygons[i] &&
+					(activePolygons[i] || !showOnly)) {
 				GlobalData.map.segments[i].showHide(activePolygons[i]);
 			}
 		}
-	}
-
-
-	int addToPolygonList (int PolygonID) {
-		if (PolygonID < 0) {return 0;}
-		
-		bool isVisible;
-		int addCount = 0;
-		//activePolygons[PolygonID] = true; activePolygons++;
-		int connCount = 0;
-		// if (activePolygons.Count < 100) {
-		MapSegment seg = GlobalData.map.segments[PolygonID];
-		if (seg.viewEdge < 0) {seg.viewEdge = 0;}
-		for( int s = 0; s < seg.sides.Count; s++) {
-			MapSegmentSide side = GlobalData.map.segments[PolygonID].sides[s];
-			if (side.connectionID >= 0 ) {
-				bool backlink = activePolygons[side.connectionID];
-				if (!backlink) {
-					connCount++;
-				}
-
-				Vector3 point1, point2;
-				point1 = seg.vertices[s];
-				if (s+1 < seg.vertices.Count) {
-					point2 = seg.vertices[s+1];
-				} else {
-					point2 = seg.vertices[0];
-				}
-				point1 = GlobalData.map.segments[PolygonID].transform.TransformPoint(point1);
-				point2 = GlobalData.map.segments[PolygonID].transform.TransformPoint(point2);
-
-				isVisible = getRectVisibility(point1, point2, seg.height);
-
-				if (isVisible) {
-					if (!backlink) {
-						activePolygons[side.connectionID] = true; activeCount++;
-						seg.viewEdge = 0;
-						GlobalData.map.segments[side.connectionID].viewEdge = 1;
-						addCount++;
-					} else {
-						GlobalData.map.segments[side.connectionID].viewEdge = 0;
-						//seg.viewEdge = 0;
-					}
-				} else if (seg.viewEdge < maxView) {
-					if (!backlink && !GlobalData.map.segments[side.connectionID].impossible) {
-						activePolygons[side.connectionID] = true; activeCount++;
-						GlobalData.map.segments[side.connectionID].viewEdge = seg.viewEdge + 1;
-						addCount++;
-					}
-				}
-			}
-		}
-		if (connCount == 0) {
-			seg.viewEdge = 1;
-		}
-		return addCount;
 	}
 
 
@@ -287,11 +262,11 @@ public class playerController : MonoBehaviour {
 
 		Vector3[] points = new Vector3[8];
 		Vector3 p1, p2, p3, h1, h2, h3;
-		h1 = height*0.05f;
-		h2 = height*0.95f;
+		h1 = height*0.005f;
+		h2 = height*0.995f;
 		h3 = height*0.5f;
-		p1 = (point1-point2)*0.05f;
-		p2 = (point1-point2)*0.95f;
+		p1 = (point1-point2)*0.005f;
+		p2 = (point1-point2)*0.995f;
 		p3 = (point1-point2)*0.5f;
 		
 
@@ -308,48 +283,32 @@ public class playerController : MonoBehaviour {
 
 
 		Vector3 castPoint;
-		// if (PolygonID == 53){
-		// Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.green);
-		// Debug.DrawRay(pointa, camera.transform.position-point1, Color.red);
-		// Debug.DrawRay(pointb,camera.transform.position-pointb, Color.blue);
-		// Debug.DrawRay(pointc, camera.transform.position-pointc, Color.cyan);
-		// Debug.DrawRay(pointd, camera.transform.position-pointd, Color.magenta);
-		// }
-		//Color colour  = Random.ColorHSV();
-		float rayCount = 1f;
+		float rayCount = 3f;
 		isVisible = false;
 
 		isVisible = (Physics.Raycast(midpoint, camera.transform.position-midpoint, out hit, 50)) 
 			&& hit.collider.gameObject == camera ;
 
+		if (isVisible) {
+			Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.red);
+		} else {
+			Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.green);
+		}
+
+		Color colour  = Random.ColorHSV();
 		for (int i = 1; i <= rayCount && !isVisible; i++) {
 			for (int p = 0; p < points.Length && !isVisible; p++){
 				castPoint = (points[p]-midpoint)*((1f/rayCount)*(float)i) + midpoint;
 				isVisible = (Physics.Raycast(castPoint, camera.transform.position-castPoint, out hit, 50)) 
 							&& hit.collider.gameObject == camera ;
-				//Debug.DrawRay(castPoint, camera.transform.position-castPoint, colour);
-				if (isVisible) {return true;}
+				if (isVisible) {
+					Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.red);
+					return true;
+				} else {
+					Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.green);
+				}
 			}
 		}
-
-		// isVisible = (Physics.Raycast(midpoint, camera.transform.position-midpoint, out hit, 50)) 
-		// 				&& hit.collider.gameObject == camera ;
-		// if (!isVisible) {
-		// 	isVisible = (Physics.Raycast(pointa, camera.transform.position-pointa, out hit, 50)) 
-		// 				&& hit.collider.gameObject == camera;
-		// }
-		// if (!isVisible) {
-		// 	isVisible = (Physics.Raycast(pointb, camera.transform.position-pointb, out hit, 50)) 
-		// 				&& hit.collider.gameObject == camera;
-		// 	}
-		// if (!isVisible) {
-		// 	isVisible = (Physics.Raycast(pointc, camera.transform.position-pointc, out hit, 50)) 
-		// 				&& hit.collider.gameObject == camera;
-		// }
-		// if (!isVisible) {
-		// 	isVisible = (Physics.Raycast(pointd, camera.transform.position-pointd, out hit, 50)) 
-		// 				&& hit.collider.gameObject == camera;
-		// }
 
 		return isVisible;
 

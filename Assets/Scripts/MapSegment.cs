@@ -21,7 +21,14 @@ public class MapSegment : MonoBehaviour {
 	public Liquid liquid = null;
 	public bool impossible = false;
 	public int viewEdge = -1;
-	private bool hidden = false;
+	public bool hidden = false;
+	public bool[] activePolygons;
+	private GameObject visCheck;
+	public int overDraw = 3;
+	
+	private int activeCount = 0;
+	private	GameObject viscalc;
+
 	// Use this for initialization
 	void Start () {
 
@@ -29,14 +36,15 @@ public class MapSegment : MonoBehaviour {
 	}
 
 	public void checkIfImpossible() {
+		if (impossible) {return;}
 		RaycastHit hit;
 		List<Vector3> verts = new List<Vector3>(vertices);
 		verts.Add(new Vector3(0,0,0));
 		foreach (Vector3 vert in verts) {
 			Vector3 startPoint = gameObject.transform.TransformPoint(vert);
-			// if (id == 22) {
-			// 	Debug.Log(centerPoint);
-			// }
+			if (id == 36) {
+				Debug.Log(centerPoint);
+			}
 
 			startPoint = (startPoint-centerPoint)*0.95f + centerPoint  + (height*0.05f);
 			// if (id == 22) {
@@ -44,6 +52,21 @@ public class MapSegment : MonoBehaviour {
 			// }
 			Vector3 castPoint = gameObject.transform.TransformPoint(vert);
 			float rayCount = 4f;
+
+			if (Physics.Raycast(centerPoint + height*0.5f, (castPoint+height*0.5f)-(centerPoint + height*0.5f), out hit,Vector3.Distance(centerPoint + height*0.5f, castPoint+height*0.5f)*0.95f)) {
+				if (hit.collider.transform.parent != null && hit.collider.transform.parent.gameObject.name == "polygon(Clone)") {
+					if (hit.collider.transform.parent.GetComponent<MapSegment>() != null &&
+						hit.collider.transform.parent.GetComponent<MapSegment>().id != id) {
+						hit.collider.transform.parent.GetComponent<MapSegment>().impossible = true;
+						impossible = true;
+						Debug.Log(id);
+						Debug.DrawRay(centerPoint + height*0.5f, (castPoint+height*0.5f)-(centerPoint + height*0.5f), Color.yellow);				
+						return;					
+
+					}
+				}
+			}
+
 			for (int i = 0; i < rayCount; i++) {
 				castPoint = (startPoint-centerPoint)*((1f/rayCount)*(float)i) + centerPoint  + (height*0.05f);
 
@@ -54,6 +77,7 @@ public class MapSegment : MonoBehaviour {
 						}
 						impossible = true;
 						Debug.DrawRay(castPoint, Vector3.up, Color.magenta);				
+						return;
 					}
 				}
 				castPoint.y -=  (height.y*0.1f);
@@ -64,14 +88,13 @@ public class MapSegment : MonoBehaviour {
 							impossible = true;
 							Debug.Log(id);
 							Debug.DrawRay(castPoint, Vector3.down, Color.white);				
+							return;
 
 						}
 						
 					}
 				}
 			}
-
-
 		}
 
 
@@ -506,6 +529,238 @@ public class MapSegment : MonoBehaviour {
 		}
 		return touched;
 	}
+
+
+	public void calculateVisibility() {
+
+
+		viscalc = GameObject.CreatePrimitive(PrimitiveType.Cube);
+		viscalc.transform.parent = transform;
+		viscalc.transform.position = transform.position + (height/2);
+		viscalc.transform.localScale=new Vector3(0.005f,0.005f,0.005f);
+
+
+	// Debug.Log("----------------------------------------");
+		if (activePolygons.Length == 0) {
+			activePolygons = new bool[GlobalData.map.segments.Count];
+		}
+		
+		bool[] ap = new bool[GlobalData.map.segments.Count];
+		for (int i = 0; i< ap.Length; i++) {
+			ap[i] = activePolygons[i];
+			GlobalData.map.segments[i].viewEdge = 0;
+			if (GlobalData.map.segments[i].impossible) {
+				GlobalData.map.segments[i].showHide(false);
+			}
+		}
+		activePolygons = new bool[GlobalData.map.segments.Count];
+
+		bool[] processedPolys = new bool[GlobalData.map.segments.Count];
+		activeCount = 0;
+		int processedCount = 0;
+		float[] distances = new float[GlobalData.map.segments.Count];
+
+ 
+		activePolygons[id] = true;activeCount++;
+		foreach(MapSegmentSide side in GlobalData.map.segments[id].sides) {
+			if (side.meshItem == null) {
+					activePolygons[side.connectionID] = true;activeCount++;
+					if (GlobalData.map.segments[side.connectionID].activePolygons.Length == 0) {
+						GlobalData.map.segments[side.connectionID].activePolygons = new bool[GlobalData.map.segments.Count];
+					}
+					GlobalData.map.segments[side.connectionID].activePolygons[id] = true;
+					addToPolygonList(side.connectionID);
+					GlobalData.map.segments[id].viewEdge = 1;
+			}
+		}
+		processedPolys[id] = true;processedCount++;
+		
+		while (processedCount < activeCount) {
+			float distance = 7777777;
+			int closest = -1;
+			int connections = 0;
+			for (int i = 0; i < activePolygons.Length; i++) {
+				if (activePolygons[i] && !processedPolys[i]){
+					if (distances[i] == 0 ) {
+						distances[i] = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.position);
+					}
+					if (distances[i] < distance) {
+						distance = distances[i];
+						closest = i;
+					}
+				}
+			}
+
+		if (id == 46 && closest == 31) {
+			processedCount = processedCount;
+		}
+
+
+			if (closest >=0){
+				connections = addToPolygonList(closest);
+				processedPolys[closest] = true; 
+			}
+			processedCount++;
+
+		}
+		for (int i = 0; i< ap.Length; i++) {
+			if (ap[i]) {activePolygons[i] = true;}
+		}
+
+		Destroy(viscalc);
+	}
+
+	int addToPolygonList (int PolygonID) {
+		if (PolygonID < 0) {return 0;}
+		
+		bool isVisible;
+		int addCount = 0;
+		//activePolygons[PolygonID] = true; activePolygons++;
+		int connCount = 0;
+		// if (activePolygons.Count < 100) {
+		MapSegment seg = GlobalData.map.segments[PolygonID];
+		if (seg.viewEdge < 0) {seg.viewEdge = 0;}
+		for( int s = 0; s < seg.sides.Count; s++) {
+			MapSegmentSide side = GlobalData.map.segments[PolygonID].sides[s];
+			if (side.connectionID >= 0 ) {
+				bool backlink = activePolygons[side.connectionID];
+				if (!backlink) {
+					connCount++;
+				}
+
+				Vector3 point1, point2;
+				point1 = seg.vertices[s];
+				if (s+1 < seg.vertices.Count) {
+					point2 = seg.vertices[s+1];
+				} else {
+					point2 = seg.vertices[0];
+				}
+				point1 = GlobalData.map.segments[PolygonID].transform.TransformPoint(point1);
+				point2 = GlobalData.map.segments[PolygonID].transform.TransformPoint(point2);
+
+				// if ( GlobalData.map.segments[side.connectionID].impossible) {
+
+				// }
+
+
+				isVisible = getRectVisibility(point1, point2, seg.height);
+
+				if (isVisible) {
+					if (!backlink) {
+						activePolygons[side.connectionID] = true; activeCount++;
+						if (GlobalData.map.segments[side.connectionID].activePolygons.Length == 0) {
+							GlobalData.map.segments[side.connectionID].activePolygons = new bool[GlobalData.map.segments.Count];
+						}
+						GlobalData.map.segments[side.connectionID].activePolygons[id] = true;
+
+						seg.viewEdge = 0;
+						GlobalData.map.segments[side.connectionID].viewEdge = 1;
+						addCount++;
+					} else {
+						GlobalData.map.segments[side.connectionID].viewEdge = 0;
+						GlobalData.map.segments[side.connectionID].viewEdge = 0;
+						//seg.viewEdge = 0;
+					}
+				} else if (seg.viewEdge < overDraw) {
+					if (!backlink) {
+						activePolygons[side.connectionID] = true; activeCount++;
+						if (GlobalData.map.segments[side.connectionID].activePolygons.Length == 0) {
+							GlobalData.map.segments[side.connectionID].activePolygons = new bool[GlobalData.map.segments.Count];
+						}
+						GlobalData.map.segments[side.connectionID].activePolygons[id] = true;
+						GlobalData.map.segments[side.connectionID].viewEdge = seg.viewEdge + 1;
+						addCount++;
+					}
+				}
+			}
+		}
+		if (connCount == 0) {
+			seg.viewEdge = 1;
+		}
+		return addCount;
+	}
+
+
+	bool getRectVisibility (Vector3 point1, Vector3 point2, Vector3 rectHeight) {
+		bool isVisible = false;
+		RaycastHit hit;
+		Vector3[] points = new Vector3[8];
+		Vector3 p1, p2, p3, h1, h2, h3;
+		h1 = rectHeight*0.005f;
+		h2 = rectHeight*0.995f;
+		h3 = rectHeight*0.5f;
+		p1 = (point1-point2)*0.005f;
+		p2 = (point1-point2)*0.995f;
+		p3 = (point1-point2)*0.5f;
+		
+
+		Vector3 midpoint = p3 + point2 + h3;
+
+		points[0] = p1 + point2  + h1;
+		points[1] = p2 + point2  + h1;
+		points[2] = p1 + point2  + h2;
+		points[3] = p2 + point2  + h2;
+		points[4] = p3 + point2  + h2;
+		points[5] = p3 + point2  + h1;
+		points[6] = p1 + point2  + h3;
+		points[7] = p2 + point2  + h3;
+
+
+		Vector3 castPoint, crossPoint;
+		float rayCount = 3f;
+		float heightCount = 2f;
+		float crossCount = 1f;
+
+		isVisible = false;
+
+		List<Vector3> checkpoints = new List<Vector3>();
+		checkpoints.Add(viscalc.transform.position);
+		foreach(Vector3 v in vertices) {
+
+			for (int c = 1; c <=crossCount; c++) {
+				crossPoint = ((gameObject.transform.TransformPoint(v)-centerPoint)*((1f/crossCount)*(float)c) + centerPoint);
+				for (int h = 1; h <=heightCount; h++) {
+					checkpoints.Add(crossPoint + (height*0.95f)*(1f/heightCount));
+				}
+			}
+		}
+		//Color colour = Random.ColorHSV();
+
+		foreach(Vector3 cp in checkpoints) {
+			viscalc.transform.position = cp;
+			isVisible = (Physics.Raycast(midpoint, viscalc.transform.position-midpoint, out hit, 50)) 
+				&& hit.collider.gameObject == viscalc ;
+			// if(	isVisible &&id == 46 ) {
+			// 	Debug.DrawRay(midpoint, viscalc.transform.position-midpoint, Color.red);
+			// }
+			if (isVisible) {
+				return true;
+			}
+			for (int i = 1; i < rayCount; i++) {
+				for (int p = 0; p < points.Length && !isVisible; p++){
+					castPoint = (points[p]-midpoint)*((1f/rayCount)*(float)i) + midpoint;
+					isVisible = (Physics.Raycast(castPoint, viscalc.transform.position-castPoint, out hit, 50)) 
+								&& hit.collider.gameObject == viscalc ;
+					// if (id == 46) {
+					// 	Debug.DrawRay(castPoint, viscalc.transform.position-castPoint, colour);
+					// }
+					if (isVisible) {
+						// if (id == 46) {
+						// Debug.DrawRay(castPoint, viscalc.transform.position-castPoint, Color.red);
+						// }
+						return true;
+						}
+				}
+			}
+		}
+
+		
+
+		return isVisible;
+
+	}
+
+
 
 }
 

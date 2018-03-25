@@ -348,11 +348,16 @@ public class Map : MonoBehaviour {
 		foreach(MapSegment s in segments) {
 			s.generateMeshes();
 		}
+
 		foreach(MapSegment s in segments) {
 			s.checkIfImpossible();
 		}
+
+		foreach(MapSegment s in segments) {
+			s.calculateVisibility();
+		}
 		foreach(Weland.Platform pl in Level.Platforms) {
-			segments[pl.PolygonIndex].GetComponent<MapSegment>().makePlatformObjects();
+			segments[pl.PolygonIndex].makePlatformObjects();
 		}
 
 
