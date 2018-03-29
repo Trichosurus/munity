@@ -32,9 +32,10 @@ public class ClippableObject : MonoBehaviour
 
     //only 3 clip planes for now, will need to modify the shader for more.
     [Range(0, 3)] public int clipPlanes = 0;
-
+    
     //preview size for the planes. Shown when the object is selected.
     public float planePreviewSize = 5.0f;
+    public bool planesAdditive = false;
 
     //Positions and rotations for the planes. The rotations will be converted into normals to be used by the shaders.
     public Vector3 plane1Position = Vector3.zero;
@@ -46,6 +47,8 @@ public class ClippableObject : MonoBehaviour
 
     public Vector3 plane3Position = Vector3.zero;
     public Vector3 plane3Rotation = new Vector3(0, 0, 90);
+
+
 
     //Only used for previewing a plane. Draws diagonals and edges of a limited flat plane.
     private void DrawPlane(Vector3 position, Vector3 euler)
@@ -88,7 +91,8 @@ public class ClippableObject : MonoBehaviour
     public static readonly string[] ClipKeywords = {
         "CLIP_ONE",
         "CLIP_TWO",
-        "CLIP_THREE"
+        "CLIP_THREE",
+        "CLIP_ADDITIVE"
     };
 
     private int _clipPlanesCache = -1;
@@ -99,7 +103,11 @@ public class ClippableObject : MonoBehaviour
 
         if (clipPlanes >= 1 && clipPlanes <= 3)
         {
-            for (var i = 0; i < ClipKeywords.Length; i++)
+            material.EnableKeyword(ClipKeywords[3]);
+            extraKeywords.Add(ClipKeywords[3]);
+
+
+            for (var i = 0; i < ClipKeywords.Length-1; i++)
             {
                 var clipKeyword = ClipKeywords[i];
 
@@ -143,6 +151,12 @@ public class ClippableObject : MonoBehaviour
         //pass the planes to the shader if necessary.
         if (clipPlanes >= 1)
         {
+            if (planesAdditive) {
+                sharedMaterial.SetFloat("_planesAdditive", 1);
+            } else {
+                sharedMaterial.SetFloat("_planesAdditive", 0);
+            }
+
             sharedMaterial.SetVector("_planePos", plane1Position);
             //plane normal vector is the rotated 'up' vector.
             sharedMaterial.SetVector("_planeNorm", Quaternion.Euler(plane1Rotation) * Vector3.up);

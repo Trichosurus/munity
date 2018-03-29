@@ -335,7 +335,7 @@ public class Map : MonoBehaviour {
 
 			seg.ceiling.upperOffset = new Vector2((float)Level.Polygons[p].CeilingOrigin.X/1024f,(float)Level.Polygons[p].CeilingOrigin.Y/1024f);
 			seg.floor.upperOffset = new Vector2((float)Level.Polygons[p].FloorOrigin.X/1024f,(float)Level.Polygons[p].FloorOrigin.Y/1024f);
-			seg.levelSegments = segments;
+			//seg.levelSegments = segments;
 			seg.vertices = points;
 			seg.centerPoint = new Vector3(0,(float)Level.Polygons[p].FloorHeight/1024f,0);
 			seg.id = p;

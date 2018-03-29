@@ -77,10 +77,10 @@
      <Compile Include="Assets\Scripts\Weland\shapes\ShapeDescriptor.cs" />
      <Compile Include="Assets\Scripts\Weland\shapes\ShapesFile.cs" />
      <Compile Include="Assets\Scripts\Weland\Wadfile.cs" />
-     <None Include="Assets\Shaders\StandardClippableV2.shader" />
-     <None Include="Assets\Shaders\plane_clipping.cginc" />
-     <None Include="Assets\Shaders\standard_clipped.cginc" />
-     <None Include="Assets\Shaders\plane_clip_pass.cginc" />
+     <None Include="Assets\Resources\Shaders\StandardClippableV2.shader" />
+     <None Include="Assets\Resources\Shaders\plane_clipping.cginc" />
+     <None Include="Assets\Resources\Shaders\standard_clipped.cginc" />
+     <None Include="Assets\Resources\Shaders\plane_clip_pass.cginc" />
  <Reference Include="Unity.PackageManagerUI.Editor">
  <HintPath>/home/alex/marathon/munity/munity/Library/ScriptAssemblies/Unity.PackageManagerUI.Editor.dll</HintPath>
  </Reference>

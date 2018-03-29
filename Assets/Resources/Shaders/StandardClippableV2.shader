@@ -46,6 +46,8 @@ Shader "Custom/StandardClippableV2"
         [HideInInspector] _DstBlend ("__dst", Float) = 0.0
         [HideInInspector] _ZWrite ("__zw", Float) = 1.0
 
+        [Toggle] _planesAdditive ("Additive Clipping", Float) = 0
+
 		_planePos      ("Clipping Plane Position",     Vector)    = ( 0, 0, 0, 1 )
         _planePos2    ("Clipping Plane Position 2",    Vector)    = ( 0, 0, 0, 1 )
         _planePos3    ("Clipping Plane Position 3",    Vector)    = ( 0, 0, 0, 1 )

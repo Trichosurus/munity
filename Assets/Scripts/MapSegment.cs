@@ -17,9 +17,10 @@ public class MapSegment : MonoBehaviour {
 	public MapSegmentFloorCeiling ceiling = new MapSegmentFloorCeiling();
 	public MapSegmentFloorCeiling floor = new MapSegmentFloorCeiling();
 	
-	public List<MapSegment> levelSegments;
+	//public List<MapSegment> levelSegments;
 	public Liquid liquid = null;
 	public bool impossible = false;
+	public List<int> collidesWith = new List<int>();
 	public int viewEdge = -1;
 	public bool hidden = false;
 	public bool[] activePolygons;
@@ -36,7 +37,7 @@ public class MapSegment : MonoBehaviour {
 	}
 
 	public void checkIfImpossible() {
-		if (impossible) {return;}
+		//if (impossible) {return;}
 		RaycastHit hit;
 		List<Vector3> verts = new List<Vector3>(vertices);
 		verts.Add(new Vector3(0,0,0));
@@ -59,6 +60,13 @@ public class MapSegment : MonoBehaviour {
 						hit.collider.transform.parent.GetComponent<MapSegment>().id != id) {
 						hit.collider.transform.parent.GetComponent<MapSegment>().impossible = true;
 						impossible = true;
+						if (!collidesWith.Contains(hit.collider.transform.parent.GetComponent<MapSegment>().id)) {
+							collidesWith.Add(hit.collider.transform.parent.GetComponent<MapSegment>().id);
+						}
+						if (!hit.collider.transform.parent.GetComponent<MapSegment>().collidesWith.Contains(id)) {
+							hit.collider.transform.parent.GetComponent<MapSegment>().collidesWith.Add(id);
+						}
+
 						Debug.Log(id);
 						Debug.DrawRay(centerPoint + height*0.5f, (castPoint+height*0.5f)-(centerPoint + height*0.5f), Color.yellow);				
 						return;					
@@ -76,7 +84,15 @@ public class MapSegment : MonoBehaviour {
 							hit.collider.transform.parent.GetComponent<MapSegment>().impossible = true;
 						}
 						impossible = true;
-						Debug.DrawRay(castPoint, Vector3.up, Color.magenta);				
+						Debug.DrawRay(castPoint, Vector3.up, Color.magenta);			
+
+						if (!collidesWith.Contains(hit.collider.transform.parent.GetComponent<MapSegment>().id)) {
+							collidesWith.Add(hit.collider.transform.parent.GetComponent<MapSegment>().id);
+						}
+						if (!hit.collider.transform.parent.GetComponent<MapSegment>().collidesWith.Contains(id)) {
+							hit.collider.transform.parent.GetComponent<MapSegment>().collidesWith.Add(id);
+						}
+	
 						return;
 					}
 				}
@@ -86,6 +102,14 @@ public class MapSegment : MonoBehaviour {
 						if (hit.collider.name != "ceiling") {
 							hit.collider.transform.parent.GetComponent<MapSegment>().impossible = true;
 							impossible = true;
+							if (!collidesWith.Contains(hit.collider.transform.parent.GetComponent<MapSegment>().id)) {
+								collidesWith.Add(hit.collider.transform.parent.GetComponent<MapSegment>().id);
+							}
+							if (!hit.collider.transform.parent.GetComponent<MapSegment>().collidesWith.Contains(id)) {
+								hit.collider.transform.parent.GetComponent<MapSegment>().collidesWith.Add(id);
+							}
+
+
 							Debug.Log(id);
 							Debug.DrawRay(castPoint, Vector3.down, Color.white);				
 							return;
@@ -129,7 +153,7 @@ public class MapSegment : MonoBehaviour {
 	public void recalculatePlatformVolume (){
 		foreach (MapSegmentSide s in sides) {
 			if (s.connection == null && s.connectionID >= 0) {
-				s.connection = levelSegments[s.connectionID];
+				s.connection = GlobalData.map.segments[s.connectionID];
 			}
 			if (s.connection != null){
 				MapSegment conn = s.connection;
@@ -206,7 +230,7 @@ public class MapSegment : MonoBehaviour {
 			MapSegmentSide wall = new MapSegmentSide();
 			if (sides.Count > i) {wall = sides[i];}
 			if (wall.connection == null && wall.connectionID >= 0) {
-				wall.connection = levelSegments[wall.connectionID];
+				wall.connection = GlobalData.map.segments[wall.connectionID];
 			}
 				
 			
@@ -384,7 +408,7 @@ public class MapSegment : MonoBehaviour {
 		if (sides.Count > side) {wall = sides[side];}
 
 		if (wall.connection == null && wall.connectionID >= 0) {
-			wall.connection = levelSegments[wall.connectionID];
+			wall.connection = GlobalData.map.segments[wall.connectionID];
 		}
 
 
@@ -931,7 +955,7 @@ public class ControlPanel {
 		if (active) {
 			wall.GetComponent<MeshRenderer>().material = activeMat;
 			if (platformSwitch > -1) {
-				MapSegment pol = wall.transform.parent.GetComponent<MapSegment>().levelSegments[platformSwitch];
+				MapSegment pol = GlobalData.map.segments[platformSwitch];
 				if (pol.platform != null) {
 					pol.platform.activate();
 				}
