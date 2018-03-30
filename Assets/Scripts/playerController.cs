@@ -167,6 +167,7 @@ public class playerController : MonoBehaviour {
 	// Debug.Log("----------------------------------------");
 		activePolygons = new bool[GlobalData.map.segments.Count];
 		bool[] processedPolys = new bool[GlobalData.map.segments.Count];
+		List<int> collides = new List<int>();
 		List<int> deferred = new List<int>();
 		activeCount = 0;
 		processedCount = 0;
@@ -189,7 +190,7 @@ public class playerController : MonoBehaviour {
 						// 	v2 = GlobalData.map.segments[i].vertices[0];
 						// }
 						distance = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.TransformPoint(v1));
-						if (distance < distances[i]) { distances[i] = distance;}
+						if (distance < distances[i]) {distances[i] = distance;}
 					}
 					// foreach (Vector3 v in GlobalData.map.segments[i].vertices) {
 					// 	distance = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.TransformPoint(v));
@@ -206,7 +207,7 @@ public class playerController : MonoBehaviour {
 		if (pol.impossible) {
 			activePolygons[currentPolygon] = true;
 			pol.showHide(true);
-			deferred.AddRange(pol.collidesWith);
+			collides.AddRange(pol.collidesWith);
 
 		}
 		for( int s = 0; s < pol.sides.Count; s++) {
@@ -215,7 +216,7 @@ public class playerController : MonoBehaviour {
 					GlobalData.map.segments[pol.sides[s].connectionID].showHide(true);
 					processedPolys[pol.sides[s].connectionID] = true;
 					processedCount++;
-					deferred.AddRange(GlobalData.map.segments[pol.sides[s].connectionID].collidesWith);
+					collides.AddRange(GlobalData.map.segments[pol.sides[s].connectionID].collidesWith);
 			}
 		}
 		
@@ -223,7 +224,7 @@ public class playerController : MonoBehaviour {
 		while (processedCount < activeCount) {
 			float distance = 7777777;
 			int closest = -1;
-			int connections = 0;
+			// int connections = 0;
 			for (int i = 0; i < activePolygons.Length; i++) {
 				if (activePolygons[i] && !processedPolys[i]){
 					if (distances[i] < distance) {
@@ -247,9 +248,11 @@ public class playerController : MonoBehaviour {
 					point1 = GlobalData.map.segments[closest].transform.TransformPoint(point1);
 					point2 = GlobalData.map.segments[closest].transform.TransformPoint(point2);
 					if (getRectVisibility(point1, point2, GlobalData.map.segments[closest].height)) {
-						if (!deferred.Contains(closest)) {
+						if (!collides.Contains(closest)) {
 							GlobalData.map.segments[closest].showHide(true);
-							deferred.AddRange(GlobalData.map.segments[closest].collidesWith);
+							collides.AddRange(GlobalData.map.segments[closest].collidesWith);
+						} else {
+							deferred.Add(closest);
 						}
 						break;
 					}
@@ -263,7 +266,104 @@ public class playerController : MonoBehaviour {
 
 		}
 		// drawPolygonList(false);
+		//Debug.Log(deferred.Count);
+
+		foreach (int i in deferred) {
+			float distance = 7777777;
+			int closest = -1;
+			foreach (int s in GlobalData.map.segments[i].collidesWith) {
+				if (distances[s] < distance && GlobalData.map.segments[s].hidden == false) {
+					distance = distances[s];
+					closest = s;
+				}
+			}
+			if (closest > -1) {
+				clipSegments(GlobalData.map.segments[i], GlobalData.map.segments[closest]);
+			}
+		}
 	}
+
+	void clipSegments(MapSegment segment1, MapSegment segment2) {
+		List<Vector2> intersectPoints = new List<Vector2>();
+		Vector3 point1a, point2a, point1b, point2b;
+
+		for (int a = 0; a < segment1.sides.Count; a++) {
+			point1a = segment1.vertices[a];
+			if (a < segment1.vertices.Count-1) {
+				point2a = segment1.vertices[a+1];
+			} else {
+				point2a = segment1.vertices[0];
+			}
+			
+			point1a = segment1.transform.TransformPoint(point1a);
+			point2a = segment1.transform.TransformPoint(point2a);
+
+			float a1 = point2a.z - point1a.z;
+			float b1 = point1a.x - point2a.x;
+			float c1 = a1*point1a.x + b1*point1a.z;
+
+			for (int b = 0; b < segment2.sides.Count; b++) {
+				point1b = segment2.vertices[b];
+				if (b < segment2.vertices.Count-1) {
+					point2b = segment2.vertices[b+1];
+				} else {
+					point2b = segment2.vertices[0];
+				}
+				
+				point1b = segment2.transform.TransformPoint(point1b);
+				point2b = segment2.transform.TransformPoint(point2b);
+
+				float a2 = point2b.z - point1b.z;
+				float b2 = point1b.x - point2b.x;
+				float c2 = a2*point1b.x + b2*point1b.z;
+
+
+				float delta = a1*b2 - a2*b1;
+				if(delta != 0) {
+					Vector2 intersect = new Vector2((b2*c1 - b1*c2)/delta, (a1*c2 - a2*c1)/delta);
+					
+					float d1 = Vector2.Distance(new Vector2(point1a.x, point1a.z), intersect);
+					float d2 = Vector2.Distance(new Vector2(point2a.x, point2a.z), intersect);
+					float d3 = Vector2.Distance(new Vector2(point1a.x, point1a.z), new Vector2(point2a.x, point2a.z));
+
+					float d4 = Vector2.Distance(new Vector2(point1b.x, point1b.z), intersect);
+					float d5 = Vector2.Distance(new Vector2(point2b.x, point2b.z), intersect);
+					float d6 = Vector2.Distance(new Vector2(point1b.x, point1b.z), new Vector2(point2b.x, point2b.z));
+
+
+					if (d1 + d2 - 0.001 < d3 + 0.001 && d4 + d5 - 0.001 < d6 + 0.001) {
+						intersectPoints.Add(intersect);
+					}
+
+					
+				}
+
+			}
+		}
+				Debug.Log("'--------'");
+ 
+	foreach(Vector2 i in intersectPoints) {
+		Debug.Log(i);
+	}
+		
+	}
+
+// Vector3 getPlaneIntersection(Plane p1, Plane p2, Vector3 r_point, Vector3 r_normal) {
+//     Vector3 p3_normal = Vector3.Cross(p1.normal,p2.normal);
+//     float det = p3_normal.sqrMagnitude;
+
+//     // If the determinant is 0, that means parallel planes, no intersection.
+//     // note: you may want to check against an epsilon value here.
+//     if (det != 0.0) {
+//         // calculate the final (point, normal)
+//         r_point = (Vector3.Cross(p3_normal, p2.normal) * p1.distance) +
+//                    (Vector3.Cross(p1.normal, p3_normal * p2.distance)) / det;
+//         r_normal = p3_normal;
+// 		return r_point;
+// 	} else {
+// 		return new Vector3(0,0,0);
+// 	}
+// }
 
 	void drawPolygonList (bool showOnly) {
 		for (int i = 0; i < activePolygons.Length; i++) {
