@@ -136,6 +136,84 @@ public class MapSegment : MonoBehaviour {
 		}
 	}
 
+	public void setClippingPlanes(List<Vector3> planes,  bool additive = true) {
+		//Vector3 plane1Position, plane1Rotation, plane2Position, plane2Rotation, plane3Position, plane3Rotation;
+		Vector3 plane1Position = new Vector3(0,0,0);
+		Vector3 plane1Rotation = new Vector3(0,0,0);
+		Vector3 plane2Position = new Vector3(0,0,0);
+		Vector3 plane2Rotation = new Vector3(0,0,0);
+		Vector3 plane3Position = new Vector3(0,0,0);
+		Vector3 plane3Rotation = new Vector3(0,0,0);
+
+		if (planes.Count > 1) {
+			plane1Position = planes[0];
+    		plane1Rotation = planes[1];
+		}
+		if (planes.Count > 3) {
+    		plane2Position = planes[2];
+    		plane2Rotation = planes[3];
+		}
+		if (planes.Count > 5) {
+    		plane3Position = planes[4];
+    		plane3Rotation = planes[5];
+		}
+
+		Component[] allChildren = gameObject.GetComponentsInChildren(typeof(Transform), true);
+		foreach (Transform child in allChildren) {
+			MeshRenderer mr = child.gameObject.GetComponent<MeshRenderer>();
+			if (mr != null) {
+				Material mat = mr.sharedMaterial;
+				mat.EnableKeyword("CLIP_ADDITIVE");
+				if (additive) {
+					mat.SetFloat("_planesAdditive", 1);
+				} else {
+					mat.SetFloat("_planesAdditive", 0);
+				}
+				if (planes.Count < 2) {
+					mat.DisableKeyword("CLIP_ONE");
+					mat.DisableKeyword("CLIP_TWO");
+					mat.DisableKeyword("CLIP_THREE");
+				}
+				if (planes.Count == 2) { 
+					mat.EnableKeyword("CLIP_ONE");
+					mat.DisableKeyword("CLIP_TWO");
+					mat.DisableKeyword("CLIP_THREE");
+				
+					mat.SetVector("_planePos", plane1Position);
+					mat.SetVector("_planeNorm", Quaternion.Euler(plane1Rotation) * Vector3.up);
+
+				}
+				if (planes.Count == 4) { 
+					mat.DisableKeyword("CLIP_ONE");
+					mat.EnableKeyword("CLIP_TWO");
+					mat.DisableKeyword("CLIP_THREE");
+
+					mat.SetVector("_planePos", plane1Position);
+					mat.SetVector("_planeNorm", Quaternion.Euler(plane1Rotation) * Vector3.up);
+
+					mat.SetVector("_planePos2", plane2Position);
+					mat.SetVector("_planeNorm2", Quaternion.Euler(plane2Rotation) * Vector3.up);
+
+				}
+				if (planes.Count == 6) { 
+					mat.DisableKeyword("CLIP_ONE");
+					mat.DisableKeyword("CLIP_TWO");
+					mat.EnableKeyword("CLIP_THREE");
+
+					mat.SetVector("_planePos", plane1Position);
+					mat.SetVector("_planeNorm", Quaternion.Euler(plane1Rotation) * Vector3.up);
+
+					mat.SetVector("_planePos2", plane2Position);
+					mat.SetVector("_planeNorm2", Quaternion.Euler(plane2Rotation) * Vector3.up);
+
+					mat.SetVector("_planePos3", plane3Position);
+					mat.SetVector("_planeNorm3", Quaternion.Euler(plane3Rotation) * Vector3.up);
+				}
+			}
+		}
+	}
+
+
 	public void calculatePoints() {
 		float yIndex = centerPoint.y;
 
@@ -920,8 +998,8 @@ public class Liquid {
 	public Quaternion currentDirectioin = new Quaternion();
 	public float high = 0;
 	public float low = 0;
-	public Material tint = new Material(Shader.Find("Standard"));
-	public Material surface = new Material(Shader.Find("Standard"));
+	public Material tint = new Material(Shader.Find("Custom/StandardClippableV2"));
+	public Material surface = new Material(Shader.Find("Custom/StandardClippableV2"));
 	public float damage = 0;
 
 	public GameObject volume = null;
@@ -945,8 +1023,8 @@ public class ControlPanel {
 	public bool dirty = false;
 	public bool savePoint = false;
 	public bool terminal = false;
-	public Material activeMat = new Material(Shader.Find("Standard"));
-	public Material inactiveMat = new Material(Shader.Find("Standard"));
+	public Material activeMat = new Material(Shader.Find("Custom/StandardClippableV2"));
+	public Material inactiveMat = new Material(Shader.Find("Custom/StandardClippableV2"));
 
 
 	public void toggle(GameObject wall, bool playerTouched = false) {

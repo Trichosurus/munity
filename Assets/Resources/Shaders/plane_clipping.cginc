@@ -15,6 +15,8 @@
 		return dot(planeNormal, w);
 	}
 
+
+
 	float greater(float no1, float no2, float no3 = -666)
 	{
 		if (no1 > no2 && no1 > no3) {
@@ -24,19 +26,8 @@
 			return no2;
 		}
 		return no3;
-	  //float ret = 0;
-	  // if (no1 > no2) {
-		//   ret =  no1;
-	  // } else {
-		//   ret = no2;
-	  // }
-
-		// if (ret > no3) {
-		//   return ret;
-	  // } else {
-		//   return no3;
-	  // }
  	}
+
 
 	float _planesAdditive; 
 
@@ -75,21 +66,32 @@
 			));
 		} else {
 			clip(float3(
-				normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld),
-				normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
-				normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
+					greater(normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld),
+									normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
+					),
+					greater(normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
+									normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
+					),
+					greater(normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld),
+									normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
+									normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
+					)
+
+				// normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld),
+				// normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
+				// normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
 			));
 		}
 #else //CLIP_THREE
 #if CLIP_TWO
 		if (_planesAdditive > 0) {
 			clip(float2(
-			greater(normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld),
-					normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld)
-			),
-			greater(normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
-				normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld)
-			)
+				greater(normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld),
+						normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld)
+				),
+				greater(normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
+					normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld)
+				)
 			));
 		} else {
 			clip(float2(

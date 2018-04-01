@@ -8,7 +8,7 @@ Material:
   m_PrefabInternal: {fileID: 0}
   m_Name: Custom_StandardClippableV2
   m_Shader: {fileID: 4800000, guid: ee7217023fa5649e2b505c307f702732, type: 3}
-  m_ShaderKeywords: CLIP_ADDITIVE CLIP_TWO
+  m_ShaderKeywords: CLIP_ADDITIVE CLIP_THREE
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
@@ -71,13 +71,13 @@ Material:
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
-    - _planesAdditive: 1
+    - _planesAdditive: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _planeNorm: {r: 0.009948213, g: 0.9999505, b: 0, a: 0}
-    - _planeNorm2: {r: 0.00000008742278, g: -1, b: 0, a: 0}
-    - _planeNorm3: {r: -0.99999994, g: 0.000000059604645, b: 0, a: 0}
-    - _planePos: {r: 0, g: 0.2, b: 0, a: 0}
-    - _planePos2: {r: 0, g: 0, b: 0, a: 0}
-    - _planePos3: {r: 0, g: 0, b: 0, a: 0}
+    - _planeNorm: {r: 0.036643706, g: -0.026507998, b: 0.9989768, a: 0}
+    - _planeNorm2: {r: 0.24192184, g: 0.010160701, b: -0.97024256, a: 0}
+    - _planeNorm3: {r: -1, g: -0.0000000027939677, b: 0, a: 0}
+    - _planePos: {r: 7, g: 0, b: 0.2, a: 0}
+    - _planePos2: {r: 7, g: 0, b: 0.2, a: 0}
+    - _planePos3: {r: 7.94, g: -0.42, b: -0.04, a: 0}

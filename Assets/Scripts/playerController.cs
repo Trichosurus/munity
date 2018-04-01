@@ -284,9 +284,17 @@ public class playerController : MonoBehaviour {
 	}
 
 	void clipSegments(MapSegment segment1, MapSegment segment2) {
+		GameObject camera;
+		camera = transform.Find("playerCamera").gameObject;
+
 		List<Vector2> intersectPoints = new List<Vector2>();
 		Vector3 point1a, point2a, point1b, point2b;
 
+		List<int> linesA = new List<int>();
+		List<int> linesB = new List<int>();
+
+
+		//find intersections between polygons
 		for (int a = 0; a < segment1.sides.Count; a++) {
 			point1a = segment1.vertices[a];
 			if (a < segment1.vertices.Count-1) {
@@ -330,40 +338,169 @@ public class playerController : MonoBehaviour {
 					float d5 = Vector2.Distance(new Vector2(point2b.x, point2b.z), intersect);
 					float d6 = Vector2.Distance(new Vector2(point1b.x, point1b.z), new Vector2(point2b.x, point2b.z));
 
-
-					if (d1 + d2 - 0.001 < d3 + 0.001 && d4 + d5 - 0.001 < d6 + 0.001) {
+					// if lenghts from end to point to end = length of line then valid point
+					//+- 0.01 to account for floating point errors 
+					if (d1 + d2 - 0.001 < d3 + 0.001 && d1 + d2 + 0.001 > d3 - 0.001
+						 && d4 + d5 - 0.001 < d6 + 0.001 && d4 + d5 + 0.001 > d6 - 0.001) {
 						intersectPoints.Add(intersect);
-					}
-
-					
+						linesA.Add(a);
+						linesB.Add(b);
+					}					
 				}
-
 			}
 		}
-				Debug.Log("'--------'");
- 
-	foreach(Vector2 i in intersectPoints) {
-		Debug.Log(i);
-	}
 		
+		Vector2 centerPoint = new Vector2(0,0);
+		foreach(Vector2 point in intersectPoints) {
+			centerPoint += point;
+		}
+		centerPoint /= intersectPoints.Count;
+		List<float> clockwise = new List<float>();
+		for (int i = 0; i < intersectPoints.Count; i++) {
+			clockwise.Add(Vector2.SignedAngle(intersectPoints[i]-centerPoint, intersectPoints[0]-centerPoint));
+		}
+		
+		//get relevant intersection points
+		int[] closest = {-1,-1,-1};
+		float distance = 7777777;
+		Vector2 pp = new Vector2(gameObject.transform.position.x, gameObject.transform.position.z);
+		for (int i = 0; i < intersectPoints.Count; i++) {
+			float d = Vector2.Distance(pp, intersectPoints[i]);
+			if (d < distance) {
+				distance = d;
+				closest[0] = i;
+			}
+		}
+
+
+		float below = -777;
+		float above = 777;
+		for (int i = 0; i < intersectPoints.Count; i++) {
+			if (i != closest[0]) {
+				if (clockwise[i] > clockwise[closest[0]] && clockwise[i] < above) {
+					above = clockwise[i];
+					closest[1] = i;
+				} else if (clockwise[i] < clockwise[closest[0]] && clockwise[i] > below) {
+					below = clockwise[i];
+					closest[2] = i;
+				}
+			}
+		}
+		
+		Vector2 polyCheck = new Vector2(intersectPoints[closest[1]].x, intersectPoints[closest[1]].y);
+		polyCheck -= intersectPoints[closest[0]];
+		polyCheck = new Vector2(0f-polyCheck.y, polyCheck.x);
+		polyCheck = intersectPoints[closest[0]]/2f + intersectPoints[closest[1]]/2f + polyCheck*(new Vector2(0.001f, 0.001f));
+
+		List<Vector2> checkPoly = new List<Vector2>();
+
+		for(int i = 0; i < segment1.vertices.Count; i++) {
+			checkPoly.Add(new Vector2(segment1.transform.TransformPoint(segment1.vertices[i]).x,segment1.transform.TransformPoint(segment1.vertices[i]).z));
+		}
+		bool s1 = ContainsPoint(checkPoly.ToArray(), polyCheck);
+		bool left = false;
+		 //dx=x2-x1 and dy=y2-y1,
+		//sort clockwise
+		Vector3 p0 = camera.GetComponent<Camera>().WorldToScreenPoint(new Vector3(intersectPoints[closest[0]].x, camera.transform.position.y, intersectPoints[closest[0]].y));
+		Vector3 p1 = new Vector3();
+		if (s1) {
+			p1 = camera.GetComponent<Camera>().WorldToScreenPoint(new Vector3(intersectPoints[closest[2]].x, camera.transform.position.y, intersectPoints[closest[2]].y));
+		} else {
+			p1 = camera.GetComponent<Camera>().WorldToScreenPoint(new Vector3(intersectPoints[closest[1]].x, camera.transform.position.y, intersectPoints[closest[1]].y));
+		}
+		// Vector3 p2 = camera.GetComponent<Camera>().WorldToScreenPoint(new Vector3(intersectPoints[closest[2]].x, camera.transform.position.y, intersectPoints[closest[2]].y));
+
+		// int temp = closest[0];
+		int[] clipPoints = {0,0,0};
+		if (p0.x < p1.x) {
+			left = true;
+			clipPoints[0] = closest[0];
+			if (s1) {
+				clipPoints[1] = closest[2];
+				clipPoints[2] = closest[1];
+			} else {
+				clipPoints[1] = closest[1];
+				clipPoints[2] = closest[2];
+			}
+		} else {
+			if (s1) {
+				clipPoints[0] = closest[2];
+				clipPoints[1] = closest[0];
+				clipPoints[2] = closest[1];
+			} else {
+				clipPoints[0] = closest[1];
+				clipPoints[1] = closest[0];
+				clipPoints[2] = closest[2];
+			}
+		}
+		// 	closest[0] = closest[1];
+		// 	closest[1] = temp;
+		// }
+
+		// get angles for clipping planes
+		float[] clipAngles = {0,0,0,0};
+		clipAngles[0] = Mathf.Atan2(pp.x-intersectPoints[clipPoints[0]].x, pp.y-intersectPoints[clipPoints[0]].y) * Mathf.Rad2Deg;
+		clipAngles[1] = Mathf.Atan2(pp.x-intersectPoints[clipPoints[1]].x, pp.y-intersectPoints[clipPoints[1]].y) * Mathf.Rad2Deg;
+		clipAngles[2] = Mathf.Atan2(intersectPoints[clipPoints[1]].x-intersectPoints[clipPoints[0]].x, intersectPoints[clipPoints[1]].y-intersectPoints[clipPoints[0]].y) * Mathf.Rad2Deg;
+		clipAngles[3] = Mathf.Atan2(intersectPoints[clipPoints[2]].x-intersectPoints[clipPoints[0]].x, intersectPoints[clipPoints[2]].y-intersectPoints[clipPoints[0]].y) * Mathf.Rad2Deg;
+		// Debug.Log(angle1);
+		// Debug.Log(angle2);
+		List<Vector3> planes = new List<Vector3>();
+		planes.Add(camera.transform.position);
+		planes.Add(new Vector3(90, 180, 90-clipAngles[0]));
+		planes.Add(camera.transform.position);
+		planes.Add(new Vector3(90, 0, 90-clipAngles[1]));
+		//planes.Add(new Vector3(intersectPoints[clipPoints[0]].x, camera.transform.position.y, intersectPoints[clipPoints[0]].y));
+		// if (left) {
+		// 	planes.Add(new Vector3(90, 180, 90-clipAngles[3]));
+		// } else {
+		// 	planes.Add(new Vector3(90, 0, 90-clipAngles[3]));
+		// }
+
+		segment1.setClippingPlanes(planes, true);
+
+		planes.Clear();
+		planes.Add(camera.transform.position);
+		planes.Add(new Vector3(90, 0, 90-clipAngles[0]));
+		planes.Add(camera.transform.position);
+		planes.Add(new Vector3(90, 180, 90-clipAngles[1]));
+		// planes.Add(new Vector3(intersectPoints[clipPoints[0]].x, camera.transform.position.y, intersectPoints[clipPoints[0]].y));
+		// planes.Add(new Vector3(90, 0, 90-clipAngles[2]));
+
+		segment2.setClippingPlanes(planes, true);
+
+		segment1.showHide(true);
+		segment2.showHide(true);
+
+
+
+		Vector3 r0 = new Vector3(intersectPoints[clipPoints[0]].x, camera.transform.position.y, intersectPoints[clipPoints[0]].y);
+		Vector3 r1 = new Vector3(intersectPoints[clipPoints[1]].x, camera.transform.position.y, intersectPoints[clipPoints[1]].y);
+		Vector3 r2 = new Vector3(intersectPoints[clipPoints[2]].x, camera.transform.position.y, intersectPoints[clipPoints[2]].y);
+		Debug.DrawRay(r0, camera.transform.position-r0, Color.magenta);
+		Debug.DrawRay(r1, camera.transform.position-r1, Color.green);
+		Debug.DrawRay(r2, camera.transform.position-r2, Color.cyan);
+		//Debug.DrawRay(new Vector3(intersectPoints[clipPoints[3]].x, camera.transform.position.y, intersectPoints[clipPoints[3]].y), camera.transform.position, Color.magenta);
+
+
+		Debug.DrawRay(r0, r1-r0, Color.blue);
+		Debug.DrawRay(r0, r2-r0, Color.yellow);
+
+
 	}
 
-// Vector3 getPlaneIntersection(Plane p1, Plane p2, Vector3 r_point, Vector3 r_normal) {
-//     Vector3 p3_normal = Vector3.Cross(p1.normal,p2.normal);
-//     float det = p3_normal.sqrMagnitude;
 
-//     // If the determinant is 0, that means parallel planes, no intersection.
-//     // note: you may want to check against an epsilon value here.
-//     if (det != 0.0) {
-//         // calculate the final (point, normal)
-//         r_point = (Vector3.Cross(p3_normal, p2.normal) * p1.distance) +
-//                    (Vector3.Cross(p1.normal, p3_normal * p2.distance)) / det;
-//         r_normal = p3_normal;
-// 		return r_point;
-// 	} else {
-// 		return new Vector3(0,0,0);
-// 	}
-// }
+	bool ContainsPoint(Vector2[] polyPoints, Vector2 p) { 
+   		int j = polyPoints.Length-1; 
+   		bool inside = false; 
+		for (int i = 0; i < polyPoints.Length; j = i++) { 
+			if ( ((polyPoints[i].y <= p.y && p.y < polyPoints[j].y) || (polyPoints[j].y <= p.y && p.y < polyPoints[i].y)) && 
+				(p.x < (polyPoints[j].x - polyPoints[i].x) * (p.y - polyPoints[i].y) / (polyPoints[j].y - polyPoints[i].y) + polyPoints[i].x)) 
+				inside = !inside; 
+		} 
+		return inside; 
+	}
+
 
 	void drawPolygonList (bool showOnly) {
 		for (int i = 0; i < activePolygons.Length; i++) {
@@ -413,7 +550,7 @@ public class playerController : MonoBehaviour {
 		if (isVisible) {
 			Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.red);
 		} else {
-			Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.green);
+		//	Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.green);
 		}
 
 		Color colour  = Random.ColorHSV();
@@ -426,7 +563,7 @@ public class playerController : MonoBehaviour {
 					Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.red);
 					return true;
 				} else {
-					Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.green);
+				//	Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.green);
 				}
 			}
 		}
@@ -445,29 +582,6 @@ public class playerController : MonoBehaviour {
 			Debug.DrawRay(cameraPos, transform.Find("playerCamera").forward, Color.yellow, 5f);
 
 		}
-// 		Vector3 point1, point2, midpoint;
-// 		MapSegment seg = GlobalData.map.segments[0].GetComponent<MapSegment>();
-// 		MapSegmentSide side = GlobalData.map.segments[0].GetComponent<MapSegment>().sides[3];
-// 			//if (side.connectionID >= 0 && !activePolygons.Contains(side.connectionID)) {
-// 				point1 = seg.vertices[3];
-// 				point2 = seg.vertices[4];
-
-
-
-
-// 				point1 = GlobalData.map.segments[0].transform.TransformPoint(point1);
-// 				point2 = GlobalData.map.segments[0].transform.TransformPoint(point2);
-// 		bool isVisible;		
-// 		midpoint = (point1-point2)/2 + point2 + (seg.height/2);
-// 				isVisible = (Physics.Raycast(midpoint, cameraPos-midpoint, out hit, 20)) 
-// 								&& hit.collider.gameObject == gameObject ;
-// 		Debug.Log(hit.collider.gameObject.name);
-
-// Debug.DrawRay(point1, cameraPos-point1, Color.green);
-// Debug.DrawRay(point2, cameraPos-point2, Color.green);
-// Debug.DrawRay(midpoint, cameraPos-midpoint, Color.green);
-
-		//	}
 
 	}
 

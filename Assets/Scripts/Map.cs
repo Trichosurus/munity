@@ -75,7 +75,7 @@ public class Map : MonoBehaviour {
 				// }
 				bitmap.Apply();
 
-				Material  material = new Material(Shader.Find("Standard"));
+				Material  material = new Material(Shader.Find("Custom/StandardClippableV2"));
 
 				material.SetFloat("_Glossiness",0.0f);
 				if (bitmap.format == TextureFormat.ARGB32) {
@@ -372,10 +372,10 @@ public class Map : MonoBehaviour {
 		foreach (MapObject obj in Level.Objects) {
 			if (obj.Type == ObjectType.Player && !playerSpawned) {
 				playerSpawned = true;
-				Debug.Log(obj.X);
-				Debug.Log(obj.Y);
-				Debug.Log(obj.Z);
-				Debug.Log(obj.Facing);
+				// Debug.Log(obj.X);
+				// Debug.Log(obj.Y);
+				// Debug.Log(obj.Z);
+				// Debug.Log(obj.Facing);
 			
 				Vector3 pos = new Vector3(pos.x = (float)obj.X/1024f,
 										pos.y = (float)obj.Z/1024f,
@@ -402,7 +402,7 @@ public class Map : MonoBehaviour {
 		if (materials.Count >= retval && retval >= 0) {
 			return materials[retval];
 		} else {
-			//return new Material(Shader.Find("Standard"));
+			//return new Material(Shader.Find("Custom/StandardClippableV2"));
 			return null;
 		}
 	}
