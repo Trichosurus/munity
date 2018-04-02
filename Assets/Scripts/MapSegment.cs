@@ -665,7 +665,7 @@ public class MapSegment : MonoBehaviour {
  
 		activePolygons[id] = true;activeCount++;
 		foreach(MapSegmentSide side in GlobalData.map.segments[id].sides) {
-			if (side.meshItem == null) {
+			if (side.meshItem == null && side.connectionID != -1) {
 					activePolygons[side.connectionID] = true;activeCount++;
 					if (GlobalData.map.segments[side.connectionID].activePolygons.Length == 0) {
 						GlobalData.map.segments[side.connectionID].activePolygons = new bool[GlobalData.map.segments.Count];

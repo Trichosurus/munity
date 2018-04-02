@@ -15,13 +15,21 @@ public class Map : MonoBehaviour {
 	public List<Material> materials;
 	public List<MapSegment> segments;
 
+	private string loadingText;
+
 	// Use this for initialization
 	void Start () {
+		
+		StartCoroutine(loadData());
+	}
+	IEnumerator loadData() {
+		loadingText = "Loading Shapes... ";
 		GlobalData.map = this;
 	    ShapesFile shapes = new ShapesFile();
 		shapes.Load(GlobalData.shapesFilePath);
-		makeMaterialsFromShapesFile(shapes);
+		yield return StartCoroutine(makeMaterialsFromShapesFile(shapes));
 
+		loadingText += "\nLoading Map... ";
 		// ClearLog();
 		Wadfile wadfile = new Wadfile();
 		wadfile.Load(GlobalData.mapsFilePath);
@@ -37,17 +45,26 @@ public class Map : MonoBehaviour {
 		Debug.Log(Level.Name);
 		// Debug.Log(Level.Environment);
 		
-		makeWorldFromMarathonMap(Level);
-		spawnEntitiesFromMarathonMap(Level);
+		yield return StartCoroutine(makeWorldFromMarathonMap(Level));
+
+		loadingText += "\nSpawing Entities... ";
+		yield return StartCoroutine(spawnEntitiesFromMarathonMap(Level));
+
+		loadingText = null;
+
+		GameObject.Find("LoadingDisplay").SetActive(false);
+
 
 	}
-	
+
 	// Update is called once per frame
 	void Update () {
-		
+		if (loadingText != null) {
+			GameObject.Find("LoadingDisplay/LoadingText").GetComponent<TextMesh>().text = loadingText;
+		}
 	}
 
-	void makeMaterialsFromShapesFile(ShapesFile shapes) {
+	IEnumerator makeMaterialsFromShapesFile(ShapesFile shapes) {
 	    
 
 		for (int col = 0; col < 32; col++) {
@@ -91,12 +108,15 @@ public class Map : MonoBehaviour {
 				materials.Add(material);
 			//	Debug.Log(material);
 			}		
+			loadingText = "Loading Shapes... " + col + "/31";
+			yield return null;
 		}
 
 
 	}
 
-	void makeWorldFromMarathonMap(Weland.Level Level) {
+	IEnumerator makeWorldFromMarathonMap(Weland.Level Level) {
+		string load = loadingText;
 		//marathon maps have y +/- directions swapped so fix that
 		for (int i = 0; i < Level.Endpoints.Count; i++) {
 			Level.Endpoints[i] = new Point(Level.Endpoints[i].X, (short)(0-Level.Endpoints[i].Y));
@@ -340,24 +360,68 @@ public class Map : MonoBehaviour {
 			seg.centerPoint = new Vector3(0,(float)Level.Polygons[p].FloorHeight/1024f,0);
 			seg.id = p;
 			seg.calculatePoints();
+		
+			if (p % 7 == 0 ){
+				loadingText = load + "\nGenerating Polygons "+p+"/"+Level.Polygons.Count;
+				yield return null;
+			}
+
 		}
 
+		load = load + "\nGenerating Polygons "+Level.Polygons.Count+"/"+Level.Polygons.Count;
+
+		int count = 0;		
 		foreach(Weland.Platform pl in Level.Platforms) {
+			count++;
 			segments[pl.PolygonIndex].recalculatePlatformVolume();
+			if (count % 7 == 0 ){
+				loadingText = load + "\nRecalculate Platform Volumes "+count+"/"+Level.Platforms.Count;
+				yield return null;
+			}
 		}
+
+		load = load + "\nRecalculate Platform Volumes "+count+"/"+Level.Platforms.Count;
+		count = 0;
 		foreach(MapSegment s in segments) {
+			count++;
 			s.generateMeshes();
+			if (count % 7 == 0 ){
+				loadingText = load + "\nGenerating Meshes "+count+"/"+segments.Count;
+				yield return null;
+			}
 		}
 
+		load = load + "\nGenerating Meshes "+count+"/"+segments.Count;
+		count = 0;
 		foreach(MapSegment s in segments) {
+			count++;
 			s.checkIfImpossible();
+			if (count % 7 == 0 ){
+				loadingText = load + "\nFinding Impossible Space "+count+"/"+segments.Count;
+				yield return null;
+			}
 		}
 
+		load = load + "\nFinding Impossible Space "+count+"/"+segments.Count;
+		count = 0;
 		foreach(MapSegment s in segments) {
+			count++;
 			s.calculateVisibility();
+			if (count % 7 == 0 ){
+				loadingText = load + "\nOcclusion Culling "+count+"/"+segments.Count;
+				yield return null;
+			}
 		}
+
+		load = load + "\nOcclusion Culling "+count+"/"+segments.Count;
+		count = 0;
 		foreach(Weland.Platform pl in Level.Platforms) {
+			count++;
 			segments[pl.PolygonIndex].makePlatformObjects();
+			if (count % 7 == 0 ){
+				loadingText = load + "\nMaking Platforms "+count+"/"+Level.Platforms.Count;
+				yield return null;
+			}
 		}
 
 
@@ -367,9 +431,11 @@ public class Map : MonoBehaviour {
 	}
 
 
-	void spawnEntitiesFromMarathonMap(Weland.Level Level) {
+	IEnumerator spawnEntitiesFromMarathonMap(Weland.Level Level) {
+		string load = loadingText;
 		bool playerSpawned = false;
-		foreach (MapObject obj in Level.Objects) {
+		for (int i = 0; i < Level.Objects.Count; i++) {
+			MapObject obj = Level.Objects[i];
 			if (obj.Type == ObjectType.Player && !playerSpawned) {
 				playerSpawned = true;
 				// Debug.Log(obj.X);
@@ -385,6 +451,10 @@ public class Map : MonoBehaviour {
 
 				Quaternion facing = Quaternion.Euler(0, (float)obj.Facing+90, 0);
 				GameObject player = Instantiate(Resources.Load<GameObject>("player"), pos, facing);
+			}
+			if (i % 7 == 0 ){
+				loadingText = load + i+"/"+Level.Objects.Count;
+				yield return null;
 			}
 
 		}
