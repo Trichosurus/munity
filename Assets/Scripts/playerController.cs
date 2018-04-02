@@ -208,6 +208,7 @@ public class playerController : MonoBehaviour {
 			activePolygons[currentPolygon] = true;
 			pol.showHide(true);
 			collides.AddRange(pol.collidesWith);
+			pol.setClippingPlanes(new List<Vector3>(), true);
 
 		}
 		for( int s = 0; s < pol.sides.Count; s++) {
@@ -217,6 +218,8 @@ public class playerController : MonoBehaviour {
 					processedPolys[pol.sides[s].connectionID] = true;
 					processedCount++;
 					collides.AddRange(GlobalData.map.segments[pol.sides[s].connectionID].collidesWith);
+					GlobalData.map.segments[pol.sides[s].connectionID].setClippingPlanes(new List<Vector3>(), true);
+
 			}
 		}
 		
@@ -258,6 +261,8 @@ public class playerController : MonoBehaviour {
 					}
 				}
 			}
+
+			GlobalData.map.segments[closest].setClippingPlanes(new List<Vector3>(), true);
 
 			processedPolys[closest] = true; 
 			processedCount++;
@@ -375,6 +380,10 @@ public class playerController : MonoBehaviour {
 
 		float below = -777;
 		float above = 777;
+		float max = -666; 
+		float min = 666;
+		int clockMax = 0;
+		int clockMin = 0;
 		for (int i = 0; i < intersectPoints.Count; i++) {
 			if (i != closest[0]) {
 				if (clockwise[i] > clockwise[closest[0]] && clockwise[i] < above) {
@@ -385,8 +394,31 @@ public class playerController : MonoBehaviour {
 					closest[2] = i;
 				}
 			}
+			if (clockwise[i] > max) {
+				max = clockwise[i];
+				clockMax = i;
+			}
+			if (clockwise[i] < min) {
+				min = clockwise[i];
+				clockMin = i;
+			}
 		}
-		
+		if (closest[1] == -1) {
+			if (clockwise[closest[0]] == max) {
+				closest[1] = clockMin;
+			} else {
+				closest[1] = clockMax;
+			}
+		}
+		if (closest[2] == -1) {
+			if (clockwise[closest[0]] == min) {
+				closest[2] = clockMax;
+			} else {
+				closest[2] = clockMin;
+			}
+		}
+
+
 		Vector2 polyCheck = new Vector2(intersectPoints[closest[1]].x, intersectPoints[closest[1]].y);
 		polyCheck -= intersectPoints[closest[0]];
 		polyCheck = new Vector2(0f-polyCheck.y, polyCheck.x);
@@ -442,7 +474,11 @@ public class playerController : MonoBehaviour {
 		clipAngles[0] = Mathf.Atan2(pp.x-intersectPoints[clipPoints[0]].x, pp.y-intersectPoints[clipPoints[0]].y) * Mathf.Rad2Deg;
 		clipAngles[1] = Mathf.Atan2(pp.x-intersectPoints[clipPoints[1]].x, pp.y-intersectPoints[clipPoints[1]].y) * Mathf.Rad2Deg;
 		clipAngles[2] = Mathf.Atan2(intersectPoints[clipPoints[1]].x-intersectPoints[clipPoints[0]].x, intersectPoints[clipPoints[1]].y-intersectPoints[clipPoints[0]].y) * Mathf.Rad2Deg;
-		clipAngles[3] = Mathf.Atan2(intersectPoints[clipPoints[2]].x-intersectPoints[clipPoints[0]].x, intersectPoints[clipPoints[2]].y-intersectPoints[clipPoints[0]].y) * Mathf.Rad2Deg;
+		if (left) {
+			clipAngles[3] = Mathf.Atan2(intersectPoints[clipPoints[2]].x-intersectPoints[clipPoints[0]].x, intersectPoints[clipPoints[2]].y-intersectPoints[clipPoints[0]].y) * Mathf.Rad2Deg;
+		} else {
+			clipAngles[3] = Mathf.Atan2(intersectPoints[clipPoints[2]].x-intersectPoints[clipPoints[1]].x, intersectPoints[clipPoints[2]].y-intersectPoints[clipPoints[1]].y) * Mathf.Rad2Deg;
+		}
 		// Debug.Log(angle1);
 		// Debug.Log(angle2);
 		List<Vector3> planes = new List<Vector3>();
@@ -450,12 +486,12 @@ public class playerController : MonoBehaviour {
 		planes.Add(new Vector3(90, 180, 90-clipAngles[0]));
 		planes.Add(camera.transform.position);
 		planes.Add(new Vector3(90, 0, 90-clipAngles[1]));
-		//planes.Add(new Vector3(intersectPoints[clipPoints[0]].x, camera.transform.position.y, intersectPoints[clipPoints[0]].y));
-		// if (left) {
-		// 	planes.Add(new Vector3(90, 180, 90-clipAngles[3]));
-		// } else {
-		// 	planes.Add(new Vector3(90, 0, 90-clipAngles[3]));
-		// }
+		planes.Add(new Vector3(intersectPoints[clipPoints[0]].x, camera.transform.position.y, intersectPoints[clipPoints[0]].y));
+		if (left) {
+			planes.Add(new Vector3(90, 0, 90-clipAngles[3]));
+		} else {
+			planes.Add(new Vector3(90, 0, 90-clipAngles[3]));
+		}
 
 		segment1.setClippingPlanes(planes, true);
 
@@ -464,10 +500,10 @@ public class playerController : MonoBehaviour {
 		planes.Add(new Vector3(90, 0, 90-clipAngles[0]));
 		planes.Add(camera.transform.position);
 		planes.Add(new Vector3(90, 180, 90-clipAngles[1]));
-		// planes.Add(new Vector3(intersectPoints[clipPoints[0]].x, camera.transform.position.y, intersectPoints[clipPoints[0]].y));
-		// planes.Add(new Vector3(90, 0, 90-clipAngles[2]));
+		planes.Add(new Vector3(intersectPoints[clipPoints[0]].x, camera.transform.position.y, intersectPoints[clipPoints[0]].y));
+		planes.Add(new Vector3(90, 180, 90-clipAngles[2]));
 
-		segment2.setClippingPlanes(planes, true);
+		segment2.setClippingPlanes(planes, false);
 
 		segment1.showHide(true);
 		segment2.showHide(true);
@@ -482,9 +518,16 @@ public class playerController : MonoBehaviour {
 		Debug.DrawRay(r2, camera.transform.position-r2, Color.cyan);
 		//Debug.DrawRay(new Vector3(intersectPoints[clipPoints[3]].x, camera.transform.position.y, intersectPoints[clipPoints[3]].y), camera.transform.position, Color.magenta);
 
-
+		Vector3 r3 = new Vector3(intersectPoints[clipPoints[0]].x, camera.transform.position.y, intersectPoints[clipPoints[0]].y);
+		if (!left) {
+			r3 = new Vector3(intersectPoints[clipPoints[1]].x, camera.transform.position.y, intersectPoints[clipPoints[1]].y);	
+		}
 		Debug.DrawRay(r0, r1-r0, Color.blue);
-		Debug.DrawRay(r0, r2-r0, Color.yellow);
+		Debug.DrawRay(r0, r2-r3, Color.yellow);
+
+		// Debug.DrawRay(r0, r1-r0, Color.blue);
+		// Debug.DrawRay(r0, r2-r0, Color.yellow);
+
 
 
 	}
