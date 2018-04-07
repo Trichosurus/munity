@@ -178,25 +178,25 @@ public class playerController : MonoBehaviour {
 				activePolygons[i] = true;
 				activeCount++;
 				GlobalData.map.segments[i].showHide(false);
-				float distance;
+				//float distance;
 				distances[i] = 7777777;
-				for (int s = 0; s < GlobalData.map.segments[i].sides.Count; s++) {
-					if (GlobalData.map.segments[i].sides[s].connectionID != -1) {
-						Vector3 v1 = GlobalData.map.segments[i].vertices[s];
+				//for (int s = 0; s < GlobalData.map.segments[i].sides.Count; s++) {
+					//if (GlobalData.map.segments[i].sides[s].connectionID != -1) {
+						//Vector3 v1 = GlobalData.map.segments[i].vertices[s];
 						// Vector2 v2;
 						// if (s < GlobalData.map.segments[i].sides.Count-1) {
 						// 	v2 = GlobalData.map.segments[i].vertices[s+1];
 						// } else {
 						// 	v2 = GlobalData.map.segments[i].vertices[0];
 						// }
-						distance = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.TransformPoint(v1));
-						if (distance < distances[i]) {distances[i] = distance;}
-					}
+					//	distance = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.TransformPoint(v1));
+					//	if (distance < distances[i]) {distances[i] = distance;}
+					//}
 					// foreach (Vector3 v in GlobalData.map.segments[i].vertices) {
 					// 	distance = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.TransformPoint(v));
 					// 	if (distance < distances[i]) { distances[i] = distance;}
 					// }
-				}
+				//}
 				//distances[i] = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.position);
 
 			}
@@ -211,17 +211,21 @@ public class playerController : MonoBehaviour {
 			pol.setClippingPlanes(new List<Vector3>(), true);
 
 		}
-		for( int s = 0; s < pol.sides.Count; s++) {
-			if (pol.sides[s].connectionID >= 0 && 
-			GlobalData.map.segments[pol.sides[s].connectionID].impossible) {
-					GlobalData.map.segments[pol.sides[s].connectionID].showHide(true);
-					processedPolys[pol.sides[s].connectionID] = true;
-					processedCount++;
-					collides.AddRange(GlobalData.map.segments[pol.sides[s].connectionID].collidesWith);
-					GlobalData.map.segments[pol.sides[s].connectionID].setClippingPlanes(new List<Vector3>(), true);
-
-			}
-		}
+		// for( int s = 0; s < pol.sides.Count; s++) {
+		// 	if (pol.sides[s].connectionID >= 0 && 
+		// 	GlobalData.map.segments[pol.sides[s].connectionID].impossible) {
+		// 		if (!collides.Contains(pol.sides[s].connectionID) ) {
+		// 			GlobalData.map.segments[pol.sides[s].connectionID].showHide(true);
+		// 		// } else {
+		// 		// 	deferred.Add(pol.sides[s].connectionID);
+		// 		// }
+		// 			processedPolys[pol.sides[s].connectionID] = true;
+		// 			processedCount++;
+		// 			collides.AddRange(GlobalData.map.segments[pol.sides[s].connectionID].collidesWith);
+		// 			GlobalData.map.segments[pol.sides[s].connectionID].setClippingPlanes(new List<Vector3>(), true);
+		// 		}
+		// 	}
+		// }
 		
 
 		while (processedCount < activeCount) {
@@ -230,12 +234,41 @@ public class playerController : MonoBehaviour {
 			// int connections = 0;
 			for (int i = 0; i < activePolygons.Length; i++) {
 				if (activePolygons[i] && !processedPolys[i]){
+
+					if (distances[i] == 7777777) {
+						for (int s = 0; s < GlobalData.map.segments[i].sides.Count; s++) {
+							if (GlobalData.map.segments[i].sides[s].connectionID != -1 &&
+							(GlobalData.map.segments[GlobalData.map.segments[i].sides[s].connectionID].hidden == false ||
+								deferred.Contains(GlobalData.map.segments[i].sides[s].connectionID)) )
+							{
+								Vector3 v1 = GlobalData.map.segments[i].vertices[s];
+								int s2 = s;
+								if (s+1 < GlobalData.map.segments[i].vertices.Count) {
+									s2 = s+1;
+								} else {
+									s2 = 0;
+								}
+								Vector3 v2 = GlobalData.map.segments[i].vertices[s2];
+
+								float d = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.TransformPoint(v1));
+								if (d < distances[i]){
+									distances[i] = d;
+								}
+								float d2 = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.TransformPoint(v2));
+								if (d2 < distances[i]){
+									distances[i] = d2;
+								}
+							}
+						}
+					}
+
 					if (distances[i] < distance) {
 						distance = distances[i];
 						closest = i;
 					}
 				}
 			}
+			if (closest == -1) {break;}
 			activePolygons[closest] = false;
 			for( int s = 0; s < GlobalData.map.segments[closest].sides.Count; s++) {
 				if (GlobalData.map.segments[closest].sides[s].connectionID >= 0 &&
@@ -256,6 +289,11 @@ public class playerController : MonoBehaviour {
 							collides.AddRange(GlobalData.map.segments[closest].collidesWith);
 						} else {
 							deferred.Add(closest);
+						}
+						foreach(MapSegmentSide side in GlobalData.map.segments[closest].sides) {
+							if (side.connectionID != -1) {
+								distances[side.connectionID] = 7777777;
+							}
 						}
 						break;
 					}
@@ -433,18 +471,27 @@ public class playerController : MonoBehaviour {
 		bool left = false;
 		 //dx=x2-x1 and dy=y2-y1,
 		//sort clockwise
-		Vector3 p0 = camera.GetComponent<Camera>().WorldToScreenPoint(new Vector3(intersectPoints[closest[0]].x, camera.transform.position.y, intersectPoints[closest[0]].y));
-		Vector3 p1 = new Vector3();
+		float[] clipAngles = {0,0,0,0};
+		clipAngles[0] = Mathf.Atan2(pp.x-intersectPoints[closest[0]].x, pp.y-intersectPoints[closest[0]].y) * Mathf.Rad2Deg;
+		//Vector3 p0 = camera.GetComponent<Camera>().WorldToViewportPoint(new Vector3(intersectPoints[closest[0]].x, camera.transform.position.y, intersectPoints[closest[0]].y));
+		//Vector3 p1 = new Vector3();
+		if (clipAngles[0] < 0 && pp.y < intersectPoints[closest[0]].y) {clipAngles[0] += 360;}
 		if (s1) {
-			p1 = camera.GetComponent<Camera>().WorldToScreenPoint(new Vector3(intersectPoints[closest[2]].x, camera.transform.position.y, intersectPoints[closest[2]].y));
+			clipAngles[1] = Mathf.Atan2(pp.x-intersectPoints[closest[2]].x, pp.y-intersectPoints[closest[2]].y) * Mathf.Rad2Deg;
+		if (clipAngles[1] < 0 && pp.y < intersectPoints[closest[2]].y) {clipAngles[1] += 360;}
+			//p1 = camera.GetComponent<Camera>().WorldToViewportPoint(new Vector3(intersectPoints[closest[2]].x, camera.transform.position.y, intersectPoints[closest[2]].y));
 		} else {
-			p1 = camera.GetComponent<Camera>().WorldToScreenPoint(new Vector3(intersectPoints[closest[1]].x, camera.transform.position.y, intersectPoints[closest[1]].y));
+			clipAngles[1] = Mathf.Atan2(pp.x-intersectPoints[closest[1]].x, pp.y-intersectPoints[closest[1]].y) * Mathf.Rad2Deg;
+		if (clipAngles[1] < 0 && pp.y < intersectPoints[closest[1]].y) {clipAngles[1] += 360;}
+			//p1 = camera.GetComponent<Camera>().WorldToViewportPoint(new Vector3(intersectPoints[closest[1]].x, camera.transform.position.y, intersectPoints[closest[1]].y));
 		}
 		// Vector3 p2 = camera.GetComponent<Camera>().WorldToScreenPoint(new Vector3(intersectPoints[closest[2]].x, camera.transform.position.y, intersectPoints[closest[2]].y));
 
+		
+
 		// int temp = closest[0];
 		int[] clipPoints = {0,0,0};
-		if (p0.x < p1.x) {
+		if (clipAngles[0] < clipAngles[1]) {
 			left = true;
 			clipPoints[0] = closest[0];
 			if (s1) {
@@ -470,7 +517,6 @@ public class playerController : MonoBehaviour {
 		// }
 
 		// get angles for clipping planes
-		float[] clipAngles = {0,0,0,0};
 		clipAngles[0] = Mathf.Atan2(pp.x-intersectPoints[clipPoints[0]].x, pp.y-intersectPoints[clipPoints[0]].y) * Mathf.Rad2Deg;
 		clipAngles[1] = Mathf.Atan2(pp.x-intersectPoints[clipPoints[1]].x, pp.y-intersectPoints[clipPoints[1]].y) * Mathf.Rad2Deg;
 		clipAngles[2] = Mathf.Atan2(intersectPoints[clipPoints[1]].x-intersectPoints[clipPoints[0]].x, intersectPoints[clipPoints[1]].y-intersectPoints[clipPoints[0]].y) * Mathf.Rad2Deg;

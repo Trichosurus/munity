@@ -25,7 +25,7 @@ public class MapSegment : MonoBehaviour {
 	public bool hidden = false;
 	public bool[] activePolygons;
 	private GameObject visCheck;
-	public int overDraw = 3;
+	public int overDraw = 1;
 	
 	private int activeCount = 0;
 	private	GameObject viscalc;
@@ -346,6 +346,10 @@ public class MapSegment : MonoBehaviour {
 
 	public void generateMeshes() {
 
+					// if (id == 6) {
+					// 	Debug.Log(centerPoint);
+					// }
+
 		makePolygon(true, vertices, height, gameObject);
 		makePolygon(false, vertices, height, gameObject);
 
@@ -362,7 +366,7 @@ public class MapSegment : MonoBehaviour {
 			if (child.gameObject.name == "floor" ||child.gameObject.name == "ceiling" || child.gameObject.name == "wall" || child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
 				MeshCollider mc = child.gameObject.AddComponent<MeshCollider>();
 				mc.sharedMesh = child.GetComponent<MeshFilter>().mesh;
-				if (child.gameObject.name != "transparent") {
+				//if (child.gameObject.name != "transparent") {
 					Rigidbody rb = child.gameObject.AddComponent<Rigidbody>();
 					rb.useGravity = false;	
 					rb.isKinematic = true;
@@ -371,7 +375,7 @@ public class MapSegment : MonoBehaviour {
 					// mc.convex = true;
 					// mc.isTrigger = true;
 					// child.gameObject.name = "transparent";
-				}
+				//}
 						
 			}
 		}
@@ -548,7 +552,10 @@ public class MapSegment : MonoBehaviour {
 							wall.middeMaterial, wall.middleOffset, gameObject);
 			}
 		} else {
-			wallPart = addWallPart(point1, point2, height, wallOffset, wall.upperMaterial, wall.upperOffset, gameObject);
+			if (wall.connectionID == -1){
+				if (wall.upperMaterial == null) { wall.upperMaterial = Resources.Load<Material>("texture");}
+				wallPart = addWallPart(point1, point2, height, wallOffset, wall.upperMaterial, wall.upperOffset, gameObject);
+			}
 		}
 		if (wallPart != null) {
 			sides[side].meshItem = wallPart;
@@ -602,9 +609,9 @@ public class MapSegment : MonoBehaviour {
 			meshItem.GetComponent<MeshRenderer>().material.SetTextureOffset("_MainTex", matOffset);
 
 		} else {
-			meshItem.GetComponent<MeshRenderer>().material = Resources.Load<Material>("transparent");
-			meshItem.name = "transparent";
-			meshItem.GetComponent<MeshRenderer>().enabled = false;
+			meshItem.GetComponent<MeshRenderer>().material = Resources.Load<Material>("texture");
+			// meshItem.name = "transparent";
+			//meshItem.GetComponent<MeshRenderer>().enabled = false;
 		}
 
 		return meshItem;
@@ -811,7 +818,7 @@ public class MapSegment : MonoBehaviour {
 		Vector3 castPoint, crossPoint;
 		float rayCount = 3f;
 		float heightCount = 2f;
-		float crossCount = 1f;
+		float crossCount = 2f;
 
 		isVisible = false;
 
