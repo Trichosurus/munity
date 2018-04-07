@@ -210,22 +210,21 @@ public class playerController : MonoBehaviour {
 			collides.AddRange(pol.collidesWith);
 			pol.setClippingPlanes(new List<Vector3>(), true);
 
+
+		
+			for( int s = 0; s < pol.sides.Count; s++) {
+				if (pol.sides[s].connectionID >= 0 && 
+				GlobalData.map.segments[pol.sides[s].connectionID].impossible) {
+					if (!collides.Contains(pol.sides[s].connectionID) ) {
+						//GlobalData.map.segments[pol.sides[s].connectionID].showHide(true);
+					// } else {
+					// 	deferred.Add(pol.sides[s].connectionID);
+					// }
+						distances[pol.sides[s].connectionID] = 0;
+					}
+				}
+			}
 		}
-		// for( int s = 0; s < pol.sides.Count; s++) {
-		// 	if (pol.sides[s].connectionID >= 0 && 
-		// 	GlobalData.map.segments[pol.sides[s].connectionID].impossible) {
-		// 		if (!collides.Contains(pol.sides[s].connectionID) ) {
-		// 			GlobalData.map.segments[pol.sides[s].connectionID].showHide(true);
-		// 		// } else {
-		// 		// 	deferred.Add(pol.sides[s].connectionID);
-		// 		// }
-		// 			processedPolys[pol.sides[s].connectionID] = true;
-		// 			processedCount++;
-		// 			collides.AddRange(GlobalData.map.segments[pol.sides[s].connectionID].collidesWith);
-		// 			GlobalData.map.segments[pol.sides[s].connectionID].setClippingPlanes(new List<Vector3>(), true);
-		// 		}
-		// 	}
-		// }
 		
 
 		while (processedCount < activeCount) {
@@ -292,7 +291,7 @@ public class playerController : MonoBehaviour {
 						}
 						foreach(MapSegmentSide side in GlobalData.map.segments[closest].sides) {
 							if (side.connectionID != -1) {
-								distances[side.connectionID] = 7777777;
+								distances[side.connectionID] = 0;
 							}
 						}
 						break;
