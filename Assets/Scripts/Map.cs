@@ -41,7 +41,7 @@ public class Map : MonoBehaviour {
 			}
 	    }
 	    Level Level = new Level();
-		Level.Load(wadfile.Directory[0]);
+		Level.Load(wadfile.Directory[1]);
 		Debug.Log(Level.Name);
 		// Debug.Log(Level.Environment);
 		
@@ -135,16 +135,40 @@ public class Map : MonoBehaviour {
 				foreach (Weland.Platform pl in Level.Platforms) {
 					if (pl.PolygonIndex == p) {
 						seg.platform = new Platform();
-						seg.platform.ComesFromCeiling = pl.ComesFromCeiling;
-						seg.platform.ComesFromFloor = pl.ComesFromFloor;
-						seg.platform.InitiallyExtended = pl.InitiallyExtended;
+						seg.platform.comesFromCeiling = pl.ComesFromCeiling;
+						seg.platform.comesFromFloor = pl.ComesFromFloor;
+						seg.platform.initiallyExtended = pl.InitiallyExtended;
 						seg.platform.maximumHeight = (float)pl.MaximumHeight/1024f;
 						seg.platform.minimumHeight = (float)pl.MinimumHeight/1024f;
-						seg.platform.Speed = (float)pl.Speed/128f;
-						seg.platform.UsesNativePolygonHeights = pl.UsesNativePolygonHeights;
+						seg.platform.speed = (float)pl.Speed/64f;
+						seg.platform.usesNativePolygonHeights = pl.UsesNativePolygonHeights;
 						seg.platform.door = pl.IsDoor;
-						seg.platform.InitiallyActive = pl.InitiallyActive;
+						seg.platform.initiallyActive = pl.InitiallyActive;
 						seg.platform.parent = seg;
+						seg.platform.activatesAdjacantPlatformsAtEachLevel = pl.ActivatesAdjacantPlatformsAtEachLevel;
+						seg.platform.activatesAdjacentPlatformsWhenActivating = pl.ActivatesAdjacentPlatformsWhenActivating;
+						seg.platform.activatesAdjacentPlatformsWhenDeactivating = pl.ActivatesAdjacentPlatformsWhenDeactivating;
+						seg.platform.activatesLight = pl.ActivatesLight;
+						seg.platform.activatesOnlyOnce = pl.ActivatesOnlyOnce;
+						seg.platform.cannotBeExternallyDeactivated = pl.CannotBeExternallyDeactivated;
+						seg.platform.causesDamage = pl.CausesDamage;
+						seg.platform.contractsSlower = pl.ContractsSlower;
+						seg.platform.deactivatesAdjacentPlatformsWhenActivating = pl.DeactivatesAdjacentPlatformsWhenActivating;
+						seg.platform.deactivatesAdjacentPlatformsWhenDeactivating = pl.DeactivatesAdjacentPlatformsWhenDeactivating;
+						seg.platform.deactivatesAtEachLevel = pl.DeactivatesAtEachLevel;
+						seg.platform.deactivatesAtInitialLevel = pl.DeactivatesAtInitialLevel;
+						seg.platform.deactivatesLight = pl.DeactivatesLight;
+						seg.platform.delay = pl.Delay/32;
+						seg.platform.delaysBeforeActivation = pl.DelaysBeforeActivation;
+						seg.platform.doesNotActivateParent = pl.DelaysBeforeActivation;
+						seg.platform.extendsFloorToCeiling = pl.ExtendsFloorToCeiling;
+						seg.platform.isMonsterControllable = pl.IsMonsterControllable;
+						seg.platform.isPlayerControllable = pl.IsPlayerControllable;
+						seg.platform.locked = pl.IsLocked;
+						seg.platform.reversesDirectionWhenObstructed = pl.ReversesDirectionWhenObstructed;
+						seg.platform.secret = pl.IsSecret;
+						seg.platform.tag = pl.Tag;
+						seg.platform.usesNativePolygonHeights = pl.UsesNativePolygonHeights;
 						// if (p == 6 || p == 4|| p == 431) {
 						// 	Debug.Log(p);
 						// 	Debug.Log(seg.platform.InitiallyExtended);

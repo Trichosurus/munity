@@ -21,7 +21,7 @@ public class platformController : MonoBehaviour {
 		// Debug.Log(platform.MinimumHeight);
 		// Debug.Log(height);
 
-		if (platform.ComesFromCeiling == true && platform.ComesFromFloor == true) {
+		if (platform.comesFromCeiling == true && platform.comesFromFloor == true) {
 			hasPartner = true;
 			height.y = getMidVector().y;
 		}
@@ -50,7 +50,7 @@ public class platformController : MonoBehaviour {
 		// Debug.Log(max);
 		// }
 
-		if (platform.InitiallyExtended) {
+		if (platform.initiallyExtended) {
 			platform.extended = true;
 			platform.extending = true;
 			if (fromTop) {
@@ -69,8 +69,8 @@ public class platformController : MonoBehaviour {
 			}
 	
 		}
-		if (platform.InitiallyActive) {
-			platform.active = true;
+		if (platform.initiallyActive) {
+			platform.activate();
 		}
 	}
 
@@ -115,7 +115,11 @@ public class platformController : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-		float speed = platform.Speed * Time.deltaTime;
+
+		if (platform.parent.id == 135 && delayedTime == 0) {
+			int i = 1;
+		}
+		float speed = platform.speed * Time.deltaTime;
 
 		if (delayedTime <= platform.delay) {
 			delayedTime += Time.deltaTime;

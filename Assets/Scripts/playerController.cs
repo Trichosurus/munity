@@ -103,12 +103,22 @@ public class playerController : MonoBehaviour {
 			touched = false;
 		}
 
+		int prevPolygon = currentPolygon;
 		getCurrentPolygon();
 		if (currentPolygon >= 0) {
-			drawActivePolygons();
+			if (prevPolygon != currentPolygon) {
+				drawActivePolygons();
+				if (GlobalData.map.segments[currentPolygon].platform != null &&
+						!GlobalData.map.segments[currentPolygon].platform.door) {
+					GlobalData.map.segments[currentPolygon].platform.activate(-2);
+				}
+			}
+
 			calculateVisibility();
 		}
 		if (Input.GetKey("f")){castRay();}
+
+
 
 	}
 
@@ -118,11 +128,17 @@ public class playerController : MonoBehaviour {
 		//GameObject camera = transform.Find("playerCamera").gameObject;
 		if (Physics.Raycast(gameObject.transform.position, Vector3.down, out hit, 50)) {
 			if (hit.collider.transform.parent != null && hit.collider.transform.parent.name == "polygon(Clone)") {
-				if (hit.collider.transform.parent.GetComponent<MapSegment>().id != currentPolygon) {
-					//Debug.Log(hit.collider.transform.parent.GetComponent<MapSegment>().id);
-				}
+				// if (hit.collider.transform.parent.GetComponent<MapSegment>().id != currentPolygon) {
+				// 	Debug.Log(hit.collider.transform.parent.GetComponent<MapSegment>().id);
+				// }
 				currentPolygon = hit.collider.transform.parent.GetComponent<MapSegment>().id;
+			} else if (hit.collider.transform.parent != null && (hit.collider.transform.parent.name == "upperPlatform" || hit.collider.transform.parent.name == "lowerPlatform")) {
+				// if (hit.collider.transform.parent.GetComponent<MapSegment>().id != currentPolygon) {
+				// 	Debug.Log(hit.collider.transform.parent.GetComponent<MapSegment>().id);
+				// }
+				currentPolygon = hit.collider.transform.parent.parent.GetComponent<MapSegment>().id;
 			}
+
 		}
 
 	}
@@ -151,10 +167,10 @@ public class playerController : MonoBehaviour {
 	}
 
 	void drawActivePolygons() {
-		bool[] avtive = GlobalData.map.segments[currentPolygon].activePolygons;
-		for (int i = 0; i < avtive.Length; i++) {
+		bool[] active = GlobalData.map.segments[currentPolygon].activePolygons;
+		for (int i = 0; i < active.Length; i++) {
 			if (!GlobalData.map.segments[i].impossible) {
-				GlobalData.map.segments[i].showHide(avtive[i]);
+				GlobalData.map.segments[i].showHide(active[i]);
 			} else {
 				GlobalData.map.segments[i].showHide(false);
 			}

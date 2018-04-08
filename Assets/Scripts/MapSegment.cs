@@ -244,12 +244,12 @@ public class MapSegment : MonoBehaviour {
 					// }
 
 				if (conn.centerPoint.y < centerPoint.y 
-							&& platform.ComesFromFloor) {
+							&& platform.comesFromFloor) {
 					height.y += (centerPoint.y - conn.centerPoint.y);
 					centerPoint.y = conn.centerPoint.y;
 				}
 				if (conn.centerPoint.y + conn.height.y > centerPoint.y + height.y
-							&& platform.ComesFromCeiling) {
+							&& platform.comesFromCeiling) {
 					height.y += (conn.height.y - conn.centerPoint.y) - (height.y - centerPoint.y);
 				}
 			}
@@ -273,11 +273,11 @@ public class MapSegment : MonoBehaviour {
 		// Debug.Log(platform.minimumHeight + (platform.maximumHeight - platform.minimumHeight)/2);
 		List<Vector3> PlatVertices = new List<Vector3>(vertices);
 		PlatVertices.Reverse();
-		bool split = platform.ComesFromFloor && platform.ComesFromCeiling;
+		bool split = platform.comesFromFloor && platform.comesFromCeiling;
 		if (split) {
 			pHeight.y = splitPoint.y;
 		}
-		if (platform.ComesFromFloor) {
+		if (platform.comesFromFloor) {
 			platform.lowerPlatform =  new GameObject("lowerPlatform");
 			platform.lowerPlatform.transform.parent = gameObject.transform;
 			makePolygon(true, PlatVertices, pHeight, platform.lowerPlatform, ceiling.upperMaterial, ceiling.upperOffset);
@@ -287,7 +287,7 @@ public class MapSegment : MonoBehaviour {
 			pHeight.y = height.y - (splitPoint.y);
 		}
 
-		if (platform.ComesFromCeiling) {
+		if (platform.comesFromCeiling) {
 			platform.upperPlatform =  new GameObject("upperPlatform");
 			platform.upperPlatform.transform.parent = gameObject.transform;
 
@@ -312,14 +312,14 @@ public class MapSegment : MonoBehaviour {
 			}
 				
 			
-			if (platform.ComesFromFloor) {
+			if (platform.comesFromFloor) {
 				if (split) {
 				addWallPart(point1, point2, splitPoint, new Vector3(0,0,0), wall.lowerMaterial, wall.lowerOffset, platform.lowerPlatform);
 				} else {
 				addWallPart(point1, point2, pHeight, new Vector3(0,0,0), wall.lowerMaterial, wall.lowerOffset, platform.lowerPlatform);
 				}
 			}
-			if (platform.ComesFromCeiling) {
+			if (platform.comesFromCeiling) {
 				addWallPart(point1, point2, pHeight, new Vector3(0,0,0), wall.upperMaterial, wall.upperOffset, platform.upperPlatform);
 				
 			}
@@ -522,10 +522,10 @@ public class MapSegment : MonoBehaviour {
 
 			// 	}
 			bool connTop = (wall.connection.platform != null &&
-							!wall.connection.platform.ComesFromCeiling) ||
+							!wall.connection.platform.comesFromCeiling) ||
 							 wall.connection.platform == null || wall.solid; 
 			bool connBottom = (wall.connection.platform != null &&
-							!wall.connection.platform.ComesFromFloor)||
+							!wall.connection.platform.comesFromFloor)||
 							wall.connection.platform == null || wall.solid; 
 ; 
 
@@ -927,29 +927,29 @@ public class MapSegmentFloorCeiling {
 }
 
 public class Platform {
-	public float Speed = 1;
+	public float speed = 1;
 	public float delay = 0;
 	public float maximumHeight;
 	public float minimumHeight;
 	public int tag;
-	public bool InitiallyActive = false;
-	public bool InitiallyExtended = false;
-	public bool DeactivatesAtEachLevel  = false;
-	public bool DeactivatesAtInitialLevel  = false;
-	public bool ActivatesAdjacentPlatformsWhenDeactivating  = false;
-	public bool ExtendsFloorToCeiling  = false;
-	public bool ComesFromFloor  = false;
-	public bool ComesFromCeiling  = false;
-	public bool CausesDamage  = false;
-	public bool DoesNotActivateParent  = false;
-	public bool ActivatesOnlyOnce  = false;
-	public bool ActivatesLight  = false;
-	public bool DeactivatesLight  = false;
-	public bool IsPlayerControllable  = false;
-	public bool IsMonsterControllable  = false;
-	public bool ReversesDirectionWhenObstructed  = false;
-	public bool CannotBeExternallyDeactivated  = false;
-	public bool UsesNativePolygonHeights = false;
+	public bool initiallyActive = false;
+	public bool initiallyExtended = false;
+	public bool deactivatesAtEachLevel  = false;
+	public bool deactivatesAtInitialLevel  = false;
+	public bool activatesAdjacentPlatformsWhenDeactivating  = false;
+	public bool extendsFloorToCeiling  = false;
+	public bool comesFromFloor  = false;
+	public bool comesFromCeiling  = false;
+	public bool causesDamage  = false;
+	public bool doesNotActivateParent  = false;
+	public bool activatesOnlyOnce  = false;
+	public bool activatesLight  = false;
+	public bool deactivatesLight  = false;
+	public bool isPlayerControllable  = false;
+	public bool isMonsterControllable  = false;
+	public bool reversesDirectionWhenObstructed  = false;
+	public bool cannotBeExternallyDeactivated  = false;
+	public bool usesNativePolygonHeights = false;
 	public bool delaysBeforeActivation  = false;
 	public bool activatesAdjacentPlatformsWhenActivating = false;
 	public bool deactivatesAdjacentPlatformsWhenActivating  = false;
@@ -973,6 +973,8 @@ public class Platform {
 	//public float delayedTime = 0;
 	private bool hasActivated = false;
 
+	private int activatedBy = -1;
+
 
 	public void playerTouch() {
 		//Debug.Log("platform");
@@ -988,16 +990,23 @@ public class Platform {
 		}
 	}
 
-	public void activate() {
+	public void activate(int activator = -1) {
+		if (activatesOnlyOnce && hasActivated) {return;}
+		if (!isPlayerControllable && activator == -2) {return;}
+		if (!isMonsterControllable && activator == -3) {return;}
 
+
+		activatedBy = activator;
 		active = true;
 		extending = !extending;
 		extended = !extended;
+		float delayTimer = 0;
+		if (!delaysBeforeActivation) {delayTimer = delay;}
 		if( upperPlatform != null ) {
-			upperPlatform.GetComponent<platformController>().delayedTime = 0;
+			upperPlatform.GetComponent<platformController>().delayedTime = delayTimer;
 		}
 		if (lowerPlatform != null) {
-			lowerPlatform.GetComponent<platformController>().delayedTime = 0;
+			lowerPlatform.GetComponent<platformController>().delayedTime = delayTimer;
 		}
 		hasActivated = true;
 		
@@ -1008,6 +1017,18 @@ public class Platform {
 				}
 			}
 		}
+
+		if (activatesAdjacentPlatformsWhenActivating) {
+			foreach (MapSegmentSide side in parent.sides) {
+				if (side.connection != null && side.connection.platform != null) {
+					if (side.connection.id != parent.id || !doesNotActivateParent) {
+						side.connection.platform.activate(parent.id);
+					}
+				}
+			}
+		}
+
+
 	}
 
 
@@ -1026,12 +1047,55 @@ public class Platform {
 				uptransit = lotransit;
 			}
 		}
+		bool deactivating = false;
 		if (uptransit == lotransit) {
-			active = false;
-			Debug.Log("stop");
+			Debug.Log("stop?" + parent.id);
+			if (deactivatesAtEachLevel || 
+				(deactivatesAtInitialLevel && (
+					(initiallyExtended && extended) ||
+					(!initiallyExtended && !extended)
+				))	) {
+				deactivating = true;
+				active = false;
+			}
+
+			if (activatesAdjacantPlatformsAtEachLevel ||
+				(activatesAdjacentPlatformsWhenDeactivating && deactivating)) {
+				foreach (MapSegmentSide side in parent.sides) {
+					if (side.connection != null && side.connection.platform != null) {
+						if (side.connection.id != parent.id || !doesNotActivateParent) {
+							side.connection.platform.activate(parent.id);
+						}
+					}
+				}
+			}
+
+			if (deactivating) {
+				foreach (MapSegment seg in GlobalData.map.segments) {
+					foreach (MapSegmentSide side in seg.sides) {
+						if (side.controlPanel != null  && side.controlPanel.platformSwitch == parent.id) {
+							side.controlPanel.toggle(side.meshItem);
+						}
+					}
+				}
+			}
+
+			if (!deactivating) {
+				if (upperPlatform != null ) {
+					upperPlatform.GetComponent<platformController>().delayedTime = 0;
+				}
+				if (lowerPlatform != null) {
+					lowerPlatform.GetComponent<platformController>().delayedTime = 0;
+				}
+				//this.activate();
+				active = true;
+				extending = !extending;
+				extended = !extended;
+
+			}
+
+
 		}
-
-
 	}
 }
 
