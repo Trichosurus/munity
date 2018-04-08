@@ -479,6 +479,10 @@ public class MapSegment : MonoBehaviour {
 
 	public void makeWall(int side) {
 
+		// if (id == 61) {
+		// 	id = id;
+		// }
+
 		Vector3 point1, point2;
 		point1 = vertices[side];
 		if (side+1 < vertices.Count) {
@@ -519,37 +523,59 @@ public class MapSegment : MonoBehaviour {
 			// 	}
 			bool connTop = (wall.connection.platform != null &&
 							!wall.connection.platform.ComesFromCeiling) ||
-							 wall.connection.platform == null; 
+							 wall.connection.platform == null || wall.solid; 
 			bool connBottom = (wall.connection.platform != null &&
 							!wall.connection.platform.ComesFromFloor)||
-							wall.connection.platform == null; 
+							wall.connection.platform == null || wall.solid; 
 ; 
-		
+
 			if (wall.connection.transform.position.y > gameObject.transform.position.y 
 				&& connBottom) {
+				if (wall.solid && wall.lowerMaterial == null ) {
+					wall.lowerMaterial = Resources.Load<Material>("transparent");
+				}
 				wallHeightLower = new Vector3(height.x, height.y, height.z);
 				wallHeightLower.y = wall.connection.transform.position.y - gameObject.transform.position.y;
 				wallPart = addWallPart(point1, point2, wallHeightLower, wallOffset, wall.lowerMaterial, wall.lowerOffset, gameObject);
+				if (wall.solid && wall.lowerMaterial.name == "transparent" || 
+						(wall.transparent && connBottom && !connTop)) {
+					wallPart.SetActive(false);
+				}
 			}
-
 
 			if (wall.connection.transform.position.y+wall.connection.height.y < gameObject.transform.position.y+height.y
 				&& connTop) {
+				if (wall.solid && wall.upperMaterial == null ) {
+					wall.upperMaterial = Resources.Load<Material>("transparent");
+				}
 				wallHeightUpper = new Vector3(height.x, height.y, height.z);
 				wallOffset = wall.connection.height + wall.connection.transform.position - gameObject.transform.position;
 				wallOffset.x = 0;
 				wallOffset.z = 0;
 				wallHeightUpper.y = height.y - wallOffset.y;
 				wallPart = addWallPart(point1, point2, wallHeightUpper, wallOffset, wall.upperMaterial, wall.upperOffset, gameObject);
+				if (wall.solid && wall.upperMaterial.name == "transparent" || 
+						(wall.transparent && connTop && !connBottom)) {
+					wallPart.SetActive(false);
+				}
 			}
 
 			Vector3 wallHeightMiddle = height - wallHeightLower - wallHeightUpper;
 			if ( wallHeightMiddle.y>0) {
+				if (wall.solid && wall.middeMaterial == null ) {
+					wall.middeMaterial = Resources.Load<Material>("transparent");
+				}
 
 				wallPart = addWallPart(point1, point2, 
 							wallHeightMiddle,
 							new Vector3(0,wallHeightLower.y,0), 
 							wall.middeMaterial, wall.middleOffset, gameObject);
+
+				if (wall.solid && wall.middeMaterial.name == "transparent" || 
+						(wall.transparent && !connTop && !connBottom)) {
+					wallPart.SetActive(false);
+				}
+				
 			}
 		} else {
 			if (wall.connectionID == -1){
@@ -672,7 +698,7 @@ public class MapSegment : MonoBehaviour {
  
 		activePolygons[id] = true;activeCount++;
 		foreach(MapSegmentSide side in GlobalData.map.segments[id].sides) {
-			if (side.meshItem == null && side.connectionID != -1) {
+			if (side.connectionID != -1) {
 					activePolygons[side.connectionID] = true;activeCount++;
 					if (GlobalData.map.segments[side.connectionID].activePolygons.Length == 0) {
 						GlobalData.map.segments[side.connectionID].activePolygons = new bool[GlobalData.map.segments.Count];
@@ -700,9 +726,9 @@ public class MapSegment : MonoBehaviour {
 				}
 			}
 
-		if (id == 46 && closest == 31) {
-			processedCount = processedCount;
-		}
+		// if (id == 46 && closest == 31) {
+		// 	processedCount = processedCount;
+		// }
 
 
 			if (closest >=0){
