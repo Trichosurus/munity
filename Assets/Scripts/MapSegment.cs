@@ -935,6 +935,7 @@ public class Platform {
 	public bool door = false;
 	public GameObject lowerPlatform = null;
 	public GameObject upperPlatform = null;
+	public MapSegment parent = null;
 	public float upperMaxHeight = 0;
 	public float upperMinHeight = 0;
 	public float lowerMaxHeight = 0;
@@ -974,7 +975,17 @@ public class Platform {
 		}
 		hasActivated = true;
 		
+		foreach (MapSegment seg in GlobalData.map.segments) {
+			foreach (MapSegmentSide side in seg.sides) {
+				if (side.controlPanel != null  && side.controlPanel.platformSwitch == parent.id) {
+					side.controlPanel.toggle(side.meshItem);
+				}
+			}
+		}
 	}
+
+
+	
 
 	public void deActivate() {
 		bool uptransit = false;
@@ -1034,21 +1045,57 @@ public class ControlPanel {
 	public Material inactiveMat = new Material(Shader.Find("Custom/StandardClippableV2"));
 
 
+	private bool toggled = false;
 	public void toggle(GameObject wall, bool playerTouched = false) {
-		active = !active;
-		Vector2 offset = wall.GetComponent<MeshRenderer>().material.mainTextureOffset;
-		if (active) {
-			wall.GetComponent<MeshRenderer>().material = activeMat;
+		// if (toggled) {return;}
+		// toggled = true;
+		// active = !active;
+		if (playerTouched) {
 			if (platformSwitch > -1) {
 				MapSegment pol = GlobalData.map.segments[platformSwitch];
 				if (pol.platform != null) {
-					pol.platform.activate();
+					if (!active) {
+						pol.platform.activate();
+					} else {
+						pol.platform.deActivate();
+					}
 				}
 			}
 		} else {
-			wall.GetComponent<MeshRenderer>().material = inactiveMat;
+			active = !active;
+			Vector2 offset = wall.GetComponent<MeshRenderer>().material.mainTextureOffset;
+			if (active) {
+				wall.GetComponent<MeshRenderer>().material = activeMat;
+			} else {
+				wall.GetComponent<MeshRenderer>().material = inactiveMat;
+			}
+			wall.GetComponent<MeshRenderer>().material.mainTextureOffset = offset;
+
 		}
-		wall.GetComponent<MeshRenderer>().material.mainTextureOffset = offset;
+		// Vector2 offset = wall.GetComponent<MeshRenderer>().material.mainTextureOffset;
+		// if (active) {
+			// wall.GetComponent<MeshRenderer>().material = activeMat;
+			// if (platformSwitch > -1) {
+				// MapSegment pol = GlobalData.map.segments[platformSwitch];
+				// if (playerTouched && pol.platform != null) {
+					// pol.platform.activate();
+				// }
+				// foreach (MapSegment seg in GlobalData.map.segments) {
+				// 	foreach (MapSegmentSide side in seg.sides) {
+				// 		if (side.controlPanel != null && side.controlPanel.platformSwitch == platformSwitch) {
+				// 			if (side.controlPanel != this) {
+				// 				side.controlPanel.toggle(side.meshItem);
+				// 				break;
+				// 			}
+				// 		}
+				// 	}
+				// }
+			// }
+		// } else {
+		// 	wall.GetComponent<MeshRenderer>().material = inactiveMat;
+		// }
+		// wall.GetComponent<MeshRenderer>().material.mainTextureOffset = offset;
+		// toggled = false;
 	}
     // public enum ControlPanelClass : short {
 	// Oxygen,

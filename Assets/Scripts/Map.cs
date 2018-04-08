@@ -109,8 +109,11 @@ public class Map : MonoBehaviour {
 			//	Debug.Log(material);
 			}		
 			loadingText = "Loading Shapes... " + col + "/31";
-			yield return null;
+			if (col % 7 == 0 ){
+				yield return null;
+			}
 		}
+		loadingText = "Loading Shapes... 31/31";
 
 
 	}
@@ -141,6 +144,7 @@ public class Map : MonoBehaviour {
 						seg.platform.UsesNativePolygonHeights = pl.UsesNativePolygonHeights;
 						seg.platform.door = pl.IsDoor;
 						seg.platform.InitiallyActive = pl.InitiallyActive;
+						seg.platform.parent = seg;
 						// if (p == 6 || p == 4|| p == 431) {
 						// 	Debug.Log(p);
 						// 	Debug.Log(seg.platform.InitiallyExtended);
@@ -444,13 +448,14 @@ public class Map : MonoBehaviour {
 				// Debug.Log(obj.Facing);
 			
 				Vector3 pos = new Vector3(pos.x = (float)obj.X/1024f,
-										pos.y = (float)obj.Z/1024f,
+										pos.y = (float)obj.Z/1024f + segments[obj.PolygonIndex].centerPoint.y,
 										pos.z = 0f-(float)obj.Y/1024f
-										);			
+										);	
 				Debug.Log(pos);
 
 				Quaternion facing = Quaternion.Euler(0, (float)obj.Facing+90, 0);
 				GameObject player = Instantiate(Resources.Load<GameObject>("player"), pos, facing);
+				player.GetComponent<playerController>().currentPolygon = obj.PolygonIndex;
 			}
 			if (i % 7 == 0 ){
 				loadingText = load + i+"/"+Level.Objects.Count;
