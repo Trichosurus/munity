@@ -18,21 +18,24 @@ public class dataFilesObject : MonoBehaviour {
 	/// </summary>
 	void OnMouseUp()
 	{
-		FileBrowser.SetFilters( true, new FileBrowser.Filter( "Maps", ".scea", ".sceA" ), 
-										new FileBrowser.Filter( "Shapes", ".shpa", ".shpA" ),
-										new FileBrowser.Filter( "Sounds", ".snda", ".sndA" ),
-										new FileBrowser.Filter( "Physics", ".phya", ".phyA" ),
-										new FileBrowser.Filter( "Images", ".imga", ".imgA" )
-								);
-		FileBrowser.SetDefaultFilter( type );
-		// FileBrowser.SetExcludedExtensions( ".lnk", ".tmp", ".zip", ".rar", ".exe" );
-		// FileBrowser.AddQuickLink( "Data", "?game path?recources folder?", null );
-		StartCoroutine( ShowLoadDialogCoroutine() );
+		if (!settingsScreen.choosingFile) {
+			FileBrowser.SetFilters( true, new FileBrowser.Filter( "Maps", ".scea", ".sceA" ), 
+											new FileBrowser.Filter( "Shapes", ".shpa", ".shpA" ),
+											new FileBrowser.Filter( "Sounds", ".snda", ".sndA" ),
+											new FileBrowser.Filter( "Physics", ".phya", ".phyA" ),
+											new FileBrowser.Filter( "Images", ".imga", ".imgA" )
+									);
+			FileBrowser.SetDefaultFilter( type );
+			// FileBrowser.SetExcludedExtensions( ".lnk", ".tmp", ".zip", ".rar", ".exe" );
+			// FileBrowser.AddQuickLink( "Data", "?game path?recources folder?", null );
+			StartCoroutine( ShowLoadDialogCoroutine() );
+		}
 
 	}
 
 	IEnumerator ShowLoadDialogCoroutine()
 	{
+		settingsScreen.choosingFile = true; 
 		// Show a load file dialog and wait for a response from user
 		// Load file/folder: file, Initial path: default (Documents), Title: "Load File", submit button text: "Load"
 		yield return FileBrowser.WaitForLoadDialog( false, null, "Choose " + type + " file", "Select" );
@@ -61,6 +64,8 @@ public class dataFilesObject : MonoBehaviour {
 			}
 			writeSettings();
 		}
+				settingsScreen.choosingFile = false; 
+
 
 	}
 

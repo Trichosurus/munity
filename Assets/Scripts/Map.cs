@@ -41,7 +41,7 @@ public class Map : MonoBehaviour {
 			}
 	    }
 	    Level Level = new Level();
-		Level.Load(wadfile.Directory[1]);
+		Level.Load(wadfile.Directory[0]);
 		Debug.Log(Level.Name);
 		// Debug.Log(Level.Environment);
 		
@@ -134,6 +134,9 @@ public class Map : MonoBehaviour {
 			if(Level.Polygons[p].Type == Weland.PolygonType.Platform) {
 				foreach (Weland.Platform pl in Level.Platforms) {
 					if (pl.PolygonIndex == p) {
+						if (pl.PolygonIndex ==6) {
+							;
+						}
 						seg.platform = new Platform();
 						seg.platform.comesFromCeiling = pl.ComesFromCeiling;
 						seg.platform.comesFromFloor = pl.ComesFromFloor;
@@ -158,9 +161,9 @@ public class Map : MonoBehaviour {
 						seg.platform.deactivatesAtEachLevel = pl.DeactivatesAtEachLevel;
 						seg.platform.deactivatesAtInitialLevel = pl.DeactivatesAtInitialLevel;
 						seg.platform.deactivatesLight = pl.DeactivatesLight;
-						seg.platform.delay = pl.Delay/32;
+						seg.platform.delay = pl.Delay/32f;
 						seg.platform.delaysBeforeActivation = pl.DelaysBeforeActivation;
-						seg.platform.doesNotActivateParent = pl.DelaysBeforeActivation;
+						seg.platform.doesNotActivateParent = pl.DoesNotActivateParent;
 						seg.platform.extendsFloorToCeiling = pl.ExtendsFloorToCeiling;
 						seg.platform.isMonsterControllable = pl.IsMonsterControllable;
 						seg.platform.isPlayerControllable = pl.IsPlayerControllable;

@@ -418,6 +418,12 @@ public class playerController : MonoBehaviour {
 			clockwise.Add(Vector2.SignedAngle(intersectPoints[i]-centerPoint, intersectPoints[0]-centerPoint));
 		}
 		
+		if (clockwise.Count == 0) {
+			segment1.showHide(false);
+			segment2.showHide(true);
+			return;
+		}
+
 		//get relevant intersection points
 		int[] closest = {-1,-1,-1};
 		float distance = 7777777;
@@ -622,7 +628,7 @@ public class playerController : MonoBehaviour {
 		GameObject camera;
 		camera = transform.Find("playerCamera").gameObject;
 
-		Vector3[] points = new Vector3[8];
+		List<Vector3> points = new List<Vector3>();
 		Vector3 p1, p2, p3, h1, h2, h3;
 		h1 = height*0.005f;
 		h2 = height*0.995f;
@@ -634,14 +640,18 @@ public class playerController : MonoBehaviour {
 
 		Vector3 midpoint = p3 + point2 + h3;
 
-		points[0] = p1 + point2  + h1;
-		points[1] = p2 + point2  + h1;
-		points[2] = p1 + point2  + h2;
-		points[3] = p2 + point2  + h2;
-		points[4] = p3 + point2  + h2;
-		points[5] = p3 + point2  + h1;
-		points[6] = p1 + point2  + h3;
-		points[7] = p2 + point2  + h3;
+		points.Add(p1 + point2 + h1);
+		points.Add(p2 + point2 + h1);
+		points.Add(p1 + point2 + h2);
+		points.Add(p2 + point2 + h2);
+		points.Add(p3 + point2 + h2);
+		points.Add(p3 + point2 + h1);
+		points.Add(p1 + point2 + h3);
+		points.Add(p2 + point2 + h3);
+		if (camera.transform.position.y > p1.y && camera.transform.position.y < p1.y+height.y ) {
+			points.Add(p3 + point2 + new Vector3(0, camera.transform.position.y - p1.y,0 ));
+			points.Add(p3 + point2 + new Vector3(0, camera.transform.position.y - p1.y - 0.7f, 0));
+		}
 
 
 		Vector3 castPoint;
@@ -654,12 +664,12 @@ public class playerController : MonoBehaviour {
 		if (isVisible) {
 			Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.red);
 		} else {
-		//	Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.green);
+			Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.green);
 		}
 
 		Color colour  = Random.ColorHSV();
 		for (int i = 1; i <= rayCount && !isVisible; i++) {
-			for (int p = 0; p < points.Length && !isVisible; p++){
+			for (int p = 0; p < points.Count && !isVisible; p++){
 				castPoint = (points[p]-midpoint)*((1f/rayCount)*(float)i) + midpoint;
 				isVisible = (Physics.Raycast(castPoint, camera.transform.position-castPoint, out hit, 50)) 
 							&& hit.collider.gameObject == camera ;
@@ -667,7 +677,7 @@ public class playerController : MonoBehaviour {
 					Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.red);
 					return true;
 				} else {
-				//	Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.green);
+					Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.green);
 				}
 			}
 		}

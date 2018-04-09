@@ -59,6 +59,7 @@
      <Compile Include="Assets\Scripts\mouselook.cs" />
      <Compile Include="Assets\Scripts\platformController.cs" />
      <Compile Include="Assets\Scripts\playerController.cs" />
+     <Compile Include="Assets\Scripts\settingsScreen.cs" />
      <Compile Include="Assets\Scripts\startGame.cs" />
      <Compile Include="Assets\Scripts\Weland\BinaryReaderBE.cs" />
      <Compile Include="Assets\Scripts\Weland\BinaryWriterBE.cs" />

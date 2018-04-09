@@ -9,13 +9,15 @@ public class platformController : MonoBehaviour {
 	private bool hasPartner = false;
 	public float delayedTime = 0;
 
+	public int platformid = -1;
+
 	private Vector3 max, min;
 	// Use this for initialization
 	void Start () {
 		if (platform == null) {
 			platform = gameObject.transform.parent.GetComponent<MapSegment>().platform;
 		}
-
+platformid = platform.parent.id;
 		Vector3 height = gameObject.transform.parent.GetComponent<MapSegment>().height;
 		// Debug.Log(platform.MaximumHeight);
 		// Debug.Log(platform.MinimumHeight);
@@ -116,8 +118,8 @@ public class platformController : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 
-		if (platform.parent.id == 135 && delayedTime == 0) {
-			int i = 1;
+		if (platform.parent.id == 436) {
+			;
 		}
 		float speed = platform.speed * Time.deltaTime;
 

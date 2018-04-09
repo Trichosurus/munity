@@ -128,8 +128,15 @@ public class MapSegment : MonoBehaviour {
 		if ( show == hidden ) {
 			Component[] allChildren = gameObject.GetComponentsInChildren(typeof(Transform), true);
 			foreach (Transform child in allChildren) {
-				if (child.gameObject.name == "floor" ||child.gameObject.name == "ceiling" || child.gameObject.name == "wall" || child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
+				if (child.gameObject.name == "floor" || child.gameObject.name == "ceiling" || child.gameObject.name == "wall" 
+						|| child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
 					child.gameObject.SetActive(show);
+				}
+				if (child.gameObject.name == "upperPlatform" || child.gameObject.name == "lowerPlatform") {
+					Component[] platChildren = child.gameObject.GetComponentsInChildren(typeof(Transform), true);
+					foreach (Transform plat in platChildren) {
+							plat.gameObject.SetActive(show);
+					}
 				}
 			} 
 			hidden = !show;
@@ -403,9 +410,9 @@ public class MapSegment : MonoBehaviour {
 					point1 = liquidVertices[0];
 				}
 				//MapSegmentSide wall = new MapSegmentSide();
-				addWallPart(point1, point2, liquidHeight, 
-							new Vector3(0,0,0), liquid.surface, 
-							new Vector2(0,0), liquid.volume);
+				// addWallPart(point1, point2, liquidHeight, 
+				// 			new Vector3(0,0,0), liquid.surface, 
+				// 			new Vector2(0,0), liquid.volume);
 			}
 			liquid.volume.transform.position = gameObject.transform.position;
 		}
@@ -983,7 +990,7 @@ public class Platform {
 		if (door) {
 			if (!locked) {
 				
-				activate();
+				activate(-2);
 			} else {
 				//?? play locked sound??
 			}
@@ -1021,7 +1028,7 @@ public class Platform {
 		if (activatesAdjacentPlatformsWhenActivating) {
 			foreach (MapSegmentSide side in parent.sides) {
 				if (side.connection != null && side.connection.platform != null) {
-					if (side.connection.id != parent.id || !doesNotActivateParent) {
+					if (side.connection.id != activatedBy || !doesNotActivateParent) {
 						side.connection.platform.activate(parent.id);
 					}
 				}
@@ -1050,6 +1057,9 @@ public class Platform {
 		bool deactivating = false;
 		if (uptransit == lotransit) {
 			Debug.Log("stop?" + parent.id);
+			if (parent.id == 6) {
+				;
+			}
 			if (deactivatesAtEachLevel || 
 				(deactivatesAtInitialLevel && (
 					(initiallyExtended && extended) ||
