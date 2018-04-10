@@ -448,6 +448,7 @@ public class Map : MonoBehaviour {
 		count = 0;
 		foreach(Weland.Platform pl in Level.Platforms) {
 			count++;
+			segments[pl.PolygonIndex].showHide(true);
 			segments[pl.PolygonIndex].makePlatformObjects();
 			if (count % 7 == 0 ){
 				loadingText = load + "\nMaking Platforms "+count+"/"+Level.Platforms.Count;

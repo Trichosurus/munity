@@ -481,7 +481,7 @@ public class playerController : MonoBehaviour {
 		Vector2 polyCheck = new Vector2(intersectPoints[closest[1]].x, intersectPoints[closest[1]].y);
 		polyCheck -= intersectPoints[closest[0]];
 		polyCheck = new Vector2(0f-polyCheck.y, polyCheck.x);
-		polyCheck = intersectPoints[closest[0]]/2f + intersectPoints[closest[1]]/2f + polyCheck*(new Vector2(0.001f, 0.001f));
+		polyCheck = intersectPoints[closest[0]]/2f + intersectPoints[closest[1]]/2f + new Vector2(polyCheck.x * 0.001f, polyCheck.y * 0.001f);
 
 		List<Vector2> checkPoly = new List<Vector2>();
 
