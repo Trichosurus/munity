@@ -256,24 +256,42 @@ public class playerController : MonoBehaviour {
 							(GlobalData.map.segments[GlobalData.map.segments[i].sides[s].connectionID].hidden == false ||
 								deferred.Contains(GlobalData.map.segments[i].sides[s].connectionID)) )
 							{
-								Vector3 v1 = GlobalData.map.segments[i].vertices[s];
-								int s2 = s;
-								if (s+1 < GlobalData.map.segments[i].vertices.Count) {
-									s2 = s+1;
-								} else {
-									s2 = 0;
-								}
-								Vector3 v2 = GlobalData.map.segments[i].vertices[s2];
+								GameObject wall = GlobalData.map.segments[i].sides[s].meshItem;
+								if (wall == null) {
+									wall = new GameObject("sideCollider");
+									wall.transform.position = GlobalData.map.segments[i].transform.position;
+									BoxCollider box = wall.AddComponent<BoxCollider>();
 
-								float d = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.TransformPoint(v1));
+									Vector3 v1 = GlobalData.map.segments[i].vertices[s];
+									int s2 = s;
+									if (s+1 < GlobalData.map.segments[i].vertices.Count) {
+										s2 = s+1;
+									} else {
+										s2 = 0;
+									}
+									Vector3 v2 = GlobalData.map.segments[i].vertices[s2];
+
+
+									box.transform.position = Vector3.Lerp(v1,v2,0.5f) + (GlobalData.map.segments[i].height/2f);
+									box.size = new Vector3(Vector3.Distance(v1,v2), GlobalData.map.segments[i].height.y, 0.02f);
+									box.transform.rotation = Quaternion.Euler(0,Vector3.Angle(v1,v2),0);
+									box.enabled = false;
+									wall.transform.parent = GlobalData.map.segments[i].transform;
+									GlobalData.map.segments[i].sides[s].meshItem = wall;
+
+								}
+				
+								Collider coll = wall.GetComponent<Collider>();
+								coll.enabled = true;
+								Vector3 closestPoint = coll.ClosestPointOnBounds(gameObject.transform.position);
+								coll.enabled = false;
+								float d = Vector3.Distance(closestPoint,gameObject.transform.position);
 								if (d < distances[i]){
 									distances[i] = d;
 								}
-								float d2 = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.TransformPoint(v2));
-								if (d2 < distances[i]){
-									distances[i] = d2;
-								}
+
 							}
+
 						}
 					}
 
@@ -648,9 +666,9 @@ public class playerController : MonoBehaviour {
 		points.Add(p3 + point2 + h1);
 		points.Add(p1 + point2 + h3);
 		points.Add(p2 + point2 + h3);
-		if (camera.transform.position.y > p1.y && camera.transform.position.y < p1.y+height.y ) {
-			points.Add(p3 + point2 + new Vector3(0, camera.transform.position.y - p1.y,0 ));
-			points.Add(p3 + point2 + new Vector3(0, camera.transform.position.y - p1.y - 0.7f, 0));
+		if (camera.transform.position.y > point1.y && camera.transform.position.y < point1.y+height.y ) {
+			points.Add(p3 + point2 + new Vector3(0, camera.transform.position.y - point1.y,0 ));
+			points.Add(p3 + point2 + new Vector3(0, camera.transform.position.y - point1.y + 0.7f, 0));
 		}
 
 

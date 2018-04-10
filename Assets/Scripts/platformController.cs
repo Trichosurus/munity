@@ -119,7 +119,7 @@ platformid = platform.parent.id;
 	void Update () {
 
 		if (platform.parent.id == 436) {
-			;
+			int i = 1;
 		}
 		float speed = platform.speed * Time.deltaTime;
 
