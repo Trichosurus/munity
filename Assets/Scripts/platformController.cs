@@ -17,7 +17,7 @@ public class platformController : MonoBehaviour {
 		if (platform == null) {
 			platform = gameObject.transform.parent.GetComponent<MapSegment>().platform;
 		}
-platformid = platform.parent.id;
+		platformid = platform.parent.id;
 		Vector3 height = gameObject.transform.parent.GetComponent<MapSegment>().height;
 		// Debug.Log(platform.MaximumHeight);
 		// Debug.Log(platform.MinimumHeight);
@@ -71,9 +71,9 @@ platformid = platform.parent.id;
 			}
 	
 		}
-		if (platform.initiallyActive) {
-			platform.activate();
-		}
+		// if (platform.initiallyActive) {
+		// 	platform.activate();
+		// }
 	}
 
 	Vector3 getMaxVector() {
@@ -118,19 +118,16 @@ platformid = platform.parent.id;
 	// Update is called once per frame
 	void Update () {
 
-		if (platform.parent.id == 436) {
-			int i = 1;
-		}
-		float speed = platform.speed * Time.deltaTime;
-
-		if (delayedTime <= platform.delay) {
-			delayedTime += Time.deltaTime;
-			speed = 0;
-		}
-
-
 		bool transit = true;
 		if (platform.active) {
+
+			float speed = platform.speed * Time.deltaTime;
+
+			if (delayedTime <= platform.delay) {
+				delayedTime += Time.deltaTime;
+				speed = 0;
+			}
+
 			// Debug.Log("active");
 			// Debug.Log(platform.Speed);
 			// Debug.Log(platform.extending);

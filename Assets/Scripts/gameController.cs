@@ -15,7 +15,8 @@ public static class GlobalData
 
 		public static Map map = null;
 
-
+		public static bool skipOcclusion = false;
+		public static bool captureMouse = true;
 }
 
 public class gameController : MonoBehaviour {

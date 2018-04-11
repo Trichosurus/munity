@@ -39,7 +39,12 @@ public class playerController : MonoBehaviour {
 		// Update is called once per frame
 
 	void Update () {
-		transform.Find("playerCamera").GetComponent<mouselook>().lockCursor = !Input.GetKey(KeyCode.LeftControl);
+		if (GlobalData.captureMouse) {
+			transform.Find("playerCamera").GetComponent<mouselook>().lockCursor = !Input.GetKey(KeyCode.LeftControl);
+		} else {
+			transform.Find("playerCamera").GetComponent<mouselook>().lockCursor = Input.GetKey(KeyCode.LeftControl);
+	
+		}
 		CharacterController cc = GetComponent<CharacterController>();
 		
 		if (Input.GetKey("w") || Input.GetKey("s")) {
@@ -127,7 +132,7 @@ public class playerController : MonoBehaviour {
 		RaycastHit hit;
 		//GameObject camera = transform.Find("playerCamera").gameObject;
 		if (Physics.Raycast(gameObject.transform.position, Vector3.down, out hit, 50)) {
-			if (hit.collider.transform.parent != null && hit.collider.transform.parent.name == "polygon(Clone)") {
+			if (hit.collider.transform.parent != null && hit.collider.transform.parent.tag == "polygon") {
 				// if (hit.collider.transform.parent.GetComponent<MapSegment>().id != currentPolygon) {
 				// 	Debug.Log(hit.collider.transform.parent.GetComponent<MapSegment>().id);
 				// }
@@ -153,7 +158,7 @@ public class playerController : MonoBehaviour {
 			MapSegment ms = null;
 			if (other.name == "floor" ||other.name == "ceiling" || other.name == "wall" || other.name == "transparent" || other.name == "polygonElement(Clone)"){
 
-				if (other.transform.parent.name == "polygon(Clone)") {
+				if (other.transform.parent.tag == "polygon") {
 					ms = other.transform.parent.GetComponent<MapSegment>();
 				} else if (other.transform.parent.name == "upperPlatform" || other.transform.parent.name == "lowerPlatform") {
 					ms =  other.transform.parent.parent.GetComponent<MapSegment>();
@@ -252,6 +257,13 @@ public class playerController : MonoBehaviour {
 
 					if (distances[i] == 7777777) {
 						for (int s = 0; s < GlobalData.map.segments[i].sides.Count; s++) {
+							int ct = GlobalData.map.segments[i].sides.Count;
+							int id = GlobalData.map.segments[i].sides[s].connectionID;
+
+							bool vis = true;
+							if (GlobalData.map.segments[i].sides[s].connectionID != -1) {
+								vis = GlobalData.map.segments[GlobalData.map.segments[i].sides[s].connectionID].hidden;
+							}
 							if (GlobalData.map.segments[i].sides[s].connectionID != -1 &&
 							(GlobalData.map.segments[GlobalData.map.segments[i].sides[s].connectionID].hidden == false ||
 								deferred.Contains(GlobalData.map.segments[i].sides[s].connectionID)) )
@@ -270,11 +282,12 @@ public class playerController : MonoBehaviour {
 										s2 = 0;
 									}
 									Vector3 v2 = GlobalData.map.segments[i].vertices[s2];
-
+									v1 = GlobalData.map.segments[i].transform.TransformPoint(v1);
+									v2 = GlobalData.map.segments[i].transform.TransformPoint(v2);
 
 									box.transform.position = Vector3.Lerp(v1,v2,0.5f) + (GlobalData.map.segments[i].height/2f);
 									box.size = new Vector3(Vector3.Distance(v1,v2), GlobalData.map.segments[i].height.y, 0.02f);
-									box.transform.rotation = Quaternion.Euler(0,Vector3.Angle(v1,v2),0);
+									box.transform.rotation = Quaternion.Euler(0,Vector3.Angle(v2 - v1, v1 - v2),0);
 									box.enabled = false;
 									wall.transform.parent = GlobalData.map.segments[i].transform;
 									GlobalData.map.segments[i].sides[s].meshItem = wall;

@@ -52,5 +52,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vertices: []
+  id: -1
   height: {x: 0, y: 2, z: 0}
   centerPoint: {x: 0, y: 0, z: 0}
+  impossible: 0
+  collidesWith: 
+  viewEdge: -1
+  hidden: 0
+  activePolygons: 
+  overDraw: 1

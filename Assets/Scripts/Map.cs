@@ -128,6 +128,8 @@ public class Map : MonoBehaviour {
 		for (int p = 0; p < Level.Polygons.Count; p++) {
 		//for (int p = 0; p < 2; p++) {
 			GameObject pol = Instantiate(polygon);
+			pol.name = "Polygon" + p;
+			pol.tag = "polygon";
 			MapSegment seg = pol.GetComponent<MapSegment>();
 			segments.Add(seg);
 			seg.height = new Vector3(0,(float)(Level.Polygons[p].CeilingHeight - Level.Polygons[p].FloorHeight)/1024f,0);
@@ -392,7 +394,7 @@ public class Map : MonoBehaviour {
 			seg.id = p;
 			seg.calculatePoints();
 		
-			if (p % 7 == 0 ){
+			if (p % 77 == 0 ){
 				loadingText = load + "\nGenerating Polygons "+p+"/"+Level.Polygons.Count;
 				yield return null;
 			}
@@ -416,7 +418,7 @@ public class Map : MonoBehaviour {
 		foreach(MapSegment s in segments) {
 			count++;
 			s.generateMeshes();
-			if (count % 7 == 0 ){
+			if (count % 77 == 0 ){
 				loadingText = load + "\nGenerating Meshes "+count+"/"+segments.Count;
 				yield return null;
 			}
@@ -427,7 +429,7 @@ public class Map : MonoBehaviour {
 		foreach(MapSegment s in segments) {
 			count++;
 			s.checkIfImpossible();
-			if (count % 7 == 0 ){
+			if (count % 77 == 0 ){
 				loadingText = load + "\nFinding Impossible Space "+count+"/"+segments.Count;
 				yield return null;
 			}
@@ -450,15 +452,16 @@ public class Map : MonoBehaviour {
 			count++;
 			segments[pl.PolygonIndex].showHide(true);
 			segments[pl.PolygonIndex].makePlatformObjects();
-			if (count % 7 == 0 ){
+			if (count % 27 == 0 ){
 				loadingText = load + "\nMaking Platforms "+count+"/"+Level.Platforms.Count;
 				yield return null;
 			}
 		}
-
-
-		// foreach(Weland.Platform pl in Level.Platforms) {
-		// }
+		foreach(Weland.Platform pl in Level.Platforms) {
+			if (segments[pl.PolygonIndex].platform.initiallyActive) {
+				segments[pl.PolygonIndex].platform.activate();
+			}
+		}
 
 	}
 

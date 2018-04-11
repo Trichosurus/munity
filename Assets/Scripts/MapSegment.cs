@@ -55,7 +55,7 @@ public class MapSegment : MonoBehaviour {
 			float rayCount = 4f;
 
 			if (Physics.Raycast(centerPoint + height*0.5f, (castPoint+height*0.5f)-(centerPoint + height*0.5f), out hit,Vector3.Distance(centerPoint + height*0.5f, castPoint+height*0.5f)*0.95f)) {
-				if (hit.collider.transform.parent != null && hit.collider.transform.parent.gameObject.name == "polygon(Clone)") {
+				if (hit.collider.transform.parent != null && hit.collider.transform.parent.gameObject.tag == "polygon") {
 					if (hit.collider.transform.parent.GetComponent<MapSegment>() != null &&
 						hit.collider.transform.parent.GetComponent<MapSegment>().id != id) {
 						hit.collider.transform.parent.GetComponent<MapSegment>().impossible = true;
@@ -98,7 +98,7 @@ public class MapSegment : MonoBehaviour {
 				}
 				castPoint.y -=  (height.y*0.1f);
 				if (Physics.Raycast(castPoint, Vector3.down, out hit,10)) {
-					if (hit.collider.transform.parent != null && hit.collider.transform.parent.gameObject.name == "polygon(Clone)") {
+					if (hit.collider.transform.parent != null && hit.collider.transform.parent.gameObject.tag == "polygon") {
 						if (hit.collider.name != "ceiling") {
 							hit.collider.transform.parent.GetComponent<MapSegment>().impossible = true;
 							impossible = true;
@@ -132,18 +132,19 @@ public class MapSegment : MonoBehaviour {
 						|| child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
 					child.gameObject.SetActive(show);
 				}
-				if (child.gameObject.name == "upperPlatform" || child.gameObject.name == "lowerPlatform") {
-					Component[] platChildren = child.gameObject.GetComponentsInChildren(typeof(Transform), true);
-					foreach (Transform plat in platChildren) {
-							plat.gameObject.SetActive(show);
-					}
-				}
+				// if (child.gameObject.name == "upperPlatform" || child.gameObject.name == "lowerPlatform") {
+				// 	Component[] platChildren = child.gameObject.GetComponentsInChildren(typeof(Transform), true);
+				// 	foreach (Transform plat in platChildren) {
+				// 			plat.gameObject.SetActive(show);
+				// 	}
+				// }
 			} 
 			hidden = !show;
 		}
 	}
 
 	public void setClippingPlanes(List<Vector3> planes,  bool additive = true) {
+		return;
 		//Vector3 plane1Position, plane1Rotation, plane2Position, plane2Rotation, plane3Position, plane3Rotation;
 		Vector3 plane1Position = new Vector3(0,0,0);
 		Vector3 plane1Rotation = new Vector3(0,0,0);
@@ -353,12 +354,14 @@ public class MapSegment : MonoBehaviour {
 
 	public void generateMeshes() {
 
-					// if (id == 6) {
-					// 	Debug.Log(centerPoint);
-					// }
+					
 
 		makePolygon(true, vertices, height, gameObject);
 		makePolygon(false, vertices, height, gameObject);
+
+		// if (id == 555) {
+		// 	Debug.Log(centerPoint);
+		// }
 
 		for (int i = 0; i < vertices.Count; i++) {
 			makeWall(i);
@@ -517,17 +520,14 @@ public class MapSegment : MonoBehaviour {
 				(
 				wall.transparent == true || 
 				wall.connection.platform != null ||
-				platform != null
+				platform != null ||
+				wall.solid == true  
 				)
 			){
 
-			// if (wall.connection.GetComponent<MapSegment>().id == 17){ 
-			// 	Debug.Log(gameObject.transform.position.y);
-			// 	Debug.Log(wall.connection.transform.position.y);
-			// 	Debug.Log(wall.connection.transform.position.y+wall.connection.GetComponent<MapSegment>().height.y);
-			// 	Debug.Log(gameObject.transform.position.y+height.y);
-
-			// 	}
+			if (wall.connection.GetComponent<MapSegment>().id == 362){ 
+				Debug.Log(gameObject.transform.position.y);
+				}
 			bool connTop = (wall.connection.platform != null &&
 							!wall.connection.platform.comesFromCeiling) ||
 							 wall.connection.platform == null || wall.solid; 
@@ -544,10 +544,10 @@ public class MapSegment : MonoBehaviour {
 				wallHeightLower = new Vector3(height.x, height.y, height.z);
 				wallHeightLower.y = wall.connection.transform.position.y - gameObject.transform.position.y;
 				wallPart = addWallPart(point1, point2, wallHeightLower, wallOffset, wall.lowerMaterial, wall.lowerOffset, gameObject);
-				if (wall.solid && wall.lowerMaterial.name == "transparent" || 
-						(wall.transparent && connBottom && !connTop)) {
-					wallPart.SetActive(false);
-				}
+				// if (wall.solid && wall.lowerMaterial.name == "transparent" || 
+				// 		(wall.transparent && connBottom && !connTop)) {
+				// 	wallPart.SetActive(false);
+				// }
 			}
 
 			if (wall.connection.transform.position.y+wall.connection.height.y < gameObject.transform.position.y+height.y
@@ -561,10 +561,10 @@ public class MapSegment : MonoBehaviour {
 				wallOffset.z = 0;
 				wallHeightUpper.y = height.y - wallOffset.y;
 				wallPart = addWallPart(point1, point2, wallHeightUpper, wallOffset, wall.upperMaterial, wall.upperOffset, gameObject);
-				if (wall.solid && wall.upperMaterial.name == "transparent" || 
-						(wall.transparent && connTop && !connBottom)) {
-					wallPart.SetActive(false);
-				}
+				// if (wall.solid && wall.upperMaterial.name == "transparent" || 
+				// 		(wall.transparent && connTop && !connBottom)) {
+				// 	wallPart.SetActive(false);
+				// }
 			}
 
 			Vector3 wallHeightMiddle = height - wallHeightLower - wallHeightUpper;
@@ -675,6 +675,16 @@ public class MapSegment : MonoBehaviour {
 
 	public void calculateVisibility() {
 
+		if (activePolygons.Length == 0) {
+			activePolygons = new bool[GlobalData.map.segments.Count];
+		}
+
+		if (GlobalData.skipOcclusion) {
+			for (int i = 0; i < activePolygons.Length; i++) {
+				activePolygons[i] = true;
+			}
+			return;
+		}
 
 		viscalc = GameObject.CreatePrimitive(PrimitiveType.Cube);
 		viscalc.transform.parent = transform;
@@ -683,9 +693,6 @@ public class MapSegment : MonoBehaviour {
 
 
 	// Debug.Log("----------------------------------------");
-		if (activePolygons.Length == 0) {
-			activePolygons = new bool[GlobalData.map.segments.Count];
-		}
 		
 		bool[] ap = new bool[GlobalData.map.segments.Count];
 		for (int i = 0; i< ap.Length; i++) {
@@ -1056,7 +1063,7 @@ public class Platform {
 		}
 		bool deactivating = false;
 		if (uptransit == lotransit) {
-			Debug.Log("stop?" + parent.id);
+			//Debug.Log("stop?" + parent.id);
 			if (parent.id == 6) {
 				;
 			}
