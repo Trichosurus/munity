@@ -16,7 +16,12 @@ public static class GlobalData
 		public static Map map = null;
 
 		public static bool skipOcclusion = true;
+		public static int occlusionOverDraw = 2;
+
 		public static bool captureMouse = true;
+
+		public static bool globalLighting = true;
+
 }
 
 public class gameController : MonoBehaviour {

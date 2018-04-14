@@ -402,6 +402,7 @@ MonoBehaviour:
   polygon: {fileID: 1851021861423652, guid: 375153c574b0f45f097160fe61399d9a, type: 2}
   materials: []
   segments: []
+  lights: []
 --- !u!114 &1113096627
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -423,7 +424,7 @@ GameObject:
   - component: {fileID: 1526980367}
   - component: {fileID: 1526980366}
   m_Layer: 0
-  m_Name: Directional Light
+  m_Name: worldLight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

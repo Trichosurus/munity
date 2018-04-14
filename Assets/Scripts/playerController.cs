@@ -290,7 +290,8 @@ public class playerController : MonoBehaviour {
 
 									box.transform.position = Vector3.Lerp(v1,v2,0.5f) + (GlobalData.map.segments[i].height/2f);
 									box.size = new Vector3(Vector3.Distance(v1,v2), GlobalData.map.segments[i].height.y, 0.02f);
-									box.transform.rotation = Quaternion.Euler(0,Vector3.Angle(v2 - v1, v1 - v2),0);
+									float wallAngle = Mathf.Atan2(v2.x-v1.x, v2.z-v1.z) * Mathf.Rad2Deg;
+									box.transform.rotation = Quaternion.Euler(0,wallAngle+90,0);
 									box.enabled = false;
 									wall.transform.parent = GlobalData.map.segments[i].transform;
 									GlobalData.map.segments[i].sides[s].upperMeshItem = wall;
@@ -697,7 +698,7 @@ public class playerController : MonoBehaviour {
 		if (isVisible) {
 			Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.red);
 		} else {
-			Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.green);
+			//Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.green);
 		}
 
 		Color colour  = Random.ColorHSV();
@@ -710,7 +711,7 @@ public class playerController : MonoBehaviour {
 					Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.red);
 					return true;
 				} else {
-					Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.green);
+					//Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.green);
 				}
 			}
 		}

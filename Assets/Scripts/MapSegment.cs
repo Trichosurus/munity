@@ -24,7 +24,7 @@ public class MapSegment : MonoBehaviour {
 	public bool hidden = false;
 	public bool[] activePolygons;
 	private GameObject visCheck;
-	public int overDraw = 1;
+	public int overDraw = GlobalData.occlusionOverDraw;
 	
 	private int activeCount = 0;
 	private	GameObject viscalc;
@@ -151,7 +151,6 @@ public class MapSegment : MonoBehaviour {
 	}
 
 	public void setClippingPlanes(List<Vector3> planes,  bool additive = true) {
-		return;
 		//Vector3 plane1Position, plane1Rotation, plane2Position, plane2Rotation, plane3Position, plane3Rotation;
 		Vector3 plane1Position = new Vector3(0,0,0);
 		Vector3 plane1Rotation = new Vector3(0,0,0);
@@ -723,7 +722,7 @@ public class MapSegment : MonoBehaviour {
 	public bool playerTouch(GameObject element) {
 		bool touched = false;
 		foreach (MapSegmentSide s in sides) {
-			if (s.controlPanel != null && s.upperMeshItem == element) {
+			if (s.controlPanel != null && (s.upperMeshItem == element || s.middleMeshItem == element || s.lowerMeshItem == element)) {
 		    	s.controlPanel.toggle(element, true);
 				touched = true;
 			}
@@ -857,7 +856,11 @@ public class MapSegment : MonoBehaviour {
 
 
 				isVisible = getRectVisibility(point1, point2, seg.height);
-
+				if (id == 16) {
+					if (seg.id == 39 || seg.id == 40) {
+					;
+					}
+				}
 				if (isVisible) {
 					if (!backlink) {
 						activePolygons[side.connectionID] = true; activeCount++;
@@ -941,12 +944,20 @@ public class MapSegment : MonoBehaviour {
 
 		foreach(Vector3 cp in checkpoints) {
 			viscalc.transform.position = cp;
+			viscalc.name = "viscalc";
 			isVisible = (Physics.Raycast(midpoint, viscalc.transform.position-midpoint, out hit, 50)) 
-				&& hit.collider.gameObject == viscalc ;
-			// if(	isVisible &&id == 46 ) {
-			// 	Debug.DrawRay(midpoint, viscalc.transform.position-midpoint, Color.red);
-			// }
+				&& (hit.collider.gameObject == viscalc || hit.collider.gameObject.name == "viscalc") ;
+			if(	id == 38 ) {
+				Debug.DrawRay(midpoint, viscalc.transform.position-midpoint, Color.magenta, 10);
+			
+				if (Physics.Raycast(midpoint, viscalc.transform.position-midpoint, out hit, 50) && hit.collider.gameObject.name != "wall") {
+					;
+				}
+			}
 			if (isVisible) {
+				if (id == 38) {
+					Debug.DrawRay(midpoint, viscalc.transform.position-midpoint, Color.green ,10);
+				}
 				return true;
 			}
 			for (int i = 1; i < rayCount; i++) {
@@ -954,13 +965,13 @@ public class MapSegment : MonoBehaviour {
 					castPoint = (points[p]-midpoint)*((1f/rayCount)*(float)i) + midpoint;
 					isVisible = (Physics.Raycast(castPoint, viscalc.transform.position-castPoint, out hit, 50)) 
 								&& hit.collider.gameObject == viscalc ;
-					// if (id == 46) {
-					// 	Debug.DrawRay(castPoint, viscalc.transform.position-castPoint, colour);
-					// }
+					if (id == 38) {
+						Debug.DrawRay(castPoint, viscalc.transform.position-castPoint, Color.blue, 10);
+					}
 					if (isVisible) {
-						// if (id == 46) {
-						// Debug.DrawRay(castPoint, viscalc.transform.position-castPoint, Color.red);
-						// }
+						if (id == 38) {
+						Debug.DrawRay(castPoint, viscalc.transform.position-castPoint, Color.green ,10);
+						}
 						return true;
 						}
 				}
@@ -1034,7 +1045,7 @@ public class Platform {
 	public float delay = 0;
 	public float maximumHeight;
 	public float minimumHeight;
-	public int tag;
+	public int mapTag;
 	public bool initiallyActive = false;
 	public bool initiallyExtended = false;
 	public bool deactivatesAtEachLevel  = false;
@@ -1104,7 +1115,7 @@ public class Platform {
 		if (!isPlayerControllable && activator == -2) {return;}
 		if (!isMonsterControllable && activator == -3) {return;}
 
-
+ 
 		activatedBy = activator;
 		active = true;
 		extending = !extending;
@@ -1263,6 +1274,25 @@ public class ControlPanel {
 					}
 				}
 			}
+			if (lightSwitch > -1) {
+				GlobalData.map.lights[lightSwitch].toggle();
+			}
+			if (tagSwitch > -1) {
+				foreach(mapLight light in GlobalData.map.lights) {
+					if (light.mapTag == tagSwitch) {
+						light.toggle();
+					}
+				}
+				foreach(MapSegment seg in GlobalData.map.segments) {
+					if (seg.platform != null && seg.platform.mapTag == tagSwitch) {
+						seg.platform.activate();
+					}
+				}
+
+			}
+
+
+
 		} else {
 			active = !active;
 			Vector2 offset = wall.GetComponent<MeshRenderer>().material.mainTextureOffset;
@@ -1316,7 +1346,7 @@ public class ControlPanel {
 
 public class mapLight : MonoBehaviour {
 	public int id = -1;
-	public int tag = -1;
+	public int mapTag = -1;
 	public bool stateless = false;
 	public bool initiallyActive = false;
 	public int phase = 0;
@@ -1356,24 +1386,20 @@ public class mapLight : MonoBehaviour {
 			}
 		}
 
-		// if (id == 23) {
-		// 	id = id;
-		// }
-
 		elapsedTime += Time.deltaTime;
 		switch (phase) {
 		case 0: 
 			intensity = becomingActive.lightIntensity(elapsedTime);
 			if (elapsedTime >= becomingActive.totalPeriod) {
-				primaryActive.initialise();
+				primaryActive.initialise(currentIntensity);
 				phase = 1;
 				elapsedTime = 0;
 			}
 			break;
 		case 1: 
-			intensity = primaryActive.lightIntensity(elapsedTime);
+			intensity = primaryActive.lightIntensity(elapsedTime,true);
 			if (elapsedTime >= primaryActive.totalPeriod) {
-				secondaryActive.initialise();
+				secondaryActive.initialise(currentIntensity);
 				phase = 2;
 				elapsedTime = 0;
 			}
@@ -1382,19 +1408,19 @@ public class mapLight : MonoBehaviour {
 			intensity = secondaryActive.lightIntensity(elapsedTime);
 			if (elapsedTime >= secondaryActive.totalPeriod) {
 				if (stateless) {
-					becomingInactive.initialise();
+					becomingInactive.initialise(currentIntensity);
 					phase = 3;
 				} else {
-					primaryActive.initialise();
+					primaryActive.initialise(currentIntensity);
 					phase = 1;
 				}
 				elapsedTime = 0;
 			}
 			break;
 		case 3: 
-			intensity = becomingInactive.lightIntensity(elapsedTime);
+			intensity = becomingInactive.lightIntensity(elapsedTime, true);
 			if (elapsedTime >= becomingInactive.totalPeriod) {
-				primaryInactive.initialise();
+				primaryInactive.initialise(currentIntensity);
 				phase = 4;
 				elapsedTime = 0;
 			}
@@ -1402,19 +1428,19 @@ public class mapLight : MonoBehaviour {
 		case 4: 
 			intensity = primaryInactive.lightIntensity(elapsedTime);
 			if (elapsedTime >= primaryInactive.totalPeriod) {
-				secondaryInactive.initialise();
+				secondaryInactive.initialise(currentIntensity);
 				phase = 4;
 				elapsedTime = 0;
 			}
 			break;
 		case 5: 
-			intensity = secondaryInactive.lightIntensity(elapsedTime);
+			intensity = secondaryInactive.lightIntensity(elapsedTime, true);
 			if (elapsedTime >= secondaryInactive.totalPeriod) {
 				if (stateless) {
-					becomingActive.initialise();
+					becomingActive.initialise(currentIntensity);
 					phase = 0;
 				} else {
-					primaryInactive.initialise();
+					primaryInactive.initialise(currentIntensity);
 					phase = 4;
 				}
 				elapsedTime = 0;
@@ -1425,6 +1451,19 @@ public class mapLight : MonoBehaviour {
 		if (currentIntensity != intensity) {
 			lightChanged = true;
 			currentIntensity = intensity;
+		}
+	}
+
+	public void toggle() {
+		active = !active;
+		if (active) {
+			becomingActive.initialise(currentIntensity);
+			phase = 0;
+			elapsedTime = 0;
+		} else {
+			becomingInactive.initialise(currentIntensity);
+			phase = 3;
+			elapsedTime = 0;
 		}
 	}
 
@@ -1456,8 +1495,10 @@ public class LightFunction {
 	public float totalIntensity = 0;
 
 	private float flickertime = 0;
+	private float initialIntensity = 0;
 
-	public void initialise() {
+	public void initialise(float currentIntensity = 0) {
+		initialIntensity = currentIntensity;
 		totalPeriod = period + Random.Range(0f-periodDelta,periodDelta);
 		totalIntensity = intensity + Random.Range(0f-intensityDelta*intensity,intensityDelta*intensity);
 		flickertime = 0;
@@ -1465,30 +1506,72 @@ public class LightFunction {
 
 	public float lightIntensity (float time, bool hightToLow = false) {
 		float value = 0;
+		float high, low, delta, amt;
+		amt = 0;
 		switch (mode) {
 		case 0: //constant
 			value = totalIntensity;
 			break;
 		case 1: //linear
-			value = totalIntensity * (totalPeriod / time);
+			if (hightToLow) {
+				high = initialIntensity;
+				low = totalIntensity;
+			} else {
+				low = initialIntensity;
+				high = totalIntensity;
+			}
+			delta = high-low;
+			if (time > 0) {
+				value = delta * (time / totalPeriod);
+			} else {
+				value = initialIntensity;
+			}
+			if (hightToLow) {
+				value = initialIntensity - value;
+			} else {
+				value = initialIntensity + value;
+			}
 			break;
 		case 2: //smooth
-			value = totalIntensity *  Mathf.Sin(90*(totalPeriod / time));
+			if (hightToLow) {
+				high = initialIntensity;
+				low = totalIntensity;
+			} else {
+				low = initialIntensity;
+				high = totalIntensity;
+			}
+			delta = high-low;
+			if (time > 0) {
+				amt = time /totalPeriod;
+				amt *= 2f;
+				amt -= 1f;
+				value = Mathf.Sin(amt * 90f * Mathf.Deg2Rad);
+				value += 1f;
+				value /= 2f;
+				value *= delta;
+			} else {
+				value = initialIntensity;
+			}
+
+			if (hightToLow) {
+				value = initialIntensity - value;
+			} else {
+				value = initialIntensity + value;
+			}
+
 			break;
 		case 3: //flicker
 			value = totalIntensity;
 			if (time > flickertime) {
 				flickertime = time + Random.Range(0f,0.2f);
 				if (Random.Range(0, 1) < 0.5f) {
-					totalIntensity = intensity + Random.Range(0f-intensityDelta*intensity,intensityDelta*intensity);
-					value = totalIntensity;
+					value = initialIntensity;
 				}
 			}
 			break;
 		}
 
-		if (hightToLow) {value = totalIntensity - value;}
-		if (value > totalIntensity) {value = totalIntensity;}
+		//if (value > totalIntensity) {value = totalIntensity;}
 		if (value < 0) {value = 0;}
 		return value;
 	} 

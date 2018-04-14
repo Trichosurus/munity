@@ -15,6 +15,7 @@ public class Map : MonoBehaviour {
 	public List<Material> materials;
 	public List<MapSegment> segments;
 	public List<mapLight> lights;
+	public List<bool> tags;
 
 	private string loadingText;
 
@@ -57,6 +58,8 @@ public class Map : MonoBehaviour {
 
 		GameObject.Find("LoadingDisplay").SetActive(false);
 
+		GameObject.Find("worldLight").SetActive(GlobalData.globalLighting);
+		
 
 	}
 
@@ -132,7 +135,7 @@ public class Map : MonoBehaviour {
 			Weland.Light light = Level.Lights[i];
 			mapLight ml = gameObject.AddComponent<mapLight>();
 			ml.id = i;
-			ml.tag = light.TagIndex;
+			ml.mapTag = light.TagIndex;
 			ml.stateless = light.Stateless;
 			ml.initiallyActive = light.InitiallyActive;
 			ml.phase = light.Phase;
@@ -206,7 +209,7 @@ public class Map : MonoBehaviour {
 						seg.platform.locked = pl.IsLocked;
 						seg.platform.reversesDirectionWhenObstructed = pl.ReversesDirectionWhenObstructed;
 						seg.platform.secret = pl.IsSecret;
-						seg.platform.tag = pl.Tag;
+						seg.platform.mapTag = pl.Tag;
 						seg.platform.usesNativePolygonHeights = pl.UsesNativePolygonHeights;
 						// if (p == 6 || p == 4|| p == 431) {
 						// 	Debug.Log(p);
@@ -350,20 +353,23 @@ public class Map : MonoBehaviour {
 					mss.lowerLight = mss.upperLight;
 				}
 
-				if (side.IsControlPanel|| side.IsPlatformSwitch() || side.IsTagSwitch() ) {
+				if (side.IsControlPanel|| side.IsPlatformSwitch() || side.IsTagSwitch() || side.IsLightSwitch()) {
+						// if (p == 4) {
+						// 	;
+						// }
 					mss.controlPanel = new ControlPanel();
 					mss.controlPanel.permutation = side.ControlPanelPermutation;
 					mss.controlPanel.type = side.ControlPanelType;
 					mss.controlPanel.controlPanel = side.IsControlPanel;
 					mss.controlPanel.platformSwitch = side.ControlPanelPermutation;
 					mss.controlPanel.tagSwitch = side.ControlPanelPermutation;
+					mss.controlPanel.lightSwitch = side.ControlPanelPermutation;
 					mss.controlPanel.inactiveMat =  mss.upperMaterial;
 					for (int t = 0 ; t < materials.Count; t++) {
 						if (materials[t] == mss.controlPanel.inactiveMat) {
 							mss.controlPanel.activeMat =  materials[t-1];
 						}
 					}
-					
 					
 					switch(side.Flags) {
 						// case SideFlags.None:
@@ -377,9 +383,9 @@ public class Map : MonoBehaviour {
 						case SideFlags.IsDestructiveSwitch:
 							mss.controlPanel.destructiveSwitch = true;
 							break;
-						case SideFlags.IsLightedSwitch:
-							mss.controlPanel.active = true;
-							break;
+						// case SideFlags.IsLightedSwitch:
+						// 	mss.controlPanel.active = true;
+						// 	break;
 						case SideFlags.IsRepairSwitch:
 							mss.controlPanel.repairSwitch = true;
 							break;
