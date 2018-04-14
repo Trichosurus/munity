@@ -8,7 +8,6 @@ public class MapSegment : MonoBehaviour {
 	public int id = -1;
 	public Vector3 height;
 	private int[] triangles;
-
 	public Platform platform = null;
 	public Vector3 centerPoint;
 
@@ -35,6 +34,15 @@ public class MapSegment : MonoBehaviour {
 
 
 	}
+
+	void Update () {
+		floor.setLight();
+		ceiling.setLight();
+		foreach (MapSegmentSide side in sides) {
+			side.setLight();
+		}
+	}
+
 
 	public void checkIfImpossible() {
 		//if (impossible) {return;}
@@ -120,16 +128,15 @@ public class MapSegment : MonoBehaviour {
 				}
 			}
 		}
-
-
 	}
 
 	public void showHide(bool show = false) {
 		if ( show == hidden ) {
 			Component[] allChildren = gameObject.GetComponentsInChildren(typeof(Transform), true);
 			foreach (Transform child in allChildren) {
-				if (child.gameObject.name == "floor" || child.gameObject.name == "ceiling" || child.gameObject.name == "wall" 
-						|| child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
+				// if (child.gameObject.name == "floor" || child.gameObject.name == "ceiling" || child.gameObject.name == "wall" 
+				// 		|| child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
+				if (child.gameObject.name != "upperPlatform" && child.gameObject.name != "lowerPlatform") {
 					child.gameObject.SetActive(show);
 				}
 				// if (child.gameObject.name == "upperPlatform" || child.gameObject.name == "lowerPlatform") {
@@ -271,6 +278,7 @@ public class MapSegment : MonoBehaviour {
 		// 	Debug.Log(platform.maximumHeight);
 		// 	Debug.Log(platform.minimumHeight);
 		// }
+		GameObject part = null;
 		Vector3 pHeight = height;
 		Vector3 splitPoint = new Vector3(height.x, 
 										platform.minimumHeight + (platform.maximumHeight - platform.minimumHeight)/2,
@@ -286,21 +294,51 @@ public class MapSegment : MonoBehaviour {
 			pHeight.y = splitPoint.y;
 		}
 		if (platform.comesFromFloor) {
+			platform.lowerBottom = new MapSegmentFloorCeiling();
+			platform.lowerTop = new MapSegmentFloorCeiling();
 			platform.lowerPlatform =  new GameObject("lowerPlatform");
 			platform.lowerPlatform.transform.parent = gameObject.transform;
-			makePolygon(true, PlatVertices, pHeight, platform.lowerPlatform, ceiling.upperMaterial, ceiling.upperOffset);
-			makePolygon(false, PlatVertices, pHeight, platform.lowerPlatform, floor.upperMaterial, floor.upperOffset);
+			part = makePolygon(true, PlatVertices, pHeight, platform.lowerPlatform, ceiling.upperMaterial, ceiling.upperOffset);
+			if (part != null) {
+				part.name = "platBottom";
+				platform.lowerBottom.meshItem = part;
+				platform.lowerBottom.light = ceiling.light;
+				platform.lowerBottom.lightID = ceiling.lightID;
+			}
+			part = makePolygon(false, PlatVertices, pHeight, platform.lowerPlatform, floor.upperMaterial, floor.upperOffset);
+			if (part != null) {
+				part.name = "platTop";
+				platform.lowerTop.meshItem = part;
+				platform.lowerTop.light = floor.light;
+				platform.lowerTop.lightID = floor.lightID;
+			}
 		}
 		if (split) {
 			pHeight.y = height.y - (splitPoint.y);
 		}
 
 		if (platform.comesFromCeiling) {
+			platform.upperBottom = new MapSegmentFloorCeiling();
+			platform.upperTop = new MapSegmentFloorCeiling();
+
 			platform.upperPlatform =  new GameObject("upperPlatform");
 			platform.upperPlatform.transform.parent = gameObject.transform;
 
-			makePolygon(true, PlatVertices, pHeight, platform.upperPlatform);
-			makePolygon(false, PlatVertices, pHeight, platform.upperPlatform);
+			part = makePolygon(true, PlatVertices, pHeight, platform.upperPlatform);
+			if (part != null) {
+				part.name = "platBottom";
+				platform.upperBottom.meshItem = part;
+				platform.upperBottom.light = floor.light;
+				platform.upperBottom.lightID = floor.lightID;
+			}
+			part = makePolygon(false, PlatVertices, pHeight, platform.upperPlatform);
+			if (part != null) {
+				part.name = "platTop";
+				platform.upperTop.meshItem = part;
+				platform.upperTop.light = floor.light;
+				platform.upperTop.lightID = floor.lightID;
+
+				}
 		}
 
 		PlatVertices.Reverse();
@@ -322,14 +360,28 @@ public class MapSegment : MonoBehaviour {
 			
 			if (platform.comesFromFloor) {
 				if (split) {
-				addWallPart(point1, point2, splitPoint, new Vector3(0,0,0), wall.lowerMaterial, wall.lowerOffset, platform.lowerPlatform);
+				part = addWallPart(point1, point2, splitPoint, new Vector3(0,0,0), wall.lowerMaterial, wall.lowerOffset, platform.lowerPlatform);
 				} else {
-				addWallPart(point1, point2, pHeight, new Vector3(0,0,0), wall.lowerMaterial, wall.lowerOffset, platform.lowerPlatform);
+				part = addWallPart(point1, point2, pHeight, new Vector3(0,0,0), wall.lowerMaterial, wall.lowerOffset, platform.lowerPlatform);
+				}
+				if (part != null) {
+					MapSegmentSide side = new MapSegmentSide();
+					part.name = "platSide";
+					side.upperLight = wall.lowerLight;
+					side.upperMeshItem = part;
+					platform.lowerSides.Add(side);
 				}
 			}
 			if (platform.comesFromCeiling) {
-				addWallPart(point1, point2, pHeight, new Vector3(0,0,0), wall.upperMaterial, wall.upperOffset, platform.upperPlatform);
-				
+				part = addWallPart(point1, point2, pHeight, new Vector3(0,0,0), wall.upperMaterial, wall.upperOffset, platform.upperPlatform);
+				if (part != null) {
+					MapSegmentSide side = new MapSegmentSide();
+					side.upperLight = wall.upperLight;
+					part.name = "platSide";
+					side.upperMeshItem = part;
+					platform.upperSides.Add(side);
+				}
+
 			}
 		}
 
@@ -356,8 +408,8 @@ public class MapSegment : MonoBehaviour {
 
 					
 
-		makePolygon(true, vertices, height, gameObject);
-		makePolygon(false, vertices, height, gameObject);
+		floor.meshItem = makePolygon(true, vertices, height, gameObject);
+		ceiling.meshItem = makePolygon(false, vertices, height, gameObject);
 
 		// if (id == 555) {
 		// 	Debug.Log(centerPoint);
@@ -373,19 +425,16 @@ public class MapSegment : MonoBehaviour {
 
 	public void generateColliders (GameObject obj){
 		foreach(Transform child in obj.transform) {
-			if (child.gameObject.name == "floor" ||child.gameObject.name == "ceiling" || child.gameObject.name == "wall" || child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
+			// if (child.gameObject.name == "floor" ||child.gameObject.name == "ceiling" || child.gameObject.name == "wall" || child.gameObject.name == "upperWall" || child.gameObject.name == "lowerWall" || child.gameObject.name == "middleWall" ||
+			// 		child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
+			MeshFilter mf = child.GetComponent<MeshFilter>();
+			if (mf != null ) {
 				MeshCollider mc = child.gameObject.AddComponent<MeshCollider>();
-				mc.sharedMesh = child.GetComponent<MeshFilter>().mesh;
-				//if (child.gameObject.name != "transparent") {
-					Rigidbody rb = child.gameObject.AddComponent<Rigidbody>();
-					rb.useGravity = false;	
-					rb.isKinematic = true;
+				mc.sharedMesh = mf.mesh;
+				Rigidbody rb = child.gameObject.AddComponent<Rigidbody>();
+				rb.useGravity = false;	
+				rb.isKinematic = true;
 
-				// } else {
-					// mc.convex = true;
-					// mc.isTrigger = true;
-					// child.gameObject.name = "transparent";
-				//}
 						
 			}
 		}
@@ -432,7 +481,7 @@ public class MapSegment : MonoBehaviour {
 		return center;
 	}
 
-	void makePolygon(bool isBase, List<Vector3> vertices, Vector3 polHeight, GameObject parent, Material mat = null, Vector2 matOffset = default(Vector2)) {
+	GameObject makePolygon(bool isBase, List<Vector3> vertices, Vector3 polHeight, GameObject parent, Material mat = null, Vector2 matOffset = default(Vector2)) {
 		List<Vector3> _vertices = new List<Vector3>(vertices);
 		GameObject meshItem = Instantiate(Resources.Load<GameObject>("polygonElement"), parent.transform.position, parent.transform.rotation);
 		meshItem.transform.parent = parent.transform;
@@ -484,6 +533,8 @@ public class MapSegment : MonoBehaviour {
 		mesh.triangles = triangles.ToArray();	
 
 		mesh.RecalculateNormals();
+
+		return meshItem;
 
 	}
 
@@ -544,6 +595,10 @@ public class MapSegment : MonoBehaviour {
 				wallHeightLower = new Vector3(height.x, height.y, height.z);
 				wallHeightLower.y = wall.connection.transform.position.y - gameObject.transform.position.y;
 				wallPart = addWallPart(point1, point2, wallHeightLower, wallOffset, wall.lowerMaterial, wall.lowerOffset, gameObject);
+				if (wallPart != null) {
+					wallPart.name = "lowerWall";
+					sides[side].lowerMeshItem = wallPart;
+				}
 				// if (wall.solid && wall.lowerMaterial.name == "transparent" || 
 				// 		(wall.transparent && connBottom && !connTop)) {
 				// 	wallPart.SetActive(false);
@@ -561,6 +616,10 @@ public class MapSegment : MonoBehaviour {
 				wallOffset.z = 0;
 				wallHeightUpper.y = height.y - wallOffset.y;
 				wallPart = addWallPart(point1, point2, wallHeightUpper, wallOffset, wall.upperMaterial, wall.upperOffset, gameObject);
+				if (wallPart != null) {
+					wallPart.name = "upperWall";
+					sides[side].upperMeshItem = wallPart;
+				}
 				// if (wall.solid && wall.upperMaterial.name == "transparent" || 
 				// 		(wall.transparent && connTop && !connBottom)) {
 				// 	wallPart.SetActive(false);
@@ -577,6 +636,12 @@ public class MapSegment : MonoBehaviour {
 							wallHeightMiddle,
 							new Vector3(0,wallHeightLower.y,0), 
 							wall.middeMaterial, wall.middleOffset, gameObject);
+				
+				if (wallPart != null) {
+					wallPart.name = "middleWall";
+					sides[side].middleMeshItem = wallPart;
+				}
+
 
 				if (wall.solid && wall.middeMaterial.name == "transparent" || 
 						(wall.transparent && !connTop && !connBottom)) {
@@ -588,10 +653,14 @@ public class MapSegment : MonoBehaviour {
 			if (wall.connectionID == -1){
 				if (wall.upperMaterial == null) { wall.upperMaterial = Resources.Load<Material>("texture");}
 				wallPart = addWallPart(point1, point2, height, wallOffset, wall.upperMaterial, wall.upperOffset, gameObject);
+				wallPart.name = "wall";
+				sides[side].upperMeshItem = wallPart;
+
 			}
 		}
+
 		if (wallPart != null) {
-			sides[side].meshItem = wallPart;
+			sides[side].upperMeshItem = wallPart;
 			wallPart.name = "wall";
 		}
 	}
@@ -651,15 +720,10 @@ public class MapSegment : MonoBehaviour {
 	}
 
 
-	// Update is called once per frame
-	void Update () {
-		
-	}
-
 	public bool playerTouch(GameObject element) {
 		bool touched = false;
 		foreach (MapSegmentSide s in sides) {
-			if (s.controlPanel != null && s.meshItem == element) {
+			if (s.controlPanel != null && s.upperMeshItem == element) {
 		    	s.controlPanel.toggle(element, true);
 				touched = true;
 			}
@@ -914,9 +978,12 @@ public class MapSegment : MonoBehaviour {
 }
 
 
-public class MapSegmentSide {
+public class MapSegmentSide  {
 	public MapSegment connection = null;
-	public GameObject meshItem = null;
+	public GameObject upperMeshItem = null;
+	public GameObject middleMeshItem = null;
+	public GameObject lowerMeshItem = null;
+	public mapLight upperLight, lowerLight, middleLight;
 	public int connectionID = -1;
 	public float Opacity = 1;
 	public bool solid = true;
@@ -925,11 +992,26 @@ public class MapSegmentSide {
 	public Vector2 upperOffset, middleOffset, lowerOffset = new Vector2(0,0);
 	public ControlPanel controlPanel = null;
 
+	public void setLight() {
+		if (upperLight != null && upperMeshItem != null ) {
+			upperLight.lightMaterial(upperMeshItem);
+		}
+		if (lowerLight != null && lowerMeshItem != null ) {
+			lowerLight.lightMaterial(lowerMeshItem);
+		}
+		if (middleLight != null && middleMeshItem != null ) {
+			middleLight.lightMaterial(middleMeshItem);
+		}
+	}
+
+
+
 }
 
-public class MapSegmentFloorCeiling {
+public class MapSegmentFloorCeiling  {
 	public GameObject meshItem = null;
-
+	public int lightID = -1;
+	public mapLight light = null;
 	public MapSegment conection = null;
 	public int connectionID = -1;
 	public float Opacity = 1;
@@ -938,6 +1020,13 @@ public class MapSegmentFloorCeiling {
 	public Material upperMaterial, lowerMaterial, middeMaterial;
 	public Vector2 upperOffset, middleOffset, lowerOffset = new Vector2(0,0);
 	public ControlPanel controlPanel = null;
+
+	public void setLight() {
+		if (light != null && meshItem != null ) {
+			light.lightMaterial(meshItem);
+		}
+	}
+
 }
 
 public class Platform {
@@ -976,6 +1065,12 @@ public class Platform {
 	public GameObject lowerPlatform = null;
 	public GameObject upperPlatform = null;
 	public MapSegment parent = null;
+	public List<MapSegmentSide> upperSides = new List<MapSegmentSide>();
+	public List<MapSegmentSide> lowerSides = new List<MapSegmentSide>();
+	public MapSegmentFloorCeiling upperTop;
+	public MapSegmentFloorCeiling lowerTop;
+	public MapSegmentFloorCeiling upperBottom;
+	public MapSegmentFloorCeiling lowerBottom;
 	public float upperMaxHeight = 0;
 	public float upperMinHeight = 0;
 	public float lowerMaxHeight = 0;
@@ -1027,7 +1122,7 @@ public class Platform {
 		foreach (MapSegment seg in GlobalData.map.segments) {
 			foreach (MapSegmentSide side in seg.sides) {
 				if (side.controlPanel != null  && side.controlPanel.platformSwitch == parent.id) {
-					side.controlPanel.toggle(side.meshItem);
+					side.controlPanel.toggle(side.upperMeshItem);
 				}
 			}
 		}
@@ -1091,7 +1186,7 @@ public class Platform {
 				foreach (MapSegment seg in GlobalData.map.segments) {
 					foreach (MapSegmentSide side in seg.sides) {
 						if (side.controlPanel != null  && side.controlPanel.platformSwitch == parent.id) {
-							side.controlPanel.toggle(side.meshItem);
+							side.controlPanel.toggle(side.upperMeshItem);
 						}
 					}
 				}
@@ -1215,5 +1310,208 @@ public class ControlPanel {
 	// PatternBuffer,
 	// Terminal
     // }
+
+}
+
+
+public class mapLight : MonoBehaviour {
+	public int id = -1;
+	public int tag = -1;
+	public bool stateless = false;
+	public bool initiallyActive = false;
+	public int phase = 0;
+	public int type = 0;
+	public bool active = false;
+	private float elapsedTime = -1;
+	private bool lightChanged = true;
+	private float currentIntensity;
+	
+	public LightFunction becomingActive = new LightFunction();
+	public LightFunction primaryActive = new LightFunction();
+	public LightFunction secondaryActive = new LightFunction();
+	public LightFunction becomingInactive = new LightFunction();
+	public LightFunction primaryInactive = new LightFunction();
+	public LightFunction secondaryInactive = new LightFunction();
+
+	public void Start () {
+		becomingActive.initialise();
+		primaryActive.initialise();
+		secondaryActive.initialise();
+		becomingInactive.initialise();
+		primaryInactive.initialise();
+		secondaryInactive.initialise();
+		active = initiallyActive;
+	}
+
+	public void Update() {
+		float intensity = 0;
+		if (!stateless) {
+			if (active && phase > 2) {
+				elapsedTime = 0;
+				phase = 0;
+			}
+			if (!active && phase < 3) {
+				elapsedTime = 0;
+				phase = 3;
+			}
+		}
+
+		// if (id == 23) {
+		// 	id = id;
+		// }
+
+		elapsedTime += Time.deltaTime;
+		switch (phase) {
+		case 0: 
+			intensity = becomingActive.lightIntensity(elapsedTime);
+			if (elapsedTime >= becomingActive.totalPeriod) {
+				primaryActive.initialise();
+				phase = 1;
+				elapsedTime = 0;
+			}
+			break;
+		case 1: 
+			intensity = primaryActive.lightIntensity(elapsedTime);
+			if (elapsedTime >= primaryActive.totalPeriod) {
+				secondaryActive.initialise();
+				phase = 2;
+				elapsedTime = 0;
+			}
+			break;
+		case 2: 
+			intensity = secondaryActive.lightIntensity(elapsedTime);
+			if (elapsedTime >= secondaryActive.totalPeriod) {
+				if (stateless) {
+					becomingInactive.initialise();
+					phase = 3;
+				} else {
+					primaryActive.initialise();
+					phase = 1;
+				}
+				elapsedTime = 0;
+			}
+			break;
+		case 3: 
+			intensity = becomingInactive.lightIntensity(elapsedTime);
+			if (elapsedTime >= becomingInactive.totalPeriod) {
+				primaryInactive.initialise();
+				phase = 4;
+				elapsedTime = 0;
+			}
+			break;
+		case 4: 
+			intensity = primaryInactive.lightIntensity(elapsedTime);
+			if (elapsedTime >= primaryInactive.totalPeriod) {
+				secondaryInactive.initialise();
+				phase = 4;
+				elapsedTime = 0;
+			}
+			break;
+		case 5: 
+			intensity = secondaryInactive.lightIntensity(elapsedTime);
+			if (elapsedTime >= secondaryInactive.totalPeriod) {
+				if (stateless) {
+					becomingActive.initialise();
+					phase = 0;
+				} else {
+					primaryInactive.initialise();
+					phase = 4;
+				}
+				elapsedTime = 0;
+			}
+			break;
+		}
+
+		if (currentIntensity != intensity) {
+			lightChanged = true;
+			currentIntensity = intensity;
+		}
+	}
+
+	public void lightMaterial (GameObject obj) {
+		if (lightChanged) {
+			MeshRenderer meshRenderer = obj.GetComponent<MeshRenderer>();
+			if (meshRenderer != null) {
+				Material material = meshRenderer.sharedMaterial;
+				Color brightness = Color.white;
+				brightness *= currentIntensity;
+				material.SetColor ("_EmissionColor", brightness);
+				obj.GetComponent<MeshRenderer>().sharedMaterial = material;
+			}
+		}
+	}
+
+	
+
+}
+
+public class LightFunction {
+	public int mode = 0;
+	public float period = 0;
+	public float periodDelta = 0;
+	public float intensity = 0;
+	public float intensityDelta = 0;
+
+	public float totalPeriod = 0;
+	public float totalIntensity = 0;
+
+	private float flickertime = 0;
+
+	public void initialise() {
+		totalPeriod = period + Random.Range(0f-periodDelta,periodDelta);
+		totalIntensity = intensity + Random.Range(0f-intensityDelta*intensity,intensityDelta*intensity);
+		flickertime = 0;
+	}
+
+	public float lightIntensity (float time, bool hightToLow = false) {
+		float value = 0;
+		switch (mode) {
+		case 0: //constant
+			value = totalIntensity;
+			break;
+		case 1: //linear
+			value = totalIntensity * (totalPeriod / time);
+			break;
+		case 2: //smooth
+			value = totalIntensity *  Mathf.Sin(90*(totalPeriod / time));
+			break;
+		case 3: //flicker
+			value = totalIntensity;
+			if (time > flickertime) {
+				flickertime = time + Random.Range(0f,0.2f);
+				if (Random.Range(0, 1) < 0.5f) {
+					totalIntensity = intensity + Random.Range(0f-intensityDelta*intensity,intensityDelta*intensity);
+					value = totalIntensity;
+				}
+			}
+			break;
+		}
+
+		if (hightToLow) {value = totalIntensity - value;}
+		if (value > totalIntensity) {value = totalIntensity;}
+		if (value < 0) {value = 0;}
+		return value;
+	} 
+
+	public void setFromMarathonObject (Weland.Light.Function state) {
+		switch (state.LightingFunction) {
+		case Weland.LightingFunction.Constant:
+			mode = 0;
+			break;
+		case Weland.LightingFunction.Linear:
+			mode = 1;
+			break;
+		case Weland.LightingFunction.Smooth:
+			mode = 2;
+			break;
+		case Weland.LightingFunction.Flicker:
+			mode = 3;
+			break;	
+		}
+		intensityDelta = (float)state.DeltaIntensity;
+		period = (float)state.Period/30f;
+		intensity = (float)state.Intensity;
+		periodDelta = (float)state.DeltaPeriod/30f;
+	}
 
 }

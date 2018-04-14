@@ -145,7 +145,7 @@ namespace Weland {
 		 		colors[i].a = 1;
 			} else {
 		 		colors[i].a = 0;
-				hasAlpha = true;
+				//hasAlpha = i;
 			}
 		}
 						//Debug.Log("trans?");
@@ -155,10 +155,15 @@ namespace Weland {
 		// Debug.Log(bitmap.Height)	;
 		// Debug.Log(bitmap.Data.Length)	;
 		Texture2D result;
+		for (int i = 0; i < bitmap.Data.Length; i++) {
+			if (bitmap.Data[i] == 0) {
+				hasAlpha = true;
+			}
+		}
 		if (hasAlpha) {
-			result = new Texture2D(bitmap.Height, bitmap.Width,TextureFormat.ARGB32,false);
+			result = new Texture2D(bitmap.Height, bitmap.Width,TextureFormat.ARGB32,true);
 		} else {
-			result = new Texture2D(bitmap.Height, bitmap.Width,TextureFormat.RGB24,false);
+			result = new Texture2D(bitmap.Height, bitmap.Width,TextureFormat.RGB24,true);
 		}
 		// result.LoadRawTextureData(bitmap.Data);
 		for (int x = 0; x < bitmap.Width; ++x) {

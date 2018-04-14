@@ -183,5 +183,21 @@ public class platformController : MonoBehaviour {
 				platform.deActivate();
 			}
 		}
+
+		if (fromTop) {
+			platform.upperBottom.setLight();
+			platform.upperTop.setLight();
+			foreach (MapSegmentSide side in platform.upperSides) {
+				side.setLight();
+			}
+		} else {
+			platform.lowerBottom.setLight();
+			platform.lowerTop.setLight();
+			foreach (MapSegmentSide side in platform.lowerSides) {
+				side.setLight();
+			}
+	
+		}
+
 	}
 }

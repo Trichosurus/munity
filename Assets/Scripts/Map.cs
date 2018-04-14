@@ -14,6 +14,7 @@ public class Map : MonoBehaviour {
 	List<int> transferModeMapping = new List<int> {0, 4, 5, 6, 9, 15, 16, 17, 18, 19, 20};
 	public List<Material> materials;
 	public List<MapSegment> segments;
+	public List<mapLight> lights;
 
 	private string loadingText;
 
@@ -44,7 +45,9 @@ public class Map : MonoBehaviour {
 		Level.Load(wadfile.Directory[0]);
 		Debug.Log(Level.Name);
 		// Debug.Log(Level.Environment);
-		
+
+		yield return createLightsFromMarathonMap(Level);
+
 		yield return StartCoroutine(makeWorldFromMarathonMap(Level));
 
 		loadingText += "\nSpawing Entities... ";
@@ -102,9 +105,12 @@ public class Map : MonoBehaviour {
 					material.EnableKeyword("_ALPHAPREMULTIPLY_ON");
 					material.EnableKeyword("_ALPHATEST_ON");
 				} else {
-					Debug.Log("noalpha");
+					//Debug.Log("noalpha");
 				}
 				material.mainTexture = bitmap;
+				material.SetTexture ("_EmissionMap", bitmap);
+				material.SetColor ("_EmissionColor", Color.white);
+				material.EnableKeyword("_EMISSION");
 				materials.Add(material);
 			//	Debug.Log(material);
 			}		
@@ -117,6 +123,34 @@ public class Map : MonoBehaviour {
 
 
 	}
+
+
+	IEnumerator createLightsFromMarathonMap(Weland.Level Level) {
+		string load = loadingText;
+		for (int i = 0; i < Level.Lights.Count; i++) {
+
+			Weland.Light light = Level.Lights[i];
+			mapLight ml = gameObject.AddComponent<mapLight>();
+			ml.id = i;
+			ml.tag = light.TagIndex;
+			ml.stateless = light.Stateless;
+			ml.initiallyActive = light.InitiallyActive;
+			ml.phase = light.Phase;
+			ml.becomingActive.setFromMarathonObject(light.BecomingActive);
+			ml.primaryActive.setFromMarathonObject(light.PrimaryActive);
+			ml.secondaryActive.setFromMarathonObject(light.SecondaryActive);
+			ml.becomingInactive.setFromMarathonObject(light.BecomingInactive);
+			ml.primaryInactive.setFromMarathonObject(light.PrimaryInactive);
+			ml.secondaryInactive.setFromMarathonObject(light.SecondaryInactive);
+			if (light.Type == Weland.LightType.Strobe) {ml.type = 1;}
+			if (light.Type == Weland.LightType.Media) {ml.type = 2;}
+
+			lights.Add(ml);
+		}
+		yield return null;
+	}
+
+
 
 	IEnumerator makeWorldFromMarathonMap(Weland.Level Level) {
 		string load = loadingText;
@@ -163,7 +197,7 @@ public class Map : MonoBehaviour {
 						seg.platform.deactivatesAtEachLevel = pl.DeactivatesAtEachLevel;
 						seg.platform.deactivatesAtInitialLevel = pl.DeactivatesAtInitialLevel;
 						seg.platform.deactivatesLight = pl.DeactivatesLight;
-						seg.platform.delay = pl.Delay/32f;
+						seg.platform.delay = pl.Delay/30f;
 						seg.platform.delaysBeforeActivation = pl.DelaysBeforeActivation;
 						seg.platform.doesNotActivateParent = pl.DoesNotActivateParent;
 						seg.platform.extendsFloorToCeiling = pl.ExtendsFloorToCeiling;
@@ -215,8 +249,6 @@ public class Map : MonoBehaviour {
 
 				int x = Level.Endpoints[Level.Polygons[p].EndpointIndexes[ep]].X;
 				int z = Level.Endpoints[Level.Polygons[p].EndpointIndexes[ep]].Y;
-
-	
 
 				if (z > Level.Endpoints[Level.Polygons[p].EndpointIndexes[zPt]].Y ||
 					(z == Level.Endpoints[Level.Polygons[p].EndpointIndexes[zPt]].Y && x > Level.Endpoints[Level.Polygons[p].EndpointIndexes[zPt]].X)) {
@@ -299,7 +331,6 @@ public class Map : MonoBehaviour {
 				} else if (Line[currentLine].CounterclockwisePolygonSideIndex >= 0 ) {
 					side = Level.Sides[Line[currentLine].CounterclockwisePolygonSideIndex];
 				}
-
 					mss.upperMaterial = getTexture(side.Primary.Texture);
 					mss.lowerMaterial = getTexture(side.Secondary.Texture);
 					mss.middeMaterial = getTexture(side.Transparent.Texture);
@@ -308,9 +339,15 @@ public class Map : MonoBehaviour {
 					mss.middleOffset = new Vector2((float)side.Transparent.X/1024f,(float)side.Transparent.Y/1024f);
 					mss.lowerOffset = new Vector2((float)side.Secondary.X/1024f,(float)side.Secondary.Y/1024f);
 
+					mss.upperLight = lights[side.PrimaryLightsourceIndex];
+					mss.lowerLight = lights[side.SecondaryLightsourceIndex];
+					mss.middleLight = lights[side.TransparentLightsourceIndex];
+
+
 				if (mss.lowerMaterial == null) {
 					mss.lowerMaterial = mss.upperMaterial;
 					mss.lowerOffset = mss.upperOffset;
+					mss.lowerLight = mss.upperLight;
 				}
 
 				if (side.IsControlPanel|| side.IsPlatformSwitch() || side.IsTagSwitch() ) {
@@ -388,6 +425,11 @@ public class Map : MonoBehaviour {
 
 			seg.ceiling.upperOffset = new Vector2((float)Level.Polygons[p].CeilingOrigin.X/1024f,(float)Level.Polygons[p].CeilingOrigin.Y/1024f);
 			seg.floor.upperOffset = new Vector2((float)Level.Polygons[p].FloorOrigin.X/1024f,(float)Level.Polygons[p].FloorOrigin.Y/1024f);
+
+			seg.ceiling.lightID = Level.Polygons[p].CeilingLight;
+			seg.ceiling.light = lights[Level.Polygons[p].CeilingLight];
+			seg.floor.lightID = Level.Polygons[p].FloorLight;
+			seg.floor.light = lights[Level.Polygons[p].FloorLight];
 			//seg.levelSegments = segments;
 			seg.vertices = points;
 			seg.centerPoint = new Vector3(0,(float)Level.Polygons[p].FloorHeight/1024f,0);
@@ -440,7 +482,7 @@ public class Map : MonoBehaviour {
 		foreach(MapSegment s in segments) {
 			count++;
 			s.calculateVisibility();
-			if (count % 7 == 0 ){
+			if (!GlobalData.skipOcclusion && count % 7 == 0) {
 				loadingText = load + "\nOcclusion Culling "+count+"/"+segments.Count;
 				yield return null;
 			}
@@ -464,6 +506,8 @@ public class Map : MonoBehaviour {
 		}
 
 	}
+
+
 
 
 	IEnumerator spawnEntitiesFromMarathonMap(Weland.Level Level) {
@@ -522,3 +566,5 @@ public class Map : MonoBehaviour {
 		method.Invoke(new object(), null);
 	}
 }
+
+

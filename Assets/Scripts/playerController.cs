@@ -156,7 +156,7 @@ public class playerController : MonoBehaviour {
 	{
 		if (!touched){
 			MapSegment ms = null;
-			if (other.name == "floor" ||other.name == "ceiling" || other.name == "wall" || other.name == "transparent" || other.name == "polygonElement(Clone)"){
+			//if (other.name == "floor" ||other.name == "ceiling" || other.name == "wall" || other.name == "transparent" || other.name == "polygonElement(Clone)"){
 
 				if (other.transform.parent.tag == "polygon") {
 					ms = other.transform.parent.GetComponent<MapSegment>();
@@ -167,7 +167,7 @@ public class playerController : MonoBehaviour {
 					touched = ms.playerTouch(other.gameObject);
 				}
 				// Debug.Log(other.)
-			}
+			//}
 		}
 	}
 
@@ -268,7 +268,10 @@ public class playerController : MonoBehaviour {
 							(GlobalData.map.segments[GlobalData.map.segments[i].sides[s].connectionID].hidden == false ||
 								deferred.Contains(GlobalData.map.segments[i].sides[s].connectionID)) )
 							{
-								GameObject wall = GlobalData.map.segments[i].sides[s].meshItem;
+								GameObject wall = GlobalData.map.segments[i].sides[s].upperMeshItem;
+								if (wall == null) {
+									wall = GlobalData.map.segments[i].sides[s].lowerMeshItem;
+								}
 								if (wall == null) {
 									wall = new GameObject("sideCollider");
 									wall.transform.position = GlobalData.map.segments[i].transform.position;
@@ -290,8 +293,7 @@ public class playerController : MonoBehaviour {
 									box.transform.rotation = Quaternion.Euler(0,Vector3.Angle(v2 - v1, v1 - v2),0);
 									box.enabled = false;
 									wall.transform.parent = GlobalData.map.segments[i].transform;
-									GlobalData.map.segments[i].sides[s].meshItem = wall;
-
+									GlobalData.map.segments[i].sides[s].upperMeshItem = wall;
 								}
 				
 								Collider coll = wall.GetComponent<Collider>();
