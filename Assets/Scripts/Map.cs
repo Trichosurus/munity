@@ -211,15 +211,6 @@ public class Map : MonoBehaviour {
 						seg.platform.secret = pl.IsSecret;
 						seg.platform.mapTag = pl.Tag;
 						seg.platform.usesNativePolygonHeights = pl.UsesNativePolygonHeights;
-						// if (p == 6 || p == 4|| p == 431) {
-						// 	Debug.Log(p);
-						// 	Debug.Log(seg.platform.InitiallyExtended);
-						// 	Debug.Log(seg.platform.MaximumHeight);
-						// 	Debug.Log(seg.platform.MinimumHeight);
-						// 	Debug.Log(seg.platform.Speed);
-						// 	Debug.Log(seg.platform.UsesNativePolygonHeights);
-							
-						// }
 					}
 				}
 			}
@@ -241,6 +232,75 @@ public class Map : MonoBehaviour {
 					// 		Shapes.	
 				//}
 				//media.Type =
+			}
+
+			switch (Level.Polygons[p].Type) {
+				case Weland.PolygonType.AutomaticExit : 
+					seg.automaticExit = Level.Polygons[p].Permutation;
+				break;	
+				case Weland.PolygonType.Base : 
+					seg.mapBase = Level.Polygons[p].Permutation;
+				break;	
+				case Weland.PolygonType.DualMonsterTrigger : 
+					seg.dualMonsterTrigger = true;
+				break;	
+				case Weland.PolygonType.Glue : 
+					seg.glue = true;
+				break;	
+				case Weland.PolygonType.GlueTrigger : 
+					seg.glueTrigger = true;
+				break;	
+				case Weland.PolygonType.Goal :
+					seg.goal = true;
+				break;	
+				case Weland.PolygonType.Hill : 
+					seg.hill = true;
+				break;	
+				case Weland.PolygonType.InvisibleMonsterTrigger : 
+					seg.invisibleMonsterTrigger = true;
+				break;	
+				case Weland.PolygonType.ItemImpassable : 
+					seg.itemImpassable = true;
+				break;	
+				case Weland.PolygonType.ItemTrigger : 
+					seg.itemTrigger = true;
+				break;	
+				case Weland.PolygonType.LightOffTrigger : 
+					seg.lightOffTrigger = Level.Polygons[p].Permutation;
+				break;	
+				case Weland.PolygonType.LightOnTrigger : 
+					seg.lightOnTrigger = Level.Polygons[p].Permutation;
+				break;	
+				case Weland.PolygonType.MajorOuch : 
+					seg.damage = 7;
+				break;	
+				case Weland.PolygonType.MinorOuch : 
+					seg.damage = 3;
+				break;	
+				case Weland.PolygonType.MonsterImpassable : 
+					seg.monsterImpassable = true;
+				break;	
+				case Weland.PolygonType.MustBeExplored : 
+					seg.mustBeExplored = true;
+				break;	
+				case Weland.PolygonType.PlatformOffTrigger : 
+					seg.platformOffTrigger = Level.Polygons[p].Permutation;
+				break;	
+				case Weland.PolygonType.PlatformOnTrigger : 
+					seg.platformOnTrigger = Level.Polygons[p].Permutation;
+				break;	
+				case Weland.PolygonType.Superglue : 
+					seg.superglue = true;
+				break;	
+				case Weland.PolygonType.Teleporter : 
+					seg.teleporter = Level.Polygons[p].Permutation;
+				break;	
+				case Weland.PolygonType.VisibleMonsterTrigger : 
+					seg.visibleMonsterTrigger = true;
+				break;	
+				case Weland.PolygonType.ZoneBorder : 
+					seg.zoneBorder = true;
+				break;	
 			}
 			
 			List<Vector3> points = new List<Vector3>();
@@ -361,9 +421,9 @@ public class Map : MonoBehaviour {
 					mss.controlPanel.permutation = side.ControlPanelPermutation;
 					mss.controlPanel.type = side.ControlPanelType;
 					mss.controlPanel.controlPanel = side.IsControlPanel;
-					mss.controlPanel.platformSwitch = side.ControlPanelPermutation;
-					mss.controlPanel.tagSwitch = side.ControlPanelPermutation;
-					mss.controlPanel.lightSwitch = side.ControlPanelPermutation;
+					if (side.IsPlatformSwitch()) {mss.controlPanel.platformSwitch = side.ControlPanelPermutation;}
+					if (side.IsTagSwitch()) {mss.controlPanel.tagSwitch = side.ControlPanelPermutation;}
+					if (side.IsLightSwitch()) {mss.controlPanel.lightSwitch = side.ControlPanelPermutation;}
 					mss.controlPanel.inactiveMat =  mss.upperMaterial;
 					for (int t = 0 ; t < materials.Count; t++) {
 						if (materials[t] == mss.controlPanel.inactiveMat) {
@@ -536,6 +596,7 @@ public class Map : MonoBehaviour {
 
 				Quaternion facing = Quaternion.Euler(0, (float)obj.Facing+90, 0);
 				GameObject player = Instantiate(Resources.Load<GameObject>("player"), pos, facing);
+				player.gameObject.name = "player";
 				player.GetComponent<playerController>().currentPolygon = obj.PolygonIndex;
 			}
 			if (i % 7 == 0 ){

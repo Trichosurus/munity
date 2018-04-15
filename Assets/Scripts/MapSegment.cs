@@ -29,6 +29,35 @@ public class MapSegment : MonoBehaviour {
 	private int activeCount = 0;
 	private	GameObject viscalc;
 
+
+	public bool itemImpassable = false;
+	public bool monsterImpassable = false;
+	public bool hill = false;
+	public int mapBase = -1;
+	public int lightOnTrigger = -1;
+	public int platformOnTrigger = -1;
+	public int lightOffTrigger = -1;
+	public int platformOffTrigger = -1;
+	public int teleporter = -1;
+	public bool zoneBorder = false;
+	public bool goal = false;
+	public bool visibleMonsterTrigger = false;
+	public bool invisibleMonsterTrigger = false;
+	public bool dualMonsterTrigger = false;
+	public bool itemTrigger = false;
+	public bool mustBeExplored = false;
+	public int automaticExit = -1;
+	
+	public int damage = 0;
+
+	public bool glue;
+	public bool glueTrigger;
+	public bool superglue;
+    
+
+
+
+
 	// Use this for initialization
 	void Start () {
 
@@ -43,6 +72,39 @@ public class MapSegment : MonoBehaviour {
 		}
 	}
 
+
+	public void triggerBehaviour() {
+		if (platform != null && !platform.door) {
+			platform.activate(-2);
+		}
+		if (platformOffTrigger >= 0 && GlobalData.map.segments[platformOffTrigger].platform != null) {
+			GlobalData.map.segments[platformOffTrigger].platform.deActivate();
+		}
+		if (platformOnTrigger >= 0 && GlobalData.map.segments[platformOnTrigger].platform != null) {
+			GlobalData.map.segments[platformOnTrigger].platform.activate();
+		}
+		if (lightOnTrigger >= 0 && GlobalData.map.lights[lightOnTrigger] != null) {
+			if (!GlobalData.map.lights[lightOnTrigger].active) {
+				GlobalData.map.lights[lightOnTrigger].toggle();
+			}
+		}
+		if (lightOffTrigger >= 0 && GlobalData.map.lights[lightOffTrigger] != null) {
+			if (GlobalData.map.lights[lightOffTrigger].active) {
+				GlobalData.map.lights[lightOffTrigger].toggle();
+			}
+		}
+		if (mustBeExplored) {
+			mustBeExplored = false;
+		}
+		if (teleporter >= 0 && GlobalData.map.segments.Count > teleporter) {
+			GameObject player =  GameObject.Find("player");
+			if (player != null) {
+				//Quaternion facing = Quaternion.Euler(0, (float)obj.Facing+90, 0);
+				player.transform.position = GlobalData.map.segments[teleporter].centerPoint;
+			}
+		}
+
+	}
 
 	public void checkIfImpossible() {
 		//if (impossible) {return;}
@@ -133,10 +195,13 @@ public class MapSegment : MonoBehaviour {
 	public void showHide(bool show = false) {
 		if ( show == hidden ) {
 			Component[] allChildren = gameObject.GetComponentsInChildren(typeof(Transform), true);
+				if (id == 436) {
+					;
+				}
 			foreach (Transform child in allChildren) {
 				// if (child.gameObject.name == "floor" || child.gameObject.name == "ceiling" || child.gameObject.name == "wall" 
 				// 		|| child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
-				if (child.gameObject.name != "upperPlatform" && child.gameObject.name != "lowerPlatform") {
+				if (child.gameObject.name != gameObject.name && child.gameObject.name != "upperPlatform" && child.gameObject.name != "lowerPlatform") {
 					child.gameObject.SetActive(show);
 				}
 				// if (child.gameObject.name == "upperPlatform" || child.gameObject.name == "lowerPlatform") {
@@ -994,6 +1059,7 @@ public class MapSegmentSide  {
 	public GameObject upperMeshItem = null;
 	public GameObject middleMeshItem = null;
 	public GameObject lowerMeshItem = null;
+	public GameObject entryCollider = null;
 	public mapLight upperLight, lowerLight, middleLight;
 	public int connectionID = -1;
 	public float Opacity = 1;
@@ -1004,13 +1070,13 @@ public class MapSegmentSide  {
 	public ControlPanel controlPanel = null;
 
 	public void setLight() {
-		if (upperLight != null && upperMeshItem != null ) {
+		if (upperLight != null && upperMeshItem != null && upperMeshItem.activeInHierarchy ) {
 			upperLight.lightMaterial(upperMeshItem);
 		}
-		if (lowerLight != null && lowerMeshItem != null ) {
+		if (lowerLight != null && lowerMeshItem != null && lowerMeshItem.activeInHierarchy) {
 			lowerLight.lightMaterial(lowerMeshItem);
 		}
-		if (middleLight != null && middleMeshItem != null ) {
+		if (middleLight != null && middleMeshItem != null && middleMeshItem.activeInHierarchy ) {
 			middleLight.lightMaterial(middleMeshItem);
 		}
 	}
@@ -1033,7 +1099,7 @@ public class MapSegmentFloorCeiling  {
 	public ControlPanel controlPanel = null;
 
 	public void setLight() {
-		if (light != null && meshItem != null ) {
+		if (light != null && meshItem != null  && meshItem.activeInHierarchy) {
 			light.lightMaterial(meshItem);
 		}
 	}
@@ -1374,7 +1440,7 @@ public class mapLight : MonoBehaviour {
 	}
 
 	public void Update() {
-		float intensity = 0;
+		float intensity = currentIntensity;
 		if (!stateless) {
 			if (active && phase > 2) {
 				elapsedTime = 0;
@@ -1389,24 +1455,27 @@ public class mapLight : MonoBehaviour {
 		elapsedTime += Time.deltaTime;
 		switch (phase) {
 		case 0: 
-			intensity = becomingActive.lightIntensity(elapsedTime);
-			if (elapsedTime >= becomingActive.totalPeriod) {
+			if (elapsedTime < becomingActive.totalPeriod) {
+				intensity = becomingActive.lightIntensity(elapsedTime);
+			} else {
 				primaryActive.initialise(currentIntensity);
 				phase = 1;
 				elapsedTime = 0;
 			}
 			break;
 		case 1: 
-			intensity = primaryActive.lightIntensity(elapsedTime,true);
-			if (elapsedTime >= primaryActive.totalPeriod) {
+			if (elapsedTime < primaryActive.totalPeriod) {
+				intensity = primaryActive.lightIntensity(elapsedTime,true);
+			} else {
 				secondaryActive.initialise(currentIntensity);
 				phase = 2;
 				elapsedTime = 0;
 			}
 			break;
 		case 2: 
-			intensity = secondaryActive.lightIntensity(elapsedTime);
-			if (elapsedTime >= secondaryActive.totalPeriod) {
+			if (elapsedTime < secondaryActive.totalPeriod) {
+				intensity = secondaryActive.lightIntensity(elapsedTime);
+			} else {
 				if (stateless) {
 					becomingInactive.initialise(currentIntensity);
 					phase = 3;
@@ -1418,24 +1487,27 @@ public class mapLight : MonoBehaviour {
 			}
 			break;
 		case 3: 
-			intensity = becomingInactive.lightIntensity(elapsedTime, true);
-			if (elapsedTime >= becomingInactive.totalPeriod) {
+			if (elapsedTime < becomingInactive.totalPeriod) {
+				intensity = becomingInactive.lightIntensity(elapsedTime, true);
+			} else {
 				primaryInactive.initialise(currentIntensity);
 				phase = 4;
 				elapsedTime = 0;
 			}
 			break;
 		case 4: 
-			intensity = primaryInactive.lightIntensity(elapsedTime);
-			if (elapsedTime >= primaryInactive.totalPeriod) {
+			if (elapsedTime < primaryInactive.totalPeriod) {
+				intensity = primaryInactive.lightIntensity(elapsedTime);
+			} else {
 				secondaryInactive.initialise(currentIntensity);
 				phase = 4;
 				elapsedTime = 0;
 			}
 			break;
 		case 5: 
-			intensity = secondaryInactive.lightIntensity(elapsedTime, true);
-			if (elapsedTime >= secondaryInactive.totalPeriod) {
+			if (elapsedTime < secondaryInactive.totalPeriod) {
+				intensity = secondaryInactive.lightIntensity(elapsedTime, true);
+			} else {
 				if (stateless) {
 					becomingActive.initialise(currentIntensity);
 					phase = 0;
@@ -1447,7 +1519,6 @@ public class mapLight : MonoBehaviour {
 			}
 			break;
 		}
-
 		if (currentIntensity != intensity) {
 			lightChanged = true;
 			currentIntensity = intensity;

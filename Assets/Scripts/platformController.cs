@@ -117,6 +117,9 @@ public class platformController : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
+			// if (platformid == 436 || platformid == 443) {
+			// 	;
+			// }
 
 		bool transit = true;
 		if (platform.active) {

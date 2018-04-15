@@ -113,10 +113,11 @@ public class playerController : MonoBehaviour {
 		if (currentPolygon >= 0) {
 			if (prevPolygon != currentPolygon) {
 				drawActivePolygons();
-				if (GlobalData.map.segments[currentPolygon].platform != null &&
-						!GlobalData.map.segments[currentPolygon].platform.door) {
-					GlobalData.map.segments[currentPolygon].platform.activate(-2);
-				}
+				// if (GlobalData.map.segments[currentPolygon].platform != null &&
+				// 		!GlobalData.map.segments[currentPolygon].platform.door) {
+				// 	GlobalData.map.segments[currentPolygon].platform.activate(-2);
+				// }
+				GlobalData.map.segments[currentPolygon].triggerBehaviour();
 			}
 
 			calculateVisibility();
@@ -268,14 +269,11 @@ public class playerController : MonoBehaviour {
 							(GlobalData.map.segments[GlobalData.map.segments[i].sides[s].connectionID].hidden == false ||
 								deferred.Contains(GlobalData.map.segments[i].sides[s].connectionID)) )
 							{
-								GameObject wall = GlobalData.map.segments[i].sides[s].upperMeshItem;
-								if (wall == null) {
-									wall = GlobalData.map.segments[i].sides[s].lowerMeshItem;
-								}
-								if (wall == null) {
-									wall = new GameObject("sideCollider");
-									wall.transform.position = GlobalData.map.segments[i].transform.position;
-									BoxCollider box = wall.AddComponent<BoxCollider>();
+								GameObject entryway = GlobalData.map.segments[i].sides[s].entryCollider;
+								if (entryway == null) {
+									entryway = new GameObject("sideCollider");
+									entryway.transform.position = GlobalData.map.segments[i].transform.position;
+									BoxCollider box = entryway.AddComponent<BoxCollider>();
 
 									Vector3 v1 = GlobalData.map.segments[i].vertices[s];
 									int s2 = s;
@@ -290,14 +288,14 @@ public class playerController : MonoBehaviour {
 
 									box.transform.position = Vector3.Lerp(v1,v2,0.5f) + (GlobalData.map.segments[i].height/2f);
 									box.size = new Vector3(Vector3.Distance(v1,v2), GlobalData.map.segments[i].height.y, 0.02f);
-									float wallAngle = Mathf.Atan2(v2.x-v1.x, v2.z-v1.z) * Mathf.Rad2Deg;
-									box.transform.rotation = Quaternion.Euler(0,wallAngle+90,0);
+									float entrywayAngle = Mathf.Atan2(v2.x-v1.x, v2.z-v1.z) * Mathf.Rad2Deg;
+									box.transform.rotation = Quaternion.Euler(0,entrywayAngle+90,0);
 									box.enabled = false;
-									wall.transform.parent = GlobalData.map.segments[i].transform;
-									GlobalData.map.segments[i].sides[s].upperMeshItem = wall;
+									entryway.transform.parent = GlobalData.map.segments[i].transform;
+									GlobalData.map.segments[i].sides[s].entryCollider = entryway;
 								}
 				
-								Collider coll = wall.GetComponent<Collider>();
+								Collider coll = entryway.GetComponent<Collider>();
 								coll.enabled = true;
 								Vector3 closestPoint = coll.ClosestPointOnBounds(gameObject.transform.position);
 								coll.enabled = false;
