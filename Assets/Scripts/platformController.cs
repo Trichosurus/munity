@@ -126,10 +126,15 @@ public class platformController : MonoBehaviour {
 
 			float speed = platform.speed * Time.deltaTime;
 
+
 			if (delayedTime <= platform.delay) {
 				delayedTime += Time.deltaTime;
 				speed = 0;
 			}
+
+			// if (speed != 0 && platformid == 0) {
+			// 	;
+			// }
 
 			// Debug.Log("active");
 			// Debug.Log(platform.Speed);

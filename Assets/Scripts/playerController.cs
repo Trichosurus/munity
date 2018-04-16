@@ -33,6 +33,10 @@ public class playerController : MonoBehaviour {
 
 		currentPolygon = -1;
 
+		if (!GlobalData.playerLight) {
+			gameObject.GetComponent<Light>().enabled = false;
+		}
+
 		//gameObject.GetComponent<CharacterController>().enabled = false;
 	}
 	

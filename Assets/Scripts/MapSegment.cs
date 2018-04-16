@@ -1116,7 +1116,6 @@ public class Platform {
 	public bool initiallyExtended = false;
 	public bool deactivatesAtEachLevel  = false;
 	public bool deactivatesAtInitialLevel  = false;
-	public bool activatesAdjacentPlatformsWhenDeactivating  = false;
 	public bool extendsFloorToCeiling  = false;
 	public bool comesFromFloor  = false;
 	public bool comesFromCeiling  = false;
@@ -1133,6 +1132,7 @@ public class Platform {
 	public bool delaysBeforeActivation  = false;
 	public bool activatesAdjacentPlatformsWhenActivating = false;
 	public bool deactivatesAdjacentPlatformsWhenActivating  = false;
+	public bool activatesAdjacentPlatformsWhenDeactivating  = false;
 	public bool deactivatesAdjacentPlatformsWhenDeactivating  = false;
 	public bool contractsSlower  = false;
 	public bool activatesAdjacantPlatformsAtEachLevel  = false;
@@ -1204,14 +1204,18 @@ public class Platform {
 			}
 		}
 
-		if (activatesAdjacentPlatformsWhenActivating) {
-			foreach (MapSegmentSide side in parent.sides) {
-				if (side.connection != null && side.connection.platform != null) {
-					if (side.connection.id != activatedBy || !doesNotActivateParent) {
+		foreach (MapSegmentSide side in parent.sides) {
+			if (side.connection != null && side.connection.platform != null) {
+				if (side.connection.id != activatedBy || !doesNotActivateParent) {
+					if (activatesAdjacentPlatformsWhenActivating) {
 						side.connection.platform.activate(parent.id);
+					}
+					if (deactivatesAdjacentPlatformsWhenActivating) {
+						side.connection.platform.deActivate(parent.id);
 					}
 				}
 			}
+
 		}
 
 
@@ -1220,7 +1224,7 @@ public class Platform {
 
 	
 
-	public void deActivate() {
+	public void deActivate(int activator = -1) {
 		bool uptransit = false;
 		bool lotransit = false;
 		if (upperPlatform != null) {
@@ -1248,12 +1252,20 @@ public class Platform {
 				active = false;
 			}
 
+
 			if (activatesAdjacantPlatformsAtEachLevel ||
-				(activatesAdjacentPlatformsWhenDeactivating && deactivating)) {
+				((activatesAdjacentPlatformsWhenDeactivating ||	deactivatesAdjacentPlatformsWhenDeactivating)
+					 && deactivating))  {
 				foreach (MapSegmentSide side in parent.sides) {
 					if (side.connection != null && side.connection.platform != null) {
 						if (side.connection.id != parent.id || !doesNotActivateParent) {
-							side.connection.platform.activate(parent.id);
+							if (activatesAdjacentPlatformsWhenDeactivating) {
+								side.connection.platform.activate(parent.id);
+							}
+							if (deactivatesAdjacentPlatformsWhenDeactivating) {
+								side.connection.platform.deActivate();
+							}
+
 						}
 					}
 				}

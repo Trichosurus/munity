@@ -21,6 +21,7 @@ public static class GlobalData
 		public static bool captureMouse = true;
 
 		public static bool globalLighting = true;
+		public static bool playerLight = true;
 
 }
 
