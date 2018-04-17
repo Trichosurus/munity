@@ -68,6 +68,9 @@ public class MapSegment : MonoBehaviour {
 		floor.setLight();
 		ceiling.setLight();
 		foreach (MapSegmentSide side in sides) {
+			if (id == 61 && side.connectionID == 62) {
+				;
+			}
 			side.setLight();
 		}
 	}
@@ -604,10 +607,6 @@ public class MapSegment : MonoBehaviour {
 
 	public void makeWall(int side) {
 
-		// if (id == 61) {
-		// 	id = id;
-		// }
-
 		Vector3 point1, point2;
 		point1 = vertices[side];
 		if (side+1 < vertices.Count) {
@@ -621,10 +620,6 @@ public class MapSegment : MonoBehaviour {
 		if (wall.connection == null && wall.connectionID >= 0) {
 			wall.connection = GlobalData.map.segments[wall.connectionID];
 		}
-
-
-
-
 
 		Vector3 wallHeightUpper = new Vector3(0,0,0);
 		Vector3 wallHeightLower = new Vector3(0,0,0);
@@ -640,16 +635,16 @@ public class MapSegment : MonoBehaviour {
 				)
 			){
 
-			if (wall.connection.GetComponent<MapSegment>().id == 362){ 
-				Debug.Log(gameObject.transform.position.y);
-				}
 			bool connTop = (wall.connection.platform != null &&
 							!wall.connection.platform.comesFromCeiling) ||
 							 wall.connection.platform == null || wall.solid; 
 			bool connBottom = (wall.connection.platform != null &&
 							!wall.connection.platform.comesFromFloor)||
 							wall.connection.platform == null || wall.solid; 
-; 
+
+		if (id == 61 && wall.connectionID == 62) {
+			id = id;
+		}
 
 			if (wall.connection.transform.position.y > gameObject.transform.position.y 
 				&& connBottom) {
@@ -707,10 +702,10 @@ public class MapSegment : MonoBehaviour {
 				}
 
 
-				if (wall.solid && wall.middeMaterial.name == "transparent" || 
-						(wall.transparent && !connTop && !connBottom)) {
-					wallPart.SetActive(false);
-				}
+				// if (wall.solid && wall.middeMaterial.name == "transparent" || 
+				// 		(wall.transparent && !connTop && !connBottom)) {
+				// 	wallPart.SetActive(false);
+				// }
 				
 			}
 		} else {
@@ -723,10 +718,10 @@ public class MapSegment : MonoBehaviour {
 			}
 		}
 
-		if (wallPart != null) {
-			sides[side].upperMeshItem = wallPart;
-			wallPart.name = "wall";
-		}
+		// if (wallPart != null) {
+		// 	sides[side].upperMeshItem = wallPart;
+		// 	wallPart.name = "wall";
+		// }
 	}
 
 

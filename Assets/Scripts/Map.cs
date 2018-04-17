@@ -356,7 +356,7 @@ public class Map : MonoBehaviour {
 						Vector2 b = new Vector2(Level.Endpoints[lep].X, Level.Endpoints[lep].Y);
 						Vector2 c = new Vector2(Level.Endpoints[ep].X, Level.Endpoints[ep].Y);
 				
-						if (Math.Atan2(b.y - a.y, b.x - a.x) < Math.Atan2(c.y - a.y, c.x - a.x)) {
+						if (Mathf.Atan2(b.y - a.y, b.x - a.x) < Mathf.Atan2(c.y - a.y, c.x - a.x)) {
 							currentLine = ln;
 						}
 					}
@@ -389,6 +389,9 @@ public class Map : MonoBehaviour {
 				mss.transparent = Line[currentLine].Transparent;
 				mss.solid = Line[currentLine].Solid;
 				Side side = new Side();
+				if (p == 61 && Line[currentLine].Solid && Line[currentLine].Transparent ) {
+					;
+				}
 				if (Line[currentLine].ClockwisePolygonSideIndex >= 0 ) {
 					side = Level.Sides[Line[currentLine].ClockwisePolygonSideIndex];
 				} else if (Line[currentLine].CounterclockwisePolygonSideIndex >= 0 ) {
@@ -525,6 +528,9 @@ public class Map : MonoBehaviour {
 		count = 0;
 		foreach(MapSegment s in segments) {
 			count++;
+			// if (s.id == 61) {
+			// 	;
+			// }
 			s.generateMeshes();
 			if (count % 77 == 0 ){
 				loadingText = load + "\nGenerating Meshes "+count+"/"+segments.Count;
