@@ -658,10 +658,12 @@ public class MapSegment : MonoBehaviour {
 					wallPart.name = "lowerWall";
 					sides[side].lowerMeshItem = wallPart;
 				}
-				// if (wall.solid && wall.lowerMaterial.name == "transparent" || 
-				// 		(wall.transparent && connBottom && !connTop)) {
-				// 	wallPart.SetActive(false);
-				// }
+				if (!GlobalData.skipOcclusion) {
+					if (wall.solid && wall.lowerMaterial.name == "transparent" || 
+							(wall.transparent && connBottom && !connTop)) {
+						wallPart.SetActive(false);
+					}
+				}
 			}
 
 			if (wall.connection.transform.position.y+wall.connection.height.y < gameObject.transform.position.y+height.y
@@ -679,10 +681,12 @@ public class MapSegment : MonoBehaviour {
 					wallPart.name = "upperWall";
 					sides[side].upperMeshItem = wallPart;
 				}
-				// if (wall.solid && wall.upperMaterial.name == "transparent" || 
-				// 		(wall.transparent && connTop && !connBottom)) {
-				// 	wallPart.SetActive(false);
-				// }
+				if (!GlobalData.skipOcclusion) {
+					if (wall.solid && wall.upperMaterial.name == "transparent" || 
+						(wall.transparent && connTop && !connBottom)) {
+						wallPart.SetActive(false);
+					}
+				}
 			}
 
 			Vector3 wallHeightMiddle = height - wallHeightLower - wallHeightUpper;
@@ -701,11 +705,12 @@ public class MapSegment : MonoBehaviour {
 					sides[side].middleMeshItem = wallPart;
 				}
 
-
-				// if (wall.solid && wall.middeMaterial.name == "transparent" || 
-				// 		(wall.transparent && !connTop && !connBottom)) {
-				// 	wallPart.SetActive(false);
-				// }
+				if (!GlobalData.skipOcclusion) {
+					if (wall.solid && wall.middeMaterial.name == "transparent" || 
+							(wall.transparent && !connTop && !connBottom)) {
+						wallPart.SetActive(false);
+					}
+				}
 				
 			}
 		} else {

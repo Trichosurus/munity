@@ -54,12 +54,14 @@
      <Compile Include="Assets\Scripts\ClippableObject.cs" />
      <Compile Include="Assets\Scripts\dataFilesObject.cs" />
      <Compile Include="Assets\Scripts\gameController.cs" />
+     <Compile Include="Assets\Scripts\itemController.cs" />
      <Compile Include="Assets\Scripts\Map.cs" />
      <Compile Include="Assets\Scripts\MapSegment.cs" />
      <Compile Include="Assets\Scripts\mouselook.cs" />
      <Compile Include="Assets\Scripts\platformController.cs" />
      <Compile Include="Assets\Scripts\playerController.cs" />
      <Compile Include="Assets\Scripts\settingsScreen.cs" />
+     <Compile Include="Assets\Scripts\spriteController.cs" />
      <Compile Include="Assets\Scripts\startGame.cs" />
      <Compile Include="Assets\Scripts\Weland\BinaryReaderBE.cs" />
      <Compile Include="Assets\Scripts\Weland\BinaryWriterBE.cs" />
@@ -86,6 +88,7 @@
      <None Include="Assets\Resources\Shaders\StandardClippableV2.shader" />
      <None Include="Assets\Resources\Shaders\plane_clipping.cginc" />
      <None Include="Assets\Resources\Shaders\standard_clipped.cginc" />
+     <None Include="Assets\Resources\Shaders\NewImageEffectShader.shader" />
      <None Include="Assets\Resources\Shaders\plane_clip_pass.cginc" />
  <Reference Include="UnityEditor.StandardEvents">
  <HintPath>/home/alex/marathon/munity/munity/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>

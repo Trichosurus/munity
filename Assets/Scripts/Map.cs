@@ -587,24 +587,62 @@ public class Map : MonoBehaviour {
 		bool playerSpawned = false;
 		for (int i = 0; i < Level.Objects.Count; i++) {
 			MapObject obj = Level.Objects[i];
+			Quaternion facing = Quaternion.Euler(0, (float)obj.Facing+90, 0);
+
+			Vector3 pos = new Vector3(pos.x = (float)obj.X/1024f,
+									pos.y = (float)obj.Z/1024f + segments[obj.PolygonIndex].centerPoint.y,
+									pos.z = 0f-(float)obj.Y/1024f
+									);	
+
 			if (obj.Type == ObjectType.Player && !playerSpawned) {
 				playerSpawned = true;
-				// Debug.Log(obj.X);
-				// Debug.Log(obj.Y);
-				// Debug.Log(obj.Z);
-				// Debug.Log(obj.Facing);
-			
-				Vector3 pos = new Vector3(pos.x = (float)obj.X/1024f,
-										pos.y = (float)obj.Z/1024f + segments[obj.PolygonIndex].centerPoint.y,
-										pos.z = 0f-(float)obj.Y/1024f
-										);	
-				Debug.Log(pos);
 
-				Quaternion facing = Quaternion.Euler(0, (float)obj.Facing+90, 0);
 				GameObject player = Instantiate(Resources.Load<GameObject>("player"), pos, facing);
 				player.gameObject.name = "player";
 				player.GetComponent<playerController>().currentPolygon = obj.PolygonIndex;
 			}
+
+			if (obj.Type == ObjectType.Item ) {
+
+// if (i == 115) {
+// 	;
+// }				
+				Vector3 rpos = pos;
+				rpos.y += 0.1f;
+				GameObject item = Instantiate(Resources.Load<GameObject>("itemObject"), rpos, facing);
+				GameObject sprite = Instantiate(Resources.Load<GameObject>("spriteObject"), rpos, facing);
+				sprite.transform.parent = item.transform;
+				spriteController sc = sprite.GetComponent<spriteController>();
+				sc.parent = item;
+				sc.sideCount = 1;
+				List<Material> frames = new List<Material>();
+				Weland.ShapeDescriptor tex = new Weland.ShapeDescriptor();
+				tex.Collection = 7;
+				tex.Bitmap = (byte)(obj.Index);
+				frames.Add(getTexture(tex));
+				sc.frames = frames;
+				item.name = "item" + i;
+			}
+
+			if (obj.Type == ObjectType.Sound ) {
+			}
+
+			if (obj.Type == ObjectType.Scenery ) {
+			}
+
+			if (obj.Type == ObjectType.Goal ) {
+			}
+
+
+			if (obj.Type == ObjectType.Monster ) {
+			}
+
+
+
+
+
+
+
 			if (i % 7 == 0 ){
 				loadingText = load + i+"/"+Level.Objects.Count;
 				yield return null;

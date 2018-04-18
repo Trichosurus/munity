@@ -16,7 +16,7 @@ public static class GlobalData
 		public static Map map = null;
 
 		public static bool skipOcclusion = true;
-		public static int occlusionOverDraw = 2;
+		public static int occlusionOverDraw = 3;
 
 		public static bool captureMouse = true;
 
