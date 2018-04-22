@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class spriteController : MonoBehaviour {
-	public int type = 0;
+	public int type = 1;
 	public int sideCount = 1;
 	public int currentFrame = 0;
 	public GameObject parent = null;
@@ -40,10 +40,10 @@ public class spriteController : MonoBehaviour {
 	void Update () {
 		if (parent != null) {
 			Vector3 point = Camera.main.transform.position;
-			if (type < 2) {
-				if (type == 1) {point.y = transform.position.y;}
+			if (type < 3) {
+				if (type == 2) {point.y = transform.position.y;}
 				transform.LookAt(point);
-				}
+			}
 			
 			float rot = transform.rotation.y;
 			if (rot < 0) {rot += 180f;}
@@ -62,6 +62,10 @@ public class spriteController : MonoBehaviour {
 				} else {
 					sides[s].SetActive(false);
 				}
+			}
+			
+			if (type == 1 || type == 2) {
+				transform.rotation = Quaternion.Euler(Camera.main.transform.rotation.x-180, Camera.main.transform.rotation.y-180, Camera.main.transform.rotation.z-180);
 			}
 
 		}

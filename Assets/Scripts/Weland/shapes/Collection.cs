@@ -32,6 +32,18 @@ namespace Weland {
 	Scenery
     }
 
+	public enum SequenceType : short {
+        Animated1 = 1,		// simple isotropic animation
+		Animated2TO8 = 2,	// 8 view animation
+		Animated3TO4 = 3,	// 4 view animation
+		Animated4 = 4,		// 4 view animation
+		Animated5TO8 = 5,	// 8 view animation
+		Animated8 = 8,		// 8 view animation
+		Animated3TO5 = 9,	// 5 view animation
+		NotAnimated = 10,	// no animation, choose a random frame
+		Animated5 = 11		// 5 view animation
+	};
+
     public class Collection {
 #pragma warning disable 0414
 	public short Version;
@@ -86,8 +98,134 @@ namespace Weland {
 	    }
 	}
 
+	struct ShapeSequence {
+	    public ushort Flags;
+	    public short Type;
+	    
+	    public string Name;
+	    public short NoOfViews;
+	    public short FramesPerView;
+	    public short TickePerFrame;
+	    public short KeyFrame;
+	    public short TrasferMode;
+	    public short TransferModePeriod;
+	    public short FirstFrameSound;
+	    public short KeyFrameSound;
+	    public short LastFrameSound;
+	    public short PixelsToWorld;
+	    public short LoopFrame;
+
+		public List<short> FrameIndexes;
+		// private short nameLen;
+	    public void Load(BinaryReaderBE reader) {
+		Type = reader.ReadInt16();
+		Flags = reader.ReadUInt16();
+		Name = reader.ReadMacString(33);
+		NoOfViews = reader.ReadInt16();
+		FramesPerView = reader.ReadInt16();
+		TickePerFrame = reader.ReadInt16();
+		KeyFrame = reader.ReadInt16();
+		TrasferMode = reader.ReadInt16();
+		TransferModePeriod = reader.ReadInt16();
+		FirstFrameSound = reader.ReadInt16();
+		KeyFrameSound = reader.ReadInt16();
+		LastFrameSound = reader.ReadInt16();
+		PixelsToWorld = reader.ReadInt16();
+		LoopFrame = reader.ReadInt16();
+		long position = reader.BaseStream.Position;
+		position += 28;//???
+		reader.BaseStream.Seek(position, SeekOrigin.Begin);
+		short nov = NoOfViews;
+		int idxCount = getRealViewCount(nov) * FramesPerView;
+		for (int i = 0; i < idxCount; i++) {
+			FrameIndexes.Add(reader.ReadInt16());
+		}
+		
+		// Value = reader.ReadByte();
+		
+		// Red = reader.ReadUInt16();
+		// Green = reader.ReadUInt16();
+		// Blue = reader.ReadUInt16();
+	    }
+
+		public int getRealViewCount(short sequenceType) {
+			switch (sequenceType) {
+				case (short)SequenceType.NotAnimated:
+					return 1;
+				case (short)SequenceType.Animated1:
+					return 1;
+				case (short)SequenceType.Animated3TO4:
+					return 4;
+				case (short)SequenceType.Animated4:
+					return 4;
+				case (short)SequenceType.Animated3TO5:
+					return 5;
+				case (short)SequenceType.Animated5:
+					return 5;
+				case (short)SequenceType.Animated2TO8:
+					return 8;
+				case (short)SequenceType.Animated5TO8:
+					return 8;
+				case (short)SequenceType.Animated8:
+					return 8;
+			}
+			return -1;
+		}
+
+		
+	}
+
+	struct ShapeFrame {
+
+		public enum ShapeFrameFlags : ushort {
+		XMirror = 0x8000,
+		YMirror = 0x4000,
+		KeypointObscured = 0x2000
+
+		}
+
+	    public ushort Flags;
+	    public short BitmapIndex;
+	    public bool XMirror;
+	    public bool YMirror;
+	    public bool KeypointObscured;
+	    
+	    public float MinimumLightIntensity;
+	    public short OriginX;
+	    public short OriginY;
+	    public short KeypointX;
+	    public short KeypointY;
+	    public short WorldY;
+	    public short WorldX;
+	    public short WorldTop;
+	    public short WorldBottom;
+	    public short WorldLeft;
+	    public short WorldRight;
+
+	    public void Load(BinaryReaderBE reader) {
+		Flags = reader.ReadUInt16();
+		XMirror = (Flags & (ushort)ShapeFrameFlags.XMirror) != 0;
+		YMirror = (Flags & (ushort)ShapeFrameFlags.YMirror) != 0;
+		KeypointObscured = (Flags & (ushort)ShapeFrameFlags.KeypointObscured) != 0;
+		MinimumLightIntensity = (float)reader.ReadInt32()/65535f;
+		BitmapIndex = reader.ReadInt16();
+		OriginX = reader.ReadInt16();
+		OriginY = reader.ReadInt16();
+		WorldLeft = reader.ReadInt16();
+		WorldRight = reader.ReadInt16();
+		WorldTop = reader.ReadInt16();
+		WorldBottom = reader.ReadInt16();
+		WorldX = reader.ReadInt16();
+		WorldY = reader.ReadInt16();
+	    }
+	}
+
+
 	List<ColorValue[]> colorTables = new List<ColorValue[]>();
 	List<Bitmap> bitmaps = new List<Bitmap>();
+
+	List<ShapeFrame> frames = new List<ShapeFrame>();
+	List<ShapeSequence> sequences = new List<ShapeSequence>();
 
 	public void Load(BinaryReaderBE reader) {
 	    long origin = reader.BaseStream.Position;
@@ -129,6 +267,34 @@ namespace Weland {
 		bitmaps.Add(bitmap);
 		reader.BaseStream.Seek(position, SeekOrigin.Begin);
 	    }
+
+	    reader.BaseStream.Seek(origin + lowLevelShapeOffsetTableOffset, SeekOrigin.Begin);
+	    frames.Clear();
+	    for (int i = 0; i < lowLevelShapeCount; ++i) {
+		int offset = reader.ReadInt32();
+		long position = reader.BaseStream.Position;
+		reader.BaseStream.Seek(origin + offset, SeekOrigin.Begin);
+		ShapeFrame frame = new ShapeFrame();
+		frame.Load(reader);
+		frames.Add(frame);
+		reader.BaseStream.Seek(position, SeekOrigin.Begin);
+	    }
+
+	    reader.BaseStream.Seek(origin + highLevelShapeOffsetTableOffset, SeekOrigin.Begin);
+	    frames.Clear();
+	    for (int i = 0; i < highLevelShapeCount; ++i) {
+		int offset = reader.ReadInt32();
+		long position = reader.BaseStream.Position;
+		reader.BaseStream.Seek(origin + offset, SeekOrigin.Begin);
+		ShapeSequence sequence = new ShapeSequence();
+		sequence.Load(reader);
+		sequences.Add(sequence);
+		reader.BaseStream.Seek(position, SeekOrigin.Begin);
+	    }
+
+
+
+
 	}
 
 	public Texture2D GetShape(byte ColorTableIndex, byte BitmapIndex) {
@@ -145,15 +311,9 @@ namespace Weland {
 		 		colors[i].a = 1;
 			} else {
 		 		colors[i].a = 0;
-				//hasAlpha = i;
 			}
 		}
-						//Debug.Log("trans?");
 
-			//	Debug.Log(colorTable.Length);
-
-		// Debug.Log(bitmap.Height)	;
-		// Debug.Log(bitmap.Data.Length)	;
 		Texture2D result;
 		for (int i = 0; i < bitmap.Data.Length; i++) {
 			if (bitmap.Data[i] == 0) {
@@ -165,10 +325,8 @@ namespace Weland {
 		} else {
 			result = new Texture2D(bitmap.Height, bitmap.Width,TextureFormat.RGB24,true);
 		}
-		// result.LoadRawTextureData(bitmap.Data);
 		for (int x = 0; x < bitmap.Width; ++x) {
 			for (int y = 0; y < bitmap.Height; ++y) {
-				//result.SetPixel(bitmap.Width-x,bitmap.Height-y, colors[bitmap.Data[x + y * bitmap.Width]]);
 				result.SetPixel(bitmap.Height-y,bitmap.Width-x, colors[bitmap.Data[x + y * bitmap.Width]]);
 
 			}
