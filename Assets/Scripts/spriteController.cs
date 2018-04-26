@@ -9,7 +9,10 @@ public class spriteController : MonoBehaviour {
 	public GameObject parent = null;
 	public List<Material> frames = new List<Material>();
 	public List<GameObject> sides = new List<GameObject>();
-	public float size = 0.2f;
+	public List<Vector2> offsets = new List<Vector2>();
+	public float scale = 0.2f;
+
+	
 
 	private int lastframe = -1;
 	// Use this for initialization
@@ -18,18 +21,18 @@ public class spriteController : MonoBehaviour {
 		sides[0].transform.parent = gameObject.transform;
 		sides[0].transform.position = gameObject.transform.position;
 		sides[0].GetComponent<MeshCollider>().enabled = false;
-		sides[0].transform.rotation = Quaternion.Euler(0,180,0);
-		sides[0].transform.localScale = new Vector3(size, size, size);
+		sides[0].transform.rotation = Quaternion.Euler(0,180,-90);
+		sides[0].transform.localScale = new Vector3(scale,scale,scale);
 	
 		for (int i = 2; i < sideCount; i++) {
 			sides.Add(GameObject.CreatePrimitive(PrimitiveType.Quad));
 			sides[i-1].transform.parent = gameObject.transform;
 			sides[i-1].transform.position = gameObject.transform.position;
-			sides[i-1].transform.rotation = Quaternion.Euler(0,180,90);
+			sides[i-1].transform.rotation = Quaternion.Euler(0,180,-90);
 
 			sides[i-1].GetComponent<MeshCollider>().enabled = false;
 			if (type == 2) {
-				sides[i-1].transform.rotation = Quaternion.Euler(0,(360f/(float)sideCount) * i-1,0);
+				sides[i-1].transform.rotation = Quaternion.Euler(0,(360f/(float)sideCount) * i-1,-90);
 			}
 		}
 
@@ -38,10 +41,10 @@ public class spriteController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		if (parent != null) {
+		if (parent != null && Camera.main != null)  {
 			Vector3 point = Camera.main.transform.position;
 			if (type < 3) {
-				if (type == 2) {point.y = transform.position.y;}
+				if (type == 2) {point.y = gameObject.transform.position.y;}
 				transform.LookAt(point);
 			}
 			
@@ -65,7 +68,11 @@ public class spriteController : MonoBehaviour {
 			}
 			
 			if (type == 1 || type == 2) {
-				transform.rotation = Quaternion.Euler(Camera.main.transform.rotation.x-180, Camera.main.transform.rotation.y-180, Camera.main.transform.rotation.z-180);
+				GameObject camera;
+				camera = GameObject.Find("playerCamera").gameObject;
+				gameObject.transform.rotation = Quaternion.Euler(camera.transform.rotation.eulerAngles.x + 180, camera.transform.rotation.eulerAngles.y , camera.transform.rotation.eulerAngles.z );
+				//gameObject.transform.rotation = Quaternion.Inverse(camera.transform.rotation);
+				// int i = 1;
 			}
 
 		}

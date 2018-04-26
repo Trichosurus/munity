@@ -52,7 +52,7 @@ public class Map : MonoBehaviour {
 		yield return StartCoroutine(makeWorldFromMarathonMap(Level));
 
 		loadingText += "\nSpawing Entities... ";
-		yield return StartCoroutine(spawnEntitiesFromMarathonMap(Level));
+		yield return StartCoroutine(spawnEntitiesFromMarathonMap(Level, shapes));
 
 		loadingText = null;
 
@@ -83,6 +83,28 @@ public class Map : MonoBehaviour {
 			d.CLUT = 0;
 			d.Collection = (byte) col;
 			//int textureSize = 64;
+
+			// if (col == 7) {
+			// 	Debug.Log(coll.frames.Count);
+			// 	Debug.Log(coll.sequences.Count);
+			// 	Debug.Log(coll.frames[0].BitmapIndex);
+			// 	Debug.Log(coll.frames[0].KeypointX);
+			// 	Debug.Log(coll.frames[0].KeypointY);
+			// 	Debug.Log(coll.frames[0].XMirror);
+			// 	Debug.Log(coll.frames[0].YMirror);
+			// 	Debug.Log(coll.frames[0].OriginX);
+			// 	Debug.Log(coll.frames[0].OriginY);
+				
+			// 	Debug.Log(coll.frames[1].BitmapIndex);
+			// 	Debug.Log(coll.frames[1].KeypointX);
+			// 	Debug.Log(coll.frames[1].KeypointY);
+			// 	Debug.Log(coll.frames[1].XMirror);
+			// 	Debug.Log(coll.frames[1].YMirror);
+			// 	Debug.Log(coll.frames[1].OriginX);
+			// 	Debug.Log(coll.frames[1].OriginY);
+			// }
+
+
 			for (byte i = 0; i < coll.BitmapCount; ++i) {
 				d.Bitmap = i;
 				
@@ -216,7 +238,7 @@ public class Map : MonoBehaviour {
 			}
 			if (Level.Polygons[p].MediaIndex >= 0) {
 				seg.liquid = new Liquid();
-				Debug.Log(Level.Polygons[p].MediaIndex);
+				//Debug.Log(Level.Polygons[p].MediaIndex);
 				Media media = Level.Medias[Level.Polygons[p].MediaIndex];
 				seg.liquid.currentSpeed = (float)media.CurrentMagnitude/1024f;
 				seg.liquid.currentDirectioin = Quaternion.Euler(0, (float)media.Direction+90, 0);
@@ -582,7 +604,7 @@ public class Map : MonoBehaviour {
 
 
 
-	IEnumerator spawnEntitiesFromMarathonMap(Weland.Level Level) {
+	IEnumerator spawnEntitiesFromMarathonMap(Weland.Level Level, Weland.ShapesFile shapes) {
 		string load = loadingText;
 		bool playerSpawned = false;
 		for (int i = 0; i < Level.Objects.Count; i++) {
@@ -602,25 +624,30 @@ public class Map : MonoBehaviour {
 				player.GetComponent<playerController>().currentPolygon = obj.PolygonIndex;
 			}
 
-			if (obj.Type == ObjectType.Item ) {
 
-// if (i == 115) {
-// 	;
-// }				
+if (i > 70) {
+	;
+}				
+
+			if (obj.Type == ObjectType.Item ) {
+				GameObject item = createMapItemFromSpriteSequence(7,GlobalData.itemSequences[obj.Index-1],shapes);
+
 				Vector3 rpos = pos;
 				rpos.y += 0.1f;
-				GameObject item = Instantiate(Resources.Load<GameObject>("itemObject"), rpos, facing);
-				GameObject sprite = Instantiate(Resources.Load<GameObject>("spriteObject"), rpos, facing);
-				sprite.transform.parent = item.transform;
-				spriteController sc = sprite.GetComponent<spriteController>();
-				sc.parent = item;
-				sc.sideCount = 1;
-				List<Material> frames = new List<Material>();
-				Weland.ShapeDescriptor tex = new Weland.ShapeDescriptor();
-				tex.Collection = 7;
-				tex.Bitmap = (byte)(obj.Index);
-				frames.Add(getTexture(tex));
-				sc.frames = frames;
+				item.transform.position = rpos;
+				item.transform.rotation = facing;
+				// GameObject item = Instantiate(Resources.Load<GameObject>("itemObject"), rpos, facing);
+				// GameObject sprite = Instantiate(Resources.Load<GameObject>("spriteObject"), rpos, facing);
+				// sprite.transform.parent = item.transform;
+				// spriteController sc = sprite.GetComponent<spriteController>();
+				// sc.parent = item;
+				// sc.sideCount = 1;
+				// List<Material> frames = new List<Material>();
+				// Weland.ShapeDescriptor tex = new Weland.ShapeDescriptor();
+				// tex.Collection = 7;
+				// tex.Bitmap = (byte)(obj.Index);
+				// frames.Add(getTexture(tex));
+				// sc.frames = frames;
 				item.name = "item" + i;
 			}
 
@@ -651,6 +678,8 @@ public class Map : MonoBehaviour {
 		}
 	}
 
+	
+
 
 	Material getTexture(Weland.ShapeDescriptor texture) {
 		int retval = 0;
@@ -660,7 +689,7 @@ public class Map : MonoBehaviour {
 		}
 		retval += texture.Bitmap;
 
-		if (materials.Count >= retval && retval >= 0) {
+		if (materials.Count > retval && retval >= 0) {
 			return materials[retval];
 		} else {
 			//return new Material(Shader.Find("Custom/StandardClippableV2"));
@@ -668,6 +697,46 @@ public class Map : MonoBehaviour {
 		}
 	}
 
+	GameObject createMapItemFromSpriteSequence (int collectionID, int sequenceID, Weland.ShapesFile shapes) {
+		GameObject item = Instantiate(Resources.Load<GameObject>("itemObject"));
+		GameObject sprite = Instantiate(Resources.Load<GameObject>("spriteObject"));
+		sprite.transform.parent = item.transform;
+		spriteController sc = sprite.GetComponent<spriteController>();
+		sc.parent = item;
+		sc.type = GlobalData.spriteType;
+
+		Debug.Log(sequenceID);
+		Collection coll = shapes.GetCollection(collectionID);
+		if (sequenceID > coll.sequences.Count) {sequenceID = coll.sequences.Count -1;}
+		Collection.ShapeSequence sequence = coll.sequences[sequenceID];
+
+		// if (collectionID == 7) {
+		// 	for (int i = 0; i < sequence.FrameIndexes.Count; i++) {
+		// 		Debug.Log(sequence.FrameIndexes[i]);
+		// 	}
+		// 	for (int i = 0; i < coll.frames.Count; i++) {
+		// 		Debug.Log(coll.frames[i].BitmapIndex);
+		// 	}
+		// }
+
+
+		sc.sideCount = sequence.getRealViewCount(sequence.NoOfViews);
+		List<Material> frames = new List<Material>();
+		Weland.ShapeDescriptor tex = new Weland.ShapeDescriptor();
+		
+		for (int i = 0; i < sequence.FrameIndexes.Count; i++) {
+			tex.Collection = (byte)collectionID;
+			tex.Bitmap = (byte)coll.frames[sequence.FrameIndexes[i]].BitmapIndex;
+			
+			frames.Add(getTexture(tex));
+
+		}
+
+		sc.frames = frames;
+
+
+		return item;
+	}
 
 	public void ClearLog()
 	{

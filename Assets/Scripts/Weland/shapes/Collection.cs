@@ -98,7 +98,7 @@ namespace Weland {
 	    }
 	}
 
-	struct ShapeSequence {
+	public struct ShapeSequence {
 	    public ushort Flags;
 	    public short Type;
 	    
@@ -115,11 +115,20 @@ namespace Weland {
 	    public short PixelsToWorld;
 	    public short LoopFrame;
 
-		public List<short> FrameIndexes;
+		public List<int> FrameIndexes;
 		// private short nameLen;
 	    public void Load(BinaryReaderBE reader) {
+		reader.ReadBytes(1);
+		// reader.ReadBytes(1);
 		Type = reader.ReadInt16();
+		// reader.ReadBytes(1);
 		Flags = reader.ReadUInt16();
+
+		// long position = reader.BaseStream.Position;
+		// position += 1;//???
+		// reader.BaseStream.Seek(position, SeekOrigin.Begin);
+
+		// reader.ReadBytes(1);
 		Name = reader.ReadMacString(33);
 		NoOfViews = reader.ReadInt16();
 		FramesPerView = reader.ReadInt16();
@@ -132,20 +141,21 @@ namespace Weland {
 		LastFrameSound = reader.ReadInt16();
 		PixelsToWorld = reader.ReadInt16();
 		LoopFrame = reader.ReadInt16();
-		long position = reader.BaseStream.Position;
-		position += 28;//???
-		reader.BaseStream.Seek(position, SeekOrigin.Begin);
+
+		// long position = reader.BaseStream.Position;
+		// position += 28;//???
+		// reader.BaseStream.Seek(position, SeekOrigin.Begin);
+		reader.ReadBytes(28);
 		short nov = NoOfViews;
 		int idxCount = getRealViewCount(nov) * FramesPerView;
+		FrameIndexes = new List<int>();
 		for (int i = 0; i < idxCount; i++) {
-			FrameIndexes.Add(reader.ReadInt16());
+			short frameIndex = reader.ReadInt16();
+			FrameIndexes.Add(frameIndex);
 		}
+
+		int ppp = 1;
 		
-		// Value = reader.ReadByte();
-		
-		// Red = reader.ReadUInt16();
-		// Green = reader.ReadUInt16();
-		// Blue = reader.ReadUInt16();
 	    }
 
 		public int getRealViewCount(short sequenceType) {
@@ -175,7 +185,7 @@ namespace Weland {
 		
 	}
 
-	struct ShapeFrame {
+	public struct ShapeFrame {
 
 		public enum ShapeFrameFlags : ushort {
 		XMirror = 0x8000,
@@ -224,8 +234,8 @@ namespace Weland {
 	List<ColorValue[]> colorTables = new List<ColorValue[]>();
 	List<Bitmap> bitmaps = new List<Bitmap>();
 
-	List<ShapeFrame> frames = new List<ShapeFrame>();
-	List<ShapeSequence> sequences = new List<ShapeSequence>();
+	public List<ShapeFrame> frames = new List<ShapeFrame>();
+	public List<ShapeSequence> sequences = new List<ShapeSequence>();
 
 	public void Load(BinaryReaderBE reader) {
 	    long origin = reader.BaseStream.Position;
@@ -281,7 +291,7 @@ namespace Weland {
 	    }
 
 	    reader.BaseStream.Seek(origin + highLevelShapeOffsetTableOffset, SeekOrigin.Begin);
-	    frames.Clear();
+	    sequences.Clear();
 	    for (int i = 0; i < highLevelShapeCount; ++i) {
 		int offset = reader.ReadInt32();
 		long position = reader.BaseStream.Position;
