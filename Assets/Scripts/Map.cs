@@ -705,7 +705,7 @@ if (i > 70) {
 		sc.parent = item;
 		sc.type = GlobalData.spriteType;
 
-		Debug.Log(sequenceID);
+		// Debug.Log(sequenceID);
 		Collection coll = shapes.GetCollection(collectionID);
 		if (sequenceID > coll.sequences.Count) {sequenceID = coll.sequences.Count -1;}
 		Collection.ShapeSequence sequence = coll.sequences[sequenceID];
@@ -718,8 +718,19 @@ if (i > 70) {
 		// 		Debug.Log(coll.frames[i].BitmapIndex);
 		// 	}
 		// }
-
-
+			// Debug.Log(coll.frames[41].WorldBottom);
+			// Debug.Log(coll.frames[41].WorldLeft);
+			// Debug.Log(coll.frames[41].WorldTop);
+			// Debug.Log(coll.frames[41].WorldRight);
+			// Debug.Log(coll.frames[41].WorldX);
+			// Debug.Log(coll.frames[41].WorldY);
+			// Debug.Log(coll.frames[41].OriginY);
+			// Debug.Log(coll.frames[41].OriginX);
+		
+		float scale = sequence.PixelsToWorld;
+		if (scale == 0) {scale = coll.pixelsToWorld ;}
+		sc.scale = scale;
+		// Debug.Log(coll.frames[0].OriginX);
 		sc.sideCount = sequence.getRealViewCount(sequence.NoOfViews);
 		List<Material> frames = new List<Material>();
 		Weland.ShapeDescriptor tex = new Weland.ShapeDescriptor();
@@ -727,7 +738,6 @@ if (i > 70) {
 		for (int i = 0; i < sequence.FrameIndexes.Count; i++) {
 			tex.Collection = (byte)collectionID;
 			tex.Bitmap = (byte)coll.frames[sequence.FrameIndexes[i]].BitmapIndex;
-			
 			frames.Add(getTexture(tex));
 
 		}

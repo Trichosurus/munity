@@ -75,7 +75,7 @@ namespace Weland {
 	short bitmapCount;
 	int bitmapOffsetTableOffset;
 
-	short pixelsToWorld;
+	public short pixelsToWorld;
 	int size;
 
 #pragma warning restore 0414
