@@ -43,7 +43,7 @@ public class Map : MonoBehaviour {
 			}
 	    }
 	    Level Level = new Level();
-		Level.Load(wadfile.Directory[0]);
+		Level.Load(wadfile.Directory[3]);
 		Debug.Log(Level.Name);
 		// Debug.Log(Level.Environment);
 
