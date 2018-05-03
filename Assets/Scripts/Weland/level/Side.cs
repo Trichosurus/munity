@@ -69,15 +69,27 @@ namespace Weland {
 	}
 
 	public bool IsPlatformSwitch() {
-	    return controlPanelClasses[ControlPanelType] == ControlPanelClass.PlatformSwitch;
+		if (ControlPanelType <= 8 && ControlPanelType >= 0) {
+	    	return controlPanelClasses[ControlPanelType] == ControlPanelClass.PlatformSwitch;
+		} else {
+			return false;
+		}
 	}
 
 	public bool IsTagSwitch() {
-	    return controlPanelClasses[ControlPanelType] == ControlPanelClass.TagSwitch;
+		if (ControlPanelType <= 8 && ControlPanelType >= 0) {
+	    	return controlPanelClasses[ControlPanelType] == ControlPanelClass.TagSwitch;
+		} else {
+			return false;
+		}
 	}
 
 	public bool IsLightSwitch() {
-	    return controlPanelClasses[ControlPanelType] == ControlPanelClass.LightSwitch;
+		if (ControlPanelType <= 8 && ControlPanelType >= 0) {
+			return controlPanelClasses[ControlPanelType] == ControlPanelClass.LightSwitch;
+		} else {
+			return false;
+		}
 	}
 
 

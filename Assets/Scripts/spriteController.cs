@@ -11,6 +11,7 @@ public class spriteController : MonoBehaviour {
 	public List<GameObject> sides = new List<GameObject>();
 	public List<Vector2> offsets = new List<Vector2>();
 	public float scale = 0.2f;
+	public bool fromCeiling = false;
 
 	
 
@@ -77,8 +78,11 @@ public class spriteController : MonoBehaviour {
 						}
 						Debug.Log(lastHeight);
 						Debug.Log(scalex);
-						
-						parent.transform.position = new Vector3(parent.transform.position.x, parent.transform.position.y - (lastHeight - scalex)/2f, parent.transform.position.z);
+						float vChange = (lastHeight - scalex)/2f;
+						if (fromCeiling) {vChange = 0-vChange;}
+						parent.transform.position = new Vector3(parent.transform.position.x, 
+																parent.transform.position.y - vChange, 
+																parent.transform.position.z);
 						lastframe = frame;
 					}
 					sides[s].SetActive(true);

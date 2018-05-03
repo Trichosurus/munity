@@ -438,7 +438,7 @@ public class Map : MonoBehaviour {
 					mss.lowerLight = mss.upperLight;
 				}
 
-				if (side.IsControlPanel|| side.IsPlatformSwitch() || side.IsTagSwitch() || side.IsLightSwitch()) {
+				if (side != null && (side.IsControlPanel|| side.IsPlatformSwitch() || side.IsTagSwitch() || side.IsLightSwitch())) {
 						// if (p == 4) {
 						// 	;
 						// }
@@ -625,29 +625,13 @@ public class Map : MonoBehaviour {
 			}
 
 
-if (i > 70) {
-	;
-}				
-
 			if (obj.Type == ObjectType.Item ) {
 				GameObject item = createMapItemFromSpriteSequence(7,GlobalData.itemSequences[obj.Index-1],shapes, "itemObject");
 
 				Vector3 rpos = pos;
-				// rpos.y += 0.1f;
 				item.transform.position = rpos;
 				item.transform.rotation = facing;
-				// GameObject item = Instantiate(Resources.Load<GameObject>("itemObject"), rpos, facing);
-				// GameObject sprite = Instantiate(Resources.Load<GameObject>("spriteObject"), rpos, facing);
-				// sprite.transform.parent = item.transform;
-				// spriteController sc = sprite.GetComponent<spriteController>();
-				// sc.parent = item;
-				// sc.sideCount = 1;
-				// List<Material> frames = new List<Material>();
-				// Weland.ShapeDescriptor tex = new Weland.ShapeDescriptor();
-				// tex.Collection = 7;
-				// tex.Bitmap = (byte)(obj.Index);
-				// frames.Add(getTexture(tex));
-				// sc.frames = frames;
+
 				item.name = "item" + i;
 			}
 
@@ -663,9 +647,14 @@ if (i > 70) {
 
 				Vector3 rpos = pos;
 				// rpos.y += 0.1f;
+				if (obj.FromCeiling) {
+					rpos.y = segments[obj.PolygonIndex].centerPoint.y + segments[obj.PolygonIndex].height.y;
+				}
 				item.transform.position = rpos;
 				item.transform.rotation = facing;
 				item.name = "scenery" + i;
+				item.transform.Find("sprite").GetComponent<spriteController>().fromCeiling = obj.FromCeiling;
+
 			}
 
 			if (obj.Type == ObjectType.Goal ) {
@@ -713,6 +702,7 @@ if (i > 70) {
 	GameObject createMapItemFromSpriteSequence (int collectionID, int sequenceID, Weland.ShapesFile shapes, string objectName) {
 		GameObject item = Instantiate(Resources.Load<GameObject>(objectName));
 		GameObject sprite = Instantiate(Resources.Load<GameObject>("spriteObject"));
+		sprite.name = "sprite";
 		sprite.transform.parent = item.transform;
 		spriteController sc = sprite.GetComponent<spriteController>();
 		sc.parent = item;
@@ -723,23 +713,6 @@ if (i > 70) {
 		if (sequenceID > coll.sequences.Count) {sequenceID = coll.sequences.Count -1;}
 		Collection.ShapeSequence sequence = coll.sequences[sequenceID];
 
-		// if (collectionID == 7) {
-		// 	for (int i = 0; i < sequence.FrameIndexes.Count; i++) {
-		// 		Debug.Log(sequence.FrameIndexes[i]);
-		// 	}
-		// 	for (int i = 0; i < coll.frames.Count; i++) {
-		// 		Debug.Log(coll.frames[i].BitmapIndex);
-		// 	}
-		// }
-			// Debug.Log(coll.frames[41].WorldBottom);
-			// Debug.Log(coll.frames[41].WorldLeft);
-			// Debug.Log(coll.frames[41].WorldTop);
-			// Debug.Log(coll.frames[41].WorldRight);
-			// Debug.Log(coll.frames[41].WorldX);
-			// Debug.Log(coll.frames[41].WorldY);
-			// Debug.Log(coll.frames[41].OriginY);
-			// Debug.Log(coll.frames[41].OriginX);
-		
 		float scale = sequence.PixelsToWorld;
 		if (scale == 0) {scale = coll.pixelsToWorld ;}
 		sc.scale = scale;
