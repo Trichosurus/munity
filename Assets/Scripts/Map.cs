@@ -43,7 +43,7 @@ public class Map : MonoBehaviour {
 			}
 	    }
 	    Level Level = new Level();
-		Level.Load(wadfile.Directory[3]);
+		Level.Load(wadfile.Directory[0]);
 		Debug.Log(Level.Name);
 		// Debug.Log(Level.Environment);
 
@@ -630,10 +630,10 @@ if (i > 70) {
 }				
 
 			if (obj.Type == ObjectType.Item ) {
-				GameObject item = createMapItemFromSpriteSequence(7,GlobalData.itemSequences[obj.Index-1],shapes);
+				GameObject item = createMapItemFromSpriteSequence(7,GlobalData.itemSequences[obj.Index-1],shapes, "itemObject");
 
 				Vector3 rpos = pos;
-				rpos.y += 0.1f;
+				// rpos.y += 0.1f;
 				item.transform.position = rpos;
 				item.transform.rotation = facing;
 				// GameObject item = Instantiate(Resources.Load<GameObject>("itemObject"), rpos, facing);
@@ -655,6 +655,17 @@ if (i > 70) {
 			}
 
 			if (obj.Type == ObjectType.Scenery ) {
+				Debug.Log("scenery");
+				Debug.Log(obj.Index);
+				GameObject item = createMapItemFromSpriteSequence(GlobalData.sceneryCollections[obj.Index],
+																	GlobalData.scenerySequences[obj.Index],
+																	shapes, "sceneryObject");
+
+				Vector3 rpos = pos;
+				// rpos.y += 0.1f;
+				item.transform.position = rpos;
+				item.transform.rotation = facing;
+				item.name = "scenery" + i;
 			}
 
 			if (obj.Type == ObjectType.Goal ) {
@@ -662,6 +673,8 @@ if (i > 70) {
 
 
 			if (obj.Type == ObjectType.Monster ) {
+				Debug.Log("monster");
+				Debug.Log(obj.Index);
 			}
 
 
@@ -697,8 +710,8 @@ if (i > 70) {
 		}
 	}
 
-	GameObject createMapItemFromSpriteSequence (int collectionID, int sequenceID, Weland.ShapesFile shapes) {
-		GameObject item = Instantiate(Resources.Load<GameObject>("itemObject"));
+	GameObject createMapItemFromSpriteSequence (int collectionID, int sequenceID, Weland.ShapesFile shapes, string objectName) {
+		GameObject item = Instantiate(Resources.Load<GameObject>(objectName));
 		GameObject sprite = Instantiate(Resources.Load<GameObject>("spriteObject"));
 		sprite.transform.parent = item.transform;
 		spriteController sc = sprite.GetComponent<spriteController>();

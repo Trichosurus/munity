@@ -36,7 +36,6 @@ public class spriteController : MonoBehaviour {
 				sides[i-1].transform.rotation = Quaternion.Euler(0,(360f/(float)sideCount) * i-1,-90);
 			}
 		}
-
 		// if (type == 1) {gameObject.transform.fix}
 	}
 	
@@ -62,29 +61,42 @@ public class spriteController : MonoBehaviour {
 						sides[s].GetComponent<MeshRenderer>().material = frames[frame];
 						float scalex = ((float)frames[frame].mainTexture.width/1024f)*scale;
 						float scaley = ((float)frames[frame].mainTexture.height/1024f)*scale;
-						
+						float lastHeight = 0;
+					
 						sides[s].transform.localScale = new Vector3(scalex,scaley,1);
-						parent.GetComponent<CapsuleCollider>().radius = scalex;
-						parent.GetComponent<CapsuleCollider>().height = scaley;
+						if (parent.GetComponent<CapsuleCollider>() != null) {
+							CapsuleCollider cc = parent.GetComponent<CapsuleCollider>();
+							lastHeight = cc.height;
+							cc.radius = scaley/2;
+							cc.height = scalex;
+
+						} else {
+							BoxCollider bc = parent.GetComponent<BoxCollider>();
+							lastHeight = bc.size.y;
+							bc.size = new Vector3(scaley, scalex, scaley);
+						}
+						Debug.Log(lastHeight);
+						Debug.Log(scalex);
 						
+						parent.transform.position = new Vector3(parent.transform.position.x, parent.transform.position.y - (lastHeight - scalex)/2f, parent.transform.position.z);
 						lastframe = frame;
 					}
 					sides[s].SetActive(true);
 
 
-			if (type == 1 || type == 2) {
-				//GameObject camera;
-				//Quaternion q = GameObject.Find("playerCamera").transform.rotation;
-				GameObject player = GameObject.Find("player");
-				Quaternion cameraQ = player.transform.Find("playerCamera").rotation;
+					if (type == 1 || type == 2) {
+						//GameObject camera;
+						//Quaternion q = GameObject.Find("playerCamera").transform.rotation;
+						GameObject player = GameObject.Find("player");
+						Quaternion cameraQ = player.transform.Find("playerCamera").rotation;
 
-				//camera = GameObject.Find("playerCamera");
-				if (type == 1) {
-					sides[s].transform.rotation = Quaternion.Euler(cameraQ.eulerAngles.x, cameraQ.eulerAngles.y , cameraQ.eulerAngles.z);
-				} else {
-					sides[s].transform.rotation = Quaternion.Euler(0, cameraQ.eulerAngles.y, 90);
-				}
-			}
+						//camera = GameObject.Find("playerCamera");
+						if (type == 1) {
+							sides[s].transform.rotation = Quaternion.Euler(cameraQ.eulerAngles.x, cameraQ.eulerAngles.y , cameraQ.eulerAngles.z);
+						} else {
+							sides[s].transform.rotation = Quaternion.Euler(0, cameraQ.eulerAngles.y, 90);
+						}
+					}
 
 
 

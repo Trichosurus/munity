@@ -66,6 +66,87 @@ public static class GlobalData
 	};
 
 
+	public static List<string> sceneryList = new List<string> {
+		"(L) Light Dirt",
+		"(L) Dark Dirt",
+		"(L) Bones",
+		"(L) Bone",
+		"(L) Ribs",
+		"(L) Skull",
+		"(L) Hanging Light #1",
+		"(L) Hanging Light #2",
+		"(L) Large Cylinder",
+		"(L) Small Cylinder",
+		"(L) Block #1",
+		"(L) Block #2",
+		"(L) Block #3",
+		"(W) Pistol Clip",
+		"(W) Short Light",
+		"(W) Long Light",
+		"(W) Siren",
+		"(W) Rocks",
+		"(W) Blood Drops",
+		"(W) Filtration Device",
+		"(W) Gun",
+		"(W) Bob Remains",
+		"(W) Puddles",
+		"(W) Big Puddles",
+		"(W) Security Monitor",
+		"(W) Alien Supply Can",
+		"(W) Machine",
+		"(W) Fighter's Staff",
+		"(S) Stubby Green Light",
+		"(S) Long Green Light",
+		"(S) Junk",
+		"(S) Big Antenna #1",
+		"(S) Big Antenna #2",
+		"(S) Alien Supply Can",
+		"(S) Bones",
+		"(S) Big Bones",
+		"(S) Pfhor Pieces",
+		"(S) Bob Pieces",
+		"(S) Bob Blood",
+		"(P) Green Light",
+		"(P) Small Alien Light",
+		"(P) Alien Ceiling Rod Light",
+		"(P) Bulbous Yellow Alien Object",
+		"(P) Square Grey Organic Object",
+		"(P) Pfhor Skeleton",
+		"(P) Pfhor Mask",
+		"(P) Green Stuff",
+		"(P) Hunter Shield",
+		"(P) Bones",
+		"(P) Alien Sludge",
+		"(J) Short Ceiling Light",
+		"(J) Long Light",
+		"(J) Weird Rod",
+		"(J) Pfhor Ship",
+		"(J) Sun",
+		"(J) Large Glass Container",
+		"(J) Nub #1",
+		"(J) Nub #2",
+		"(J) Lh'owon",
+		"(J) Floor Whip Antenna",
+		"(J) Ceiling Whip Antenna"
+	};
+	public static List<int> sceneryCollections = new List<int> {
+		23,	23,	23,	23,	23,	23,	23,	23,	23,	23,	23,	23,	23,
+		22,	22,	22,	22,	22,	22,	22,	22,	22,	22,	22,	22,	22,	22,	22,
+		24,	24,	24,	24,	24,	24,	24,	24,	24,	24,	24,
+		26,	26,	26,	26,	26,	26,	26,	26,	26,	26,	26,
+		25,	25,	25,	25,	25,	25,	25,	25,	25,	25,	25
+	};
+
+	public static List<int> scenerySequences = new List<int> {
+		3,4,5,6,7,8,9,10,11,12,13,14,15,
+		4,5,7,9,10,21,11,12,13,14,15,16,17,18,20,
+		5,7,4,9,10,11,13,17,12,14,15,4,14,16,
+		6,7,9,10,11,12,13,18,
+		5,7,4,9,10,11,13,17,12,14,15
+	};
+
+
+
 }
 
 public class gameController : MonoBehaviour {
