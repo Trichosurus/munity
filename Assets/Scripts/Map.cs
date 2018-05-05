@@ -684,8 +684,8 @@ public class Map : MonoBehaviour {
 			}
 
 			if (obj.Type == ObjectType.Scenery ) {
-				Debug.Log("scenery");
-				Debug.Log(obj.Index);
+				// Debug.Log("scenery");
+				// Debug.Log(obj.Index);
 				GameObject item = createMapItemFromSpriteSequence(GlobalData.sceneryCollections[obj.Index],
 																	GlobalData.scenerySequences[obj.Index],
 																	shapes, "sceneryObject");

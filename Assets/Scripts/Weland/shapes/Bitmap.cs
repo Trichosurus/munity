@@ -15,6 +15,13 @@ namespace Weland {
 	    get {
 		return ((flags & BitmapFlags.ColumnOrder) == BitmapFlags.ColumnOrder);
 	    }
+		set {
+		if (value) {
+		    flags |= BitmapFlags.ColumnOrder;
+		} else {
+		    flags &= ~BitmapFlags.ColumnOrder;
+		}
+		}
 	}
 	public short BitDepth;
 
@@ -38,26 +45,35 @@ namespace Weland {
 	    data = new byte[Width * Height];
 	    if (bytesPerRow > -1) {
 		// not compressed
-		if (ColumnOrder) {
-		    // rotate
-		    short temp = Width;
-		    Width = Height;
-		    Height = temp;
-		    for (int y = Height - 1; y >= 0; --y) {
-			for (int x = 0; x < Width; ++x) {
-			    data[x + y * Width] = reader.ReadByte();
-			}
-		    }
-		} else {
+		// if (ColumnOrder) {
+		//     // rotate
+		//     short temp = Width;
+		//     Width = Height;
+		//     Height = temp;
+		//     for (int y = Height - 1; y >= 0; --y) {
+		// 	for (int x = 0; x < Width; ++x) {
+		// 	    data[x + y * Width] = reader.ReadByte();
+		// 	}
+		//     }
+		// } else {
 		    reader.Read(data, 0, Width * Height);
-		}
+		// }
 	    } else {
-		for (int x = 0; x < Width; ++x) {
+		ColumnOrder = false;//??
+		for (int x = 0; x < Width; x++) {
 		    short start = reader.ReadInt16();
 		    short end = reader.ReadInt16();
-		    for (int y = start; y < end; ++y) {
-			data[x + y * Width] = reader.ReadByte();
+
+		    for (int y = start; y < end; y++) {
+				data[x + y * Width] = reader.ReadByte();
 		    }
+			// int dstp = x + start * Width;
+			// while (start != end) {
+			// 	data[dstp] = reader.ReadByte();
+			// 	dstp += Width;
+			// 	start++;
+			// }
+
 		}
 	    }
 	}

@@ -34,7 +34,7 @@ public class spriteController : MonoBehaviour {
 
 			sides[i-1].GetComponent<MeshCollider>().enabled = false;
 			if (type == 3) {
-				sides[i-1].transform.rotation = Quaternion.Euler(0,(360f/(float)sideCount) * i-1,-90);
+				sides[i-1].transform.rotation = Quaternion.Euler(0,(360f/(float)sideCount) * i-1,0);
 			}
 		}
 		// if (type == 1) {gameObject.transform.fix}
@@ -68,17 +68,22 @@ public class spriteController : MonoBehaviour {
 						if (parent.GetComponent<CapsuleCollider>() != null) {
 							CapsuleCollider cc = parent.GetComponent<CapsuleCollider>();
 							lastHeight = cc.height;
-							cc.radius = scaley/2;
-							cc.height = scalex;
+							if (scaley > scalex) {
+								cc.radius = scalex/2;
+								cc.height = scaley;
+							} else {
+								cc.height = scaley;
+								cc.radius = scaley/2;
+							}
 
 						} else {
 							BoxCollider bc = parent.GetComponent<BoxCollider>();
-							lastHeight = bc.size.y;
-							bc.size = new Vector3(scaley, scalex, scaley);
+							lastHeight = bc.size.x;
+							bc.size = new Vector3(scalex, scaley, scalex);
 						}
-						Debug.Log(lastHeight);
-						Debug.Log(scalex);
-						float vChange = (lastHeight - scalex)/2f;
+						// Debug.Log(lastHeight);
+						// Debug.Log(scalex);
+						float vChange = (lastHeight - scaley)/2f;
 						if (fromCeiling) {vChange = 0-vChange;}
 						parent.transform.position = new Vector3(parent.transform.position.x, 
 																parent.transform.position.y - vChange, 
@@ -98,7 +103,7 @@ public class spriteController : MonoBehaviour {
 						if (type == 1) {
 							sides[s].transform.rotation = Quaternion.Euler(cameraQ.eulerAngles.x, cameraQ.eulerAngles.y , cameraQ.eulerAngles.z);
 						} else {
-							sides[s].transform.rotation = Quaternion.Euler(0, cameraQ.eulerAngles.y, 90);
+							sides[s].transform.rotation = Quaternion.Euler(0, cameraQ.eulerAngles.y, 0);
 						}
 					}
 

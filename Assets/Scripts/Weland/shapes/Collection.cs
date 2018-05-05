@@ -323,7 +323,6 @@ namespace Weland {
 		 		colors[i].a = 0;
 			}
 		}
-
 		Texture2D result;
 		for (int i = 0; i < bitmap.Data.Length; i++) {
 			if (bitmap.Data[i] == 0) {
@@ -331,21 +330,21 @@ namespace Weland {
 			}
 		}
 		if (hasAlpha) {
-			result = new Texture2D(bitmap.Height, bitmap.Width,TextureFormat.ARGB32,true);
+			result = new Texture2D(bitmap.Width, bitmap.Height,TextureFormat.ARGB32,true);
 		} else {
-			result = new Texture2D(bitmap.Height, bitmap.Width,TextureFormat.RGB24,true);
+			result = new Texture2D(bitmap.Width, bitmap.Height,TextureFormat.RGB24,true);
 		}
 		if (!bitmap.ColumnOrder) {
-			for (int y = 0; y < bitmap.Height; ++y) {
-				for (int x = 0; x < bitmap.Width; ++x) {
-					result.SetPixel(bitmap.Width-x, bitmap.Height-y, colors[bitmap.Data[x + y * bitmap.Width]]);
+			for (int y = 0; y < bitmap.Height; y++) {
+				for (int x = 0; x < bitmap.Width; x++) {
+					result.SetPixel(x, bitmap.Height-y-1, colors[bitmap.Data[x + y * bitmap.Width]]);
 
 				}
 			}
 		} else {
-			for (int y = 0; y < bitmap.Height; ++y) {
-				for (int x = 0; x < bitmap.Width; ++x) {
-					result.SetPixel(bitmap.Height-y,bitmap.Width-x, colors[bitmap.Data[y * bitmap.Width + x]]);
+			for (int x = 0; x < bitmap.Width; x++) {
+				for (int y = 0; y < bitmap.Height; y++) {
+					result.SetPixel(x,bitmap.Height-y-1, colors[bitmap.Data[x * bitmap.Height + y]]);
 
 				}
 			}
