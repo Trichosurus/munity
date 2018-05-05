@@ -65,7 +65,7 @@ public static class GlobalData
 		25,24
 	};
 
-
+	//----scenery definitions -- where are these defined in the data files ??????
 	public static List<string> sceneryList = new List<string> {
 		"(L) Light Dirt",
 		"(L) Dark Dirt",
@@ -146,7 +146,46 @@ public static class GlobalData
 	};
 
 
+	//----liquid media definitions -- where are these defined in the data files ??????
+	public static List<string> mediaList = new List<string> {
+		"Water",
+		"Lava",
+		"Goo",
+		"Sweage",
+		"Jjaro"
+	};
 
+	public static List<int> mediaCollections = new List<int> {
+		17,
+		18,
+		21,
+		19,
+		20
+	};
+
+	public static List<int> mediaBitmaps = new List<int> {
+		19,
+		12,
+		5,
+		13,
+		13
+	};
+
+	public static List<Color> mediaColours = new List<Color> {
+		new Color(123,158,166),
+		new Color(210,160,49),
+		new Color(210,19,139),
+		new Color(105,114,30),
+		new Color(205,207,87)		
+	};
+
+	public static List<float> mediaDensities = new List<float> {
+		0.1f,
+		0.3f,
+		0.3f,
+		0.2f,
+		0.2f		
+	};
 }
 
 public class gameController : MonoBehaviour {

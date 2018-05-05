@@ -238,22 +238,67 @@ public class Map : MonoBehaviour {
 			}
 			if (Level.Polygons[p].MediaIndex >= 0) {
 				seg.liquid = new Liquid();
+
 				//Debug.Log(Level.Polygons[p].MediaIndex);
 				Media media = Level.Medias[Level.Polygons[p].MediaIndex];
 				seg.liquid.currentSpeed = (float)media.CurrentMagnitude/1024f;
 				seg.liquid.currentDirectioin = Quaternion.Euler(0, (float)media.Direction+90, 0);
 				seg.liquid.high = (float)media.High/1024f;
 				seg.liquid.low = (float)media.Low/1024f;
-				// media.
+				seg.liquid.mediaLight = lights[media.LightIndex];
 				//?? where is the liquid data stored???
-				//switch (media.Type) {
-					// case MediaType.Goo: 
-					// 		seg.liquid.
-							
+				// Material mat = new Material(Shader.Find("Custom/StandardClippableV2"));
 
-					// 		Shapes.	
-				//}
-				//media.Type =
+				Weland.ShapeDescriptor tex = new Weland.ShapeDescriptor();
+		
+				switch (media.Type) {
+					case MediaType.Water: 
+						tex.Collection = (byte)GlobalData.mediaCollections[0];
+						tex.Bitmap = (byte)GlobalData.mediaBitmaps[0];
+						seg.liquid.surface = getTexture(tex);
+						seg.liquid.colour = GlobalData.mediaColours[0];
+						seg.liquid.density = GlobalData.mediaDensities[0];
+						break;
+					case MediaType.Lava: 
+						tex.Collection = (byte)GlobalData.mediaCollections[1];
+						tex.Bitmap = (byte)GlobalData.mediaBitmaps[1];
+						seg.liquid.surface = getTexture(tex);
+						seg.liquid.colour = GlobalData.mediaColours[1];
+						seg.liquid.density = GlobalData.mediaDensities[1];
+						break;
+					case MediaType.Goo: 
+						tex.Collection = (byte)GlobalData.mediaCollections[2];
+						tex.Bitmap = (byte)GlobalData.mediaBitmaps[2];
+						seg.liquid.surface = getTexture(tex);
+						seg.liquid.colour = GlobalData.mediaColours[2];
+						seg.liquid.density = GlobalData.mediaDensities[2];
+						break;
+					case MediaType.Sewage: 
+						tex.Collection = (byte)GlobalData.mediaCollections[3];
+						tex.Bitmap = (byte)GlobalData.mediaBitmaps[3];
+						seg.liquid.surface = getTexture(tex);
+						seg.liquid.colour = GlobalData.mediaColours[3];
+						seg.liquid.density = GlobalData.mediaDensities[3];
+						break;
+					case MediaType.Jjaro: 
+						tex.Collection = (byte)GlobalData.mediaCollections[4];
+						tex.Bitmap = (byte)GlobalData.mediaBitmaps[4];
+						seg.liquid.surface = getTexture(tex);
+						seg.liquid.colour = GlobalData.mediaColours[4];
+						seg.liquid.density = GlobalData.mediaDensities[4];
+						break;
+					default: 
+						tex.Collection = (byte)GlobalData.mediaCollections[0];
+						tex.Bitmap = (byte)GlobalData.mediaBitmaps[0];
+						seg.liquid.surface = getTexture(tex);
+						seg.liquid.colour = GlobalData.mediaColours[0];
+						seg.liquid.density = GlobalData.mediaDensities[0];
+						break;
+				}
+
+				seg.liquid.parent = seg;
+
+				// media.Type =
 			}
 
 			switch (Level.Polygons[p].Type) {

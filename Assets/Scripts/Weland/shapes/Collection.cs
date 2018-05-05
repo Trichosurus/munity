@@ -312,7 +312,7 @@ namespace Weland {
 	    ColorValue[] colorTable = colorTables[ColorTableIndex];
 	    Color[] colors = new Color[colorTable.Length];
 		bool hasAlpha = false;
-	    for (int i = 0; i < colorTable.Length; ++i) {
+	    for (int i = 0; i < colorTable.Length; i++) {
 			ColorValue color = colorTable[i];
 		 	colors[i].r = (float)color.Red/65535f;
 		 	colors[i].g = (float)color.Green/65535f;
@@ -335,11 +335,21 @@ namespace Weland {
 		} else {
 			result = new Texture2D(bitmap.Height, bitmap.Width,TextureFormat.RGB24,true);
 		}
-		for (int x = 0; x < bitmap.Width; ++x) {
+		if (!bitmap.ColumnOrder) {
 			for (int y = 0; y < bitmap.Height; ++y) {
-				result.SetPixel(bitmap.Height-y,bitmap.Width-x, colors[bitmap.Data[x + y * bitmap.Width]]);
+				for (int x = 0; x < bitmap.Width; ++x) {
+					result.SetPixel(bitmap.Width-x, bitmap.Height-y, colors[bitmap.Data[x + y * bitmap.Width]]);
 
+				}
 			}
+		} else {
+			for (int y = 0; y < bitmap.Height; ++y) {
+				for (int x = 0; x < bitmap.Width; ++x) {
+					result.SetPixel(bitmap.Height-y,bitmap.Width-x, colors[bitmap.Data[y * bitmap.Width + x]]);
+
+				}
+			}
+
 		}
 		return result;
 	}

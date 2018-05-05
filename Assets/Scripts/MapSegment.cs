@@ -68,10 +68,24 @@ public class MapSegment : MonoBehaviour {
 		floor.setLight();
 		ceiling.setLight();
 		foreach (MapSegmentSide side in sides) {
-			if (id == 61 && side.connectionID == 62) {
-				;
-			}
+			// if (id == 61 && side.connectionID == 62) {
+			// 	;
+			// }
 			side.setLight();
+		}
+
+		if (liquid != null) {
+
+			float min = liquid.low;
+			float max = liquid.high;
+			Vector3 liquidHeight = new Vector3(
+				liquid.volume.transform.position.x,
+				centerPoint.y - (max - min) + ((max - min) * liquid.mediaLight.intensity()),
+				liquid.volume.transform.position.z
+			);
+
+
+			liquid.volume.transform.position = liquidHeight;
 		}
 	}
 
@@ -516,8 +530,8 @@ public class MapSegment : MonoBehaviour {
 			Vector3 liquidHeight = new Vector3(0,
 												liquid.high - centerPoint.y,
 												0);
-			makePolygon(true, liquidVertices, liquidHeight, liquid.volume, Resources.Load("texture") as Material);
-			makePolygon(false, liquidVertices, liquidHeight, liquid.volume, Resources.Load("texture") as Material);
+			makePolygon(true, liquidVertices, liquidHeight, liquid.volume, liquid.surface);
+			makePolygon(false, liquidVertices, liquidHeight, liquid.volume, liquid.surface);
 
 			for (int i = 0; i < vertices.Count; i++) {
 
@@ -1302,16 +1316,30 @@ public class Platform {
 
 
 
-public class Liquid {
+public class Liquid  {
 	public float currentSpeed = 0;
 	public Quaternion currentDirectioin = new Quaternion();
 	public float high = 0;
 	public float low = 0;
-	public Material tint = new Material(Shader.Find("Custom/StandardClippableV2"));
+	//public Material tint = new Material(Shader.Find("Custom/StandardClippableV2"));
 	public Material surface = new Material(Shader.Find("Custom/StandardClippableV2"));
 	public float damage = 0;
+	public mapLight mediaLight;
 
 	public GameObject volume = null;
+
+	public Color colour = new Color(210,210,210);
+	public float density = 0.1f;
+
+	public MapSegment parent;
+
+	// public void Start () {
+
+	// }
+
+	// public void Update() {
+	// }
+
 
 }
 
@@ -1561,6 +1589,10 @@ public class mapLight : MonoBehaviour {
 				obj.GetComponent<MeshRenderer>().sharedMaterial = material;
 			}
 		}
+	}
+
+	public float intensity () {
+		return currentIntensity;
 	}
 
 	
