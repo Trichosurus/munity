@@ -1179,7 +1179,7 @@ public class Platform {
 	public void playerTouch() {
 		//Debug.Log("platform");
 		//element.GetComponent<Mesh>().material =
-				Debug.Log("'woo?'");
+				Debug.Log("woo?");
 		if (door) {
 			if (!locked) {
 				

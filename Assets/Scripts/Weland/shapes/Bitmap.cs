@@ -59,7 +59,7 @@ namespace Weland {
 		    reader.Read(data, 0, Width * Height);
 		// }
 	    } else {
-		ColumnOrder = false;//??
+		ColumnOrder = false;
 		for (int x = 0; x < Width; x++) {
 		    short start = reader.ReadInt16();
 		    short end = reader.ReadInt16();

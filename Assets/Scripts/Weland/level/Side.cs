@@ -69,7 +69,7 @@ namespace Weland {
 	}
 
 	public bool IsPlatformSwitch() {
-		if (ControlPanelType <= 8 && ControlPanelType >= 0) {
+		if (ControlPanelType >= 0) {
 	    	return controlPanelClasses[ControlPanelType] == ControlPanelClass.PlatformSwitch;
 		} else {
 			return false;
@@ -77,7 +77,7 @@ namespace Weland {
 	}
 
 	public bool IsTagSwitch() {
-		if (ControlPanelType <= 8 && ControlPanelType >= 0) {
+		if (ControlPanelType >= 0) {
 	    	return controlPanelClasses[ControlPanelType] == ControlPanelClass.TagSwitch;
 		} else {
 			return false;
@@ -85,7 +85,7 @@ namespace Weland {
 	}
 
 	public bool IsLightSwitch() {
-		if (ControlPanelType <= 8 && ControlPanelType >= 0) {
+		if (ControlPanelType >= 0) {
 			return controlPanelClasses[ControlPanelType] == ControlPanelClass.LightSwitch;
 		} else {
 			return false;
