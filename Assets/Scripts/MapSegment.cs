@@ -74,7 +74,7 @@ public class MapSegment : MonoBehaviour {
 			side.setLight();
 		}
 
-		if (liquid != null) {
+		if (liquid != null && liquid.volume != null) {
 
 			float min = liquid.low;
 			float max = liquid.high;
@@ -1586,6 +1586,9 @@ public class mapLight : MonoBehaviour {
 				Color brightness = Color.white;
 				brightness *= currentIntensity;
 				material.SetColor ("_EmissionColor", brightness);
+
+				//material.renderQueue = 2502;
+
 				obj.GetComponent<MeshRenderer>().sharedMaterial = material;
 			}
 		}

@@ -44,6 +44,7 @@ public class Map : MonoBehaviour {
 	    }
 	    Level Level = new Level();
 		Level.Load(wadfile.Directory[0]);
+
 		Debug.Log(Level.Name);
 		// Debug.Log(Level.Environment);
 
@@ -70,54 +71,66 @@ public class Map : MonoBehaviour {
 		}
 	}
 
+     Texture2D rotateTexture(Texture2D originalTexture, bool clockwise)
+         {
+             Color32[] original = originalTexture.GetPixels32();
+             Color32[] rotated = new Color32[original.Length];
+             int w = originalTexture.width;
+             int h = originalTexture.height;
+     
+             int iRotated, iOriginal;
+     
+             for (int j = 0; j < h; ++j)
+             {
+                 for (int i = 0; i < w; ++i)
+                 {
+                     iRotated = (i + 1) * h - j - 1;
+                     iOriginal = clockwise ? original.Length - 1 - (j * w + i) : j * w + i;
+                     rotated[iRotated] = original[iOriginal];
+                 }
+             }
+     
+             Texture2D rotatedTexture = new Texture2D(h, w);
+             rotatedTexture.SetPixels32(rotated);
+             rotatedTexture.Apply();
+             return rotatedTexture;
+         }
+
 	IEnumerator makeMaterialsFromShapesFile(ShapesFile shapes) {
 	    
 
 		for (int col = 0; col < 32; col++) {
 			//if (col != 20) {	collectionMapping.Add(0);continue;}
-			bool landscape = col >= 27;
+			//bool landscape = col >= 27;
 			Collection coll = shapes.GetCollection(col);
 			collectionMapping.Add(coll.BitmapCount);
 			// Debug.Log(collectionMapping[col]);
 			ShapeDescriptor d = new ShapeDescriptor();
 			d.CLUT = 0;
 			d.Collection = (byte) col;
-			//int textureSize = 64;
-
-			// if (col == 7) {
-			// 	Debug.Log(coll.frames.Count);
-			// 	Debug.Log(coll.sequences.Count);
-			// 	Debug.Log(coll.frames[0].BitmapIndex);
-			// 	Debug.Log(coll.frames[0].KeypointX);
-			// 	Debug.Log(coll.frames[0].KeypointY);
-			// 	Debug.Log(coll.frames[0].XMirror);
-			// 	Debug.Log(coll.frames[0].YMirror);
-			// 	Debug.Log(coll.frames[0].OriginX);
-			// 	Debug.Log(coll.frames[0].OriginY);
-				
-			// 	Debug.Log(coll.frames[1].BitmapIndex);
-			// 	Debug.Log(coll.frames[1].KeypointX);
-			// 	Debug.Log(coll.frames[1].KeypointY);
-			// 	Debug.Log(coll.frames[1].XMirror);
-			// 	Debug.Log(coll.frames[1].YMirror);
-			// 	Debug.Log(coll.frames[1].OriginX);
-			// 	Debug.Log(coll.frames[1].OriginY);
-			// }
-
 
 			for (byte i = 0; i < coll.BitmapCount; ++i) {
 				d.Bitmap = i;
 				
 				Texture2D bitmap = shapes.GetShape(d);
-				// if (col == 20) {Debug.Log(d.GetType().);}
-				// if (landscape) {
-				// 	int W = 192;
-				// 	int H = (int) Math.Round((double) bitmap.height * W / bitmap.width);
-				// 	bitmap.Resize(W,H);
-				// } else {
-				// 	//bitmap.RotateFlip(System.Drawing.RotateFlipType.Rotate90FlipNone);
-				// 	//bitmap = ImageUtilities.ResizeImage(bitmap, textureSize, textureSize);
-				// }
+
+				if (GlobalData.landscapeCollections.Contains(col)) {
+
+					bitmap = rotateTexture(bitmap,false);
+
+					//landscapes need to be rotated 90 degrees
+
+					// Color[] rotated = new Color[bitmap.width * bitmap.height];
+					// Color[] pixels = bitmap.GetPixels();
+					// for (int y = 0; y < bitmap.height; y++) {
+					// 	for (int x = 0; x < bitmap.width; x++) {
+					// 		rotated[y + (bitmap.width-1-x) * bitmap.height] = pixels[x + y * bitmap.width];         //    
+					// 	}
+					// }
+					// bitmap.SetPixels(rotated);
+
+				}
+
 				bitmap.Apply();
 
 				Material  material = new Material(Shader.Find("Custom/StandardClippableV2"));
@@ -737,7 +750,13 @@ public class Map : MonoBehaviour {
 		retval += texture.Bitmap;
 
 		if (materials.Count > retval && retval >= 0) {
-			return materials[retval];
+
+			if (GlobalData.landscapeCollections.Contains(texture.Collection)) {
+				RenderSettings.skybox.mainTexture = materials[retval].mainTexture;
+				return  Resources.Load<Material>("transparent");
+			} else {
+				return materials[retval];
+			}
 		} else {
 			//return new Material(Shader.Find("Custom/StandardClippableV2"));
 			return null;

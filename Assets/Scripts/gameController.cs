@@ -28,6 +28,12 @@ public static class GlobalData
 
 
 	//----item definitions -- where are these defined in the data files ??????
+
+	public static List<int> landscapeCollections = new List<int> {
+		27,28,29,30
+	};
+
+
 	public static int itemCollection = 7;
 
 	public static List<string> itemList = new List<string> {

@@ -6,13 +6,13 @@ Material:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: texture
-  m_Shader: {fileID: 4800000, guid: ee7217023fa5649e2b505c307f702732, type: 3}
-  m_ShaderKeywords: CLIP_ONE
+  m_Name: DepthTest
+  m_Shader: {fileID: 4800000, guid: 95047bd71460f4656800cadc973a5315, type: 3}
+  m_ShaderKeywords: _MAPPING_LATITUDE_LONGITUDE_LAYOUT
   m_LightmapFlags: 4
-  m_EnableInstancingVariants: 1
+  m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3000
+  m_CustomRenderQueue: 2501
   stringTagMap: {}
   disabledShaderPasses: []
   m_SavedProperties:
@@ -39,7 +39,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 6763c901340564e868fbe93ca1928e5e, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -56,28 +56,35 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Floats:
     - _BumpScale: 1
-    - _Cutoff: 0.882
+    - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
+    - _Exposure: 1
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _ImageType: 0
+    - _Layout: 0
+    - _Mapping: 1
     - _Metallic: 0
+    - _MirrorOnBack: 0
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
+    - _Rotation: 0
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
-    - _planesAdditive: 1
+    - _planesAdditive: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _planeNorm: {r: 0.17364816, g: -0.00000004703179, b: 0.9848078, a: 0}
-    - _planeNorm2: {r: 0.17364809, g: -0.00000003958121, b: -0.9848078, a: 0}
-    - _planeNorm3: {r: -0.9999999, g: 0.00000011920929, b: 0.00000011920929, a: 0}
-    - _planePos: {r: 5, g: 0, b: 2, a: 0}
-    - _planePos2: {r: 5, g: 0, b: 1.81, a: 0}
-    - _planePos3: {r: 5, g: 0, b: 2, a: 0}
+    - _Tint: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
+    - _planeNorm: {r: 0, g: 1, b: 0, a: 1}
+    - _planeNorm2: {r: 0, g: 1, b: 0, a: 1}
+    - _planeNorm3: {r: 0, g: 1, b: 0, a: 1}
+    - _planePos: {r: 0, g: 0, b: 0, a: 1}
+    - _planePos2: {r: 0, g: 0, b: 0, a: 1}
+    - _planePos3: {r: 0, g: 0, b: 0, a: 1}
