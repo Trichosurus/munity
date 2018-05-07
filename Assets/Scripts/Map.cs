@@ -43,7 +43,7 @@ public class Map : MonoBehaviour {
 			}
 	    }
 	    Level Level = new Level();
-		Level.Load(wadfile.Directory[0]);
+		Level.Load(wadfile.Directory[2]);
 
 		Debug.Log(Level.Name);
 		// Debug.Log(Level.Environment);
@@ -71,30 +71,30 @@ public class Map : MonoBehaviour {
 		}
 	}
 
-     Texture2D rotateTexture(Texture2D originalTexture, bool clockwise)
-         {
-             Color32[] original = originalTexture.GetPixels32();
-             Color32[] rotated = new Color32[original.Length];
-             int w = originalTexture.width;
-             int h = originalTexture.height;
-     
-             int iRotated, iOriginal;
-     
-             for (int j = 0; j < h; ++j)
-             {
-                 for (int i = 0; i < w; ++i)
-                 {
-                     iRotated = (i + 1) * h - j - 1;
-                     iOriginal = clockwise ? original.Length - 1 - (j * w + i) : j * w + i;
-                     rotated[iRotated] = original[iOriginal];
-                 }
-             }
-     
-             Texture2D rotatedTexture = new Texture2D(h, w);
-             rotatedTexture.SetPixels32(rotated);
-             rotatedTexture.Apply();
-             return rotatedTexture;
-         }
+	Texture2D rotateTexture(Texture2D originalTexture, bool clockwise)
+		{
+			Color32[] original = originalTexture.GetPixels32();
+			Color32[] rotated = new Color32[original.Length];
+			int w = originalTexture.width;
+			int h = originalTexture.height;
+	
+			int iRotated, iOriginal;
+	
+			for (int j = 0; j < h; ++j)
+			{
+				for (int i = 0; i < w; ++i)
+				{
+					iRotated = (i + 1) * h - j - 1;
+					iOriginal = clockwise ? original.Length - 1 - (j * w + i) : j * w + i;
+					rotated[iRotated] = original[iOriginal];
+				}
+			}
+	
+			Texture2D rotatedTexture = new Texture2D(h, w);
+			rotatedTexture.SetPixels32(rotated);
+			rotatedTexture.Apply();
+			return rotatedTexture;
+		}
 
 	IEnumerator makeMaterialsFromShapesFile(ShapesFile shapes) {
 	    
@@ -114,20 +114,92 @@ public class Map : MonoBehaviour {
 				
 				Texture2D bitmap = shapes.GetShape(d);
 
+
 				if (GlobalData.landscapeCollections.Contains(col)) {
-
 					bitmap = rotateTexture(bitmap,false);
+					//extend landscape image to make skybox distortion less
+					if (GlobalData.landscapeType > 0) {
+						Color32[] original = bitmap.GetPixels32();
+						Color32[] stretched = new Color32[bitmap.width * bitmap.width];
+						int difference = stretched.Length - original.Length;
+						int top = difference/2;
 
-					//landscapes need to be rotated 90 degrees
+						if (GlobalData.landscapeType == 2) {
+							Color32 fill = new Color32(255,255,255,0);
+							for (int pos = 0; pos < stretched.Length; pos++) {
+								stretched[pos] = fill;
+							}
+						}
 
-					// Color[] rotated = new Color[bitmap.width * bitmap.height];
-					// Color[] pixels = bitmap.GetPixels();
-					// for (int y = 0; y < bitmap.height; y++) {
-					// 	for (int x = 0; x < bitmap.width; x++) {
-					// 		rotated[y + (bitmap.width-1-x) * bitmap.height] = pixels[x + y * bitmap.width];         //    
-					// 	}
-					// }
-					// bitmap.SetPixels(rotated);
+						if (GlobalData.landscapeType == 3) {
+							int row = bitmap.width;
+							Color32[] fillTop = new Color32[row];
+							Color32[] fillBottom = new Color32[row];
+ 							for (int pos = 0; pos < row; pos++) {
+								fillBottom[pos] = original[pos];
+								fillTop[pos] = original[pos+original.Length-row];
+							}
+							
+							for (int y = 0; y < top/row; y++) {
+								for (int x = 0; x < row; x++) {
+									stretched[y * row + x + original.Length + top] = fillTop[x];	
+									stretched[y*row + x] = fillBottom[x];									
+								}
+							}
+						}
+						if (GlobalData.landscapeType == 4 || GlobalData.landscapeType == 5) {
+							int row = bitmap.width;
+							Color32[] fillTop = new Color32[row];
+							Color32[] fillBottom = new Color32[row];
+							int rt = 0;
+							int gt = 0;
+							int bt = 0;
+							int rb = 0;
+							int gb = 0;
+							int bb = 0;
+ 							for (int pos = 0; pos < row; pos++) {
+								rb += original[pos].r;
+								gb += original[pos].g;
+								bb += original[pos].b;
+								rt += original[pos+original.Length-row].r;
+								gt += original[pos+original.Length-row].g;
+								bt += original[pos+original.Length-row].b;
+							}
+							rt = rt/row;
+							gt = gt/row;
+							bt = bt/row;
+							rb = rb/row;
+							gb = gb/row;
+							bb = bb/row;
+							
+ 							for (int pos = 0; pos < row; pos++) {
+								fillBottom[pos] = new Color32((byte)rb,(byte)gb,(byte)bb,255);
+								fillTop[pos] = new Color32((byte)rt,(byte)gt,(byte)bt,255);
+							}
+
+							for (int y = 0; y < top/row; y++) {
+								for (int x = 0; x < row; x++) {
+									stretched[y * row + x + original.Length + top] = fillTop[x];	
+									stretched[y*row + x] = fillBottom[x];									
+								}
+							}
+						}
+						for (int pos = 0; pos < original.Length; pos++) {
+							stretched[pos + top] = original[pos];
+						}
+
+						if (GlobalData.landscapeType == 5) {
+							Color32[] restretched = new Color32[bitmap.width * bitmap.width - top];
+							for (int pos = top /2; pos < stretched.Length-top/2; pos++) {
+								restretched[pos-top/2] = stretched[pos];
+							}
+							bitmap = new Texture2D(bitmap.width, bitmap.width - top/bitmap.width);
+							bitmap.SetPixels32(restretched);
+						} else {
+							bitmap = new Texture2D(bitmap.width, bitmap.width);
+							bitmap.SetPixels32(stretched);
+						}
+					}
 
 				}
 

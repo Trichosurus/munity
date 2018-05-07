@@ -23,6 +23,7 @@ public static class GlobalData
 	public static bool globalLighting = true;
 	public static bool playerLight = true;
 	public static int spriteType = 2;
+	public static int landscapeType = 5;
 
 
 
