@@ -16,8 +16,9 @@ public class Map : MonoBehaviour {
 	public List<MapSegment> segments;
 	public List<mapLight> lights;
 	public List<bool> tags;
+	public List<audioDefinition> audioDefinitions = new List<audioDefinition>();
 
-	private string loadingText;
+	private string loadingText = "";
 
 	// Use this for initialization
 	void Start () {
@@ -25,7 +26,18 @@ public class Map : MonoBehaviour {
 		StartCoroutine(loadData());
 	}
 	IEnumerator loadData() {
-		loadingText = "Loading Shapes... ";
+		// loadingText += "Loading Default Physics... ";
+		// Wadfile physicsFile = new Wadfile();
+		loadingText += "\n";
+		SoundsFile sounds = new SoundsFile();
+		sounds.Load(GlobalData.soundsFilePath);
+		yield return makeAudioDefinitionsFromSoundsFile(sounds);
+
+		AudioSource aud = GetComponent<AudioSource>();
+		aud.clip = audioDefinitions[11].sounds[0];
+		aud.Play();
+
+		loadingText += "\n";
 		GlobalData.map = this;
 	    ShapesFile shapes = new ShapesFile();
 		shapes.Load(GlobalData.shapesFilePath);
@@ -43,7 +55,7 @@ public class Map : MonoBehaviour {
 			}
 	    }
 	    Level Level = new Level();
-		Level.Load(wadfile.Directory[2]);
+		Level.Load(wadfile.Directory[0]);
 
 		Debug.Log(Level.Name);
 		// Debug.Log(Level.Environment);
@@ -95,9 +107,43 @@ public class Map : MonoBehaviour {
 			rotatedTexture.Apply();
 			return rotatedTexture;
 		}
+	IEnumerator makeAudioDefinitionsFromSoundsFile(SoundsFile sounds) {
+		//Debug.Log(sounds.SourceCount);
+		string load = loadingText;
+		for (int sound = 0; sound < sounds.SoundCount; sound++) {
+
+			SoundDefinition sd = sounds.GetSound(1,sound);
+			audioDefinition ad = new audioDefinition();
+			ad.sounds = new List<AudioClip>();
+			foreach (Permutation p in sd.permutations) {
+				AudioClip clip = AudioClip.Create("sound", p.Samples.Length, 1, (int)p.SampleRate, false); 
+				clip.SetData(p.Samples,0);
+				ad.sounds.Add(clip);
+			}
+			ad.cannotBeMediaObstructed = sd.CannotBeMediaObstructed;
+			ad.cannotBeRestarted = sd.CannotBeRestarted;
+			ad.doesNotSelfAbort = sd.DoesNotSelfAbort;
+			ad.resistsPitchChanges = sd.ResistsPitchChanges;
+			ad.cannotChangePitch = sd.CannotChangePitch;
+			ad.cannotBeObstructed = sd.CannotBeObstructed;
+			ad.isAmbient = sd.IsAmbient;
+			ad.chance = sd.Chance;
+			ad.lowPitch = sd.LowPitch;
+			ad.highPitch = sd.HighPitch;
+
+			audioDefinitions.Add(ad);
+
+			if (sound % 7 == 0 ){
+				loadingText = load + "Loading Sounds... " + sound + "/" + sounds.SoundCount;
+				yield return null;
+			}
+		}
+		loadingText = load + "Loading Sounds... " + sounds.SoundCount + "/" + sounds.SoundCount;
+
+	}
 
 	IEnumerator makeMaterialsFromShapesFile(ShapesFile shapes) {
-	    
+		string load = loadingText;
 
 		for (int col = 0; col < 32; col++) {
 			//if (col != 20) {	collectionMapping.Add(0);continue;}
@@ -200,7 +246,7 @@ public class Map : MonoBehaviour {
 							bitmap.SetPixels32(stretched);
 						}
 					}
-
+					bitmap.wrapMode = TextureWrapMode.Clamp;
 				}
 
 				bitmap.Apply();
@@ -224,12 +270,12 @@ public class Map : MonoBehaviour {
 				materials.Add(material);
 			//	Debug.Log(material);
 			}		
-			loadingText = "Loading Shapes... " + col + "/31";
+			loadingText = load + "Loading Shapes... " + col + "/31";
 			if (col % 7 == 0 ){
 				yield return null;
 			}
 		}
-		loadingText = "Loading Shapes... 31/31";
+		loadingText = load + "Loading Shapes... 31/31";
 
 
 	}

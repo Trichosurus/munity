@@ -96,8 +96,8 @@ public class spriteController : MonoBehaviour {
 					if (type == 1 || type == 2) {
 						//GameObject camera;
 						//Quaternion q = GameObject.Find("playerCamera").transform.rotation;
-						GameObject player = GameObject.Find("player");
-						Quaternion cameraQ = player.transform.Find("playerCamera").rotation;
+						//GameObject player = GameObject.Find("player/playerCamera");
+						Quaternion cameraQ = GameObject.Find("player/playerCamera").transform.rotation;
 
 						//camera = GameObject.Find("playerCamera");
 						if (type == 1) {

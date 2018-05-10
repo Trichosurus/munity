@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using System.IO;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Weland {
     enum WadfileVersion {
@@ -226,8 +227,16 @@ namespace Weland {
 		directoryEntryBaseSize = reader.ReadInt16();
 		
 		// sanity check the map
-		if (Version < 2 || DataVersion < 1 || entryHeaderSize != 16 || directoryEntryBaseSize != 10) {
-		    throw new BadMapException("Only Marathon 2 and higher maps are supported");
+		if (Version < 2 || DataVersion < 0 || entryHeaderSize != 16 || directoryEntryBaseSize != 10) {
+			// if ((Version == 0 || Version == 1 || Version == 2 || Version == 4) && (DataVersion == 0 || DataVersion == 1 || DataVersion == 2)) {
+			// 	//physics file
+			// 	PhysicsFile physics = new PhysicsFile();
+			// 	physics.Load(reader);
+			// 	return;
+			// } else {
+				
+		    	throw new BadMapException("Only Marathon 2 and higher maps are supported");
+			// }
 		}
 		
 		ParentChecksum = reader.ReadUInt32();
@@ -253,6 +262,16 @@ namespace Weland {
 		    kvp.Value.LoadChunks(reader);
 		}
 		
+		List<uint> PhysicsChunks = new List<uint> {
+			// embedded physics
+			Wadfile.Chunk("MNpx"),
+			Wadfile.Chunk("FXpx"),
+			Wadfile.Chunk("PRpx"),
+			Wadfile.Chunk("RXpx"),
+			Wadfile.Chunk("WPpx"),
+		};
+
+
 		if (applicationSpecificDirectoryDataSize != DirectoryEntry.DataSize) {
 		    foreach(var kvp in Directory) {
 			if (kvp.Value.Chunks.ContainsKey(MapInfo.Tag)) {
@@ -264,6 +283,12 @@ namespace Weland {
 			    kvp.Value.EntryPointFlags = info.EntryPointFlags;
 			    kvp.Value.LevelName = info.Name;
 			}
+			
+
+			if (kvp.Value.Chunks.ContainsKey(PhysicsChunks[0])) {
+				Debug.Log("Physics??");
+			}
+
 		    }
 		}
 	    } finally {

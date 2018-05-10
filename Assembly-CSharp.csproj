@@ -80,10 +80,14 @@
      <Compile Include="Assets\Scripts\Weland\level\Polygon.cs" />
      <Compile Include="Assets\Scripts\Weland\level\Side.cs" />
      <Compile Include="Assets\Scripts\Weland\level\Sounds.cs" />
+     <Compile Include="Assets\Scripts\Weland\physics\physics.cs" />
      <Compile Include="Assets\Scripts\Weland\shapes\Bitmap.cs" />
      <Compile Include="Assets\Scripts\Weland\shapes\Collection.cs" />
      <Compile Include="Assets\Scripts\Weland\shapes\ShapeDescriptor.cs" />
      <Compile Include="Assets\Scripts\Weland\shapes\ShapesFile.cs" />
+     <Compile Include="Assets\Scripts\Weland\sounds\Permutation.cs" />
+     <Compile Include="Assets\Scripts\Weland\sounds\SoundDefinition.cs" />
+     <Compile Include="Assets\Scripts\Weland\sounds\SoundsFile.cs" />
      <Compile Include="Assets\Scripts\Weland\Wadfile.cs" />
      <None Include="Assets\Resources\NewImageEffectShader.shader" />
      <None Include="Assets\Resources\Shaders\StandardClippableV2.shader" />

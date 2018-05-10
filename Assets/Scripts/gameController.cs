@@ -223,9 +223,24 @@ public class gameController : MonoBehaviour {
 
 
 	}
-	
 	// Update is called once per frame
 	void Update () {
 		
 	}
 }
+
+public class audioDefinition {
+	public List<AudioClip> sounds;
+	public bool cannotBeRestarted;
+	public bool doesNotSelfAbort;
+	public bool resistsPitchChanges ;
+	public bool cannotChangePitch ;
+	public bool cannotBeObstructed;
+	public bool cannotBeMediaObstructed;
+	public bool isAmbient;
+	public double chance;
+	public double lowPitch;
+	public double highPitch;
+
+}
+	

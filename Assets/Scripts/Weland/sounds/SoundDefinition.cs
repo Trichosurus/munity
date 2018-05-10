@@ -14,63 +14,63 @@ namespace Weland {
     };
     
     public class SoundDefinition {
-        short SoundCode {
+        public short SoundCode {
             get { return soundCode; }
         }
 
-        short BehaviorIndex {
+        public short BehaviorIndex {
             get { return behaviorIndex; }
         }
 
-        double Chance {
+        public double Chance {
             get { return chance; }
         }
 
-        double LowPitch {
+        public double LowPitch {
             get { return lowPitch; }
         }
 
-        double HighPitch {
+        public double HighPitch {
             get { return highPitch; }
         }
 
-        bool CannotBeRestarted {
+        public bool CannotBeRestarted {
             get {
                 return (flags & SoundDefinitionFlags.CannotBeRestarted) != 0;
             }
         }
 
-        bool DoesNotSelfAbort {
+        public bool DoesNotSelfAbort {
             get {
                 return (flags & SoundDefinitionFlags.DoesNotSelfAbort) != 0;
             }
         }
 
-        bool ResistsPitchChanges {
+        public bool ResistsPitchChanges {
             get {
                 return (flags & SoundDefinitionFlags.ResistsPitchChanges) != 0;
             }
         }
 
-        bool CannotChangePitch {
+        public bool CannotChangePitch {
             get {
                 return (flags & SoundDefinitionFlags.CannotChangePitch) != 0;
             }
         }
 
-        bool CannotBeObstructed {
+        public bool CannotBeObstructed {
             get {
                 return (flags & SoundDefinitionFlags.CannotBeObstructed) != 0;
             }
         }
 
-        bool CannotBeMediaObstructed {
+        public bool CannotBeMediaObstructed {
             get {
                 return (flags & SoundDefinitionFlags.CannotBeMediaObstructed) != 0;
             }
         }
 
-        bool IsAmbient {
+        public bool IsAmbient {
             get {
                 return (flags & SoundDefinitionFlags.IsAmbient) != 0;
             }
