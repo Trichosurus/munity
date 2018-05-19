@@ -33,9 +33,9 @@ public class Map : MonoBehaviour {
 		sounds.Load(GlobalData.soundsFilePath);
 		yield return makeAudioDefinitionsFromSoundsFile(sounds);
 
-		AudioSource aud = GetComponent<AudioSource>();
-		aud.clip = audioDefinitions[11].sounds[0];
-		aud.Play();
+		// AudioSource aud = GetComponent<AudioSource>();
+		// aud.clip = audioDefinitions[29].sounds[0];
+		// aud.Play();
 
 		loadingText += "\n";
 		GlobalData.map = this;
@@ -44,10 +44,8 @@ public class Map : MonoBehaviour {
 		yield return StartCoroutine(makeMaterialsFromShapesFile(shapes));
 
 		loadingText += "\nLoading Map... ";
-		// ClearLog();
 		Wadfile wadfile = new Wadfile();
 		wadfile.Load(GlobalData.mapsFilePath);
-		//Wadfile	wadfile = w;
 	    foreach (var kvp in wadfile.Directory) {
 			if (kvp.Value.Chunks.ContainsKey(MapInfo.Tag)) {
 				string String = kvp.Value.LevelName;
@@ -68,12 +66,11 @@ public class Map : MonoBehaviour {
 		yield return StartCoroutine(spawnEntitiesFromMarathonMap(Level, shapes));
 
 		loadingText = null;
-
 		GameObject.Find("LoadingDisplay").SetActive(false);
 
+		
 		GameObject.Find("worldLight").SetActive(GlobalData.globalLighting);
 		
-
 	}
 
 	// Update is called once per frame
@@ -133,7 +130,7 @@ public class Map : MonoBehaviour {
 
 			audioDefinitions.Add(ad);
 
-			if (sound % 7 == 0 ){
+			if (sound % 77 == 0 ){
 				loadingText = load + "Loading Sounds... " + sound + "/" + sounds.SoundCount;
 				yield return null;
 			}
@@ -316,7 +313,6 @@ public class Map : MonoBehaviour {
 		}
 		//now we can generate mapsegment objects from each map polygon
 		for (int p = 0; p < Level.Polygons.Count; p++) {
-		//for (int p = 0; p < 2; p++) {
 			GameObject pol = Instantiate(polygon);
 			pol.name = "Polygon" + p;
 			pol.tag = "polygon";
@@ -326,9 +322,6 @@ public class Map : MonoBehaviour {
 			if(Level.Polygons[p].Type == Weland.PolygonType.Platform) {
 				foreach (Weland.Platform pl in Level.Platforms) {
 					if (pl.PolygonIndex == p) {
-						if (pl.PolygonIndex ==6) {
-							;
-						}
 						seg.platform = new Platform();
 						seg.platform.comesFromCeiling = pl.ComesFromCeiling;
 						seg.platform.comesFromFloor = pl.ComesFromFloor;
@@ -367,10 +360,11 @@ public class Map : MonoBehaviour {
 					}
 				}
 			}
+
+
 			if (Level.Polygons[p].MediaIndex >= 0) {
 				seg.liquid = new Liquid();
 
-				//Debug.Log(Level.Polygons[p].MediaIndex);
 				Media media = Level.Medias[Level.Polygons[p].MediaIndex];
 				seg.liquid.currentSpeed = (float)media.CurrentMagnitude/1024f;
 				seg.liquid.currentDirectioin = Quaternion.Euler(0, (float)media.Direction+90, 0);
@@ -428,8 +422,6 @@ public class Map : MonoBehaviour {
 				}
 
 				seg.liquid.parent = seg;
-
-				// media.Type =
 			}
 
 			switch (Level.Polygons[p].Type) {
@@ -501,20 +493,18 @@ public class Map : MonoBehaviour {
 				break;	
 			}
 			
+			//get the map points that make up the polygon
 			List<Vector3> points = new List<Vector3>();
-
+			//find the top most point so we can sort them clockwise to make
 			int zPt = 0;
 			int xPt = 0;
-
-			for (int ep = 0; ep <  Level.Polygons[p].VertexCount; ep++) {
-
+						for (int ep = 0; ep <  Level.Polygons[p].VertexCount; ep++) {
 				int x = Level.Endpoints[Level.Polygons[p].EndpointIndexes[ep]].X;
 				int z = Level.Endpoints[Level.Polygons[p].EndpointIndexes[ep]].Y;
 
 				if (z > Level.Endpoints[Level.Polygons[p].EndpointIndexes[zPt]].Y ||
 					(z == Level.Endpoints[Level.Polygons[p].EndpointIndexes[zPt]].Y && x > Level.Endpoints[Level.Polygons[p].EndpointIndexes[zPt]].X)) {
 						zPt = ep;
-
 				}
 				if (x < Level.Endpoints[Level.Polygons[p].EndpointIndexes[xPt]].X ||
 					(x == Level.Endpoints[Level.Polygons[p].EndpointIndexes[xPt]].X && z > Level.Endpoints[Level.Polygons[p].EndpointIndexes[xPt]].Y)) {
@@ -522,21 +512,20 @@ public class Map : MonoBehaviour {
 				}
 			}
 
+			//add the lines and sides for the polygon
 			List<Weland.Line> Line = new List<Weland.Line>();
 			List<Weland.Side> Sides = new List<Weland.Side>();
 			int currentLine = -1;
 			for (int ln = 0; ln < Level.Polygons[p].VertexCount; ln++) {
-
 				Line.Add(Level.Lines[Level.Polygons[p].LineIndexes[ln]]);
 				if (Level.Polygons[p].SideIndexes[ln] >=0) {
 					Sides.Add(Level.Sides[Level.Polygons[p].SideIndexes[ln]]);
 				}
+				//which lines are attached to the vertex
 				int ep = -1;
 				if (Line[Line.Count-1].EndpointIndexes[0] == Level.Polygons[p].EndpointIndexes[zPt]) {ep = 0;}
 				if (Line[Line.Count-1].EndpointIndexes[1] == Level.Polygons[p].EndpointIndexes[zPt]) {ep = 1;}
 				if (ep >= 0) {
-					
-
 					if (currentLine < 0) {
 						currentLine = ln;
 					} else {
@@ -545,15 +534,14 @@ public class Map : MonoBehaviour {
 							Line[currentLine].EndpointIndexes[1] == Line[Line.Count-1].EndpointIndexes[1]) {
 							lep = 1;
 						}
-
 						Point point = Level.Endpoints[Line[currentLine].EndpointIndexes[lep]];
 						Vector2 a = new Vector2(point.X, point.Y);
 						
 						ep = Line[Line.Count-1].EndpointIndexes[Mathf.Abs(ep-1)];
 						lep = Line[currentLine].EndpointIndexes[Mathf.Abs(lep-1)];
+						//make sure we are going clockwise
 						Vector2 b = new Vector2(Level.Endpoints[lep].X, Level.Endpoints[lep].Y);
 						Vector2 c = new Vector2(Level.Endpoints[ep].X, Level.Endpoints[ep].Y);
-				
 						if (Mathf.Atan2(b.y - a.y, b.x - a.x) < Mathf.Atan2(c.y - a.y, c.x - a.x)) {
 							currentLine = ln;
 						}
@@ -563,6 +551,7 @@ public class Map : MonoBehaviour {
 			
 			int lastPt = -1;
 			while (Line.Count > 0) {
+				//get the correct point for each line
 				int pt = 0;
 				int[] ei= {Line[currentLine].EndpointIndexes[0], Line[currentLine].EndpointIndexes[1]};
 				if (lastPt == -1) {
@@ -576,7 +565,7 @@ public class Map : MonoBehaviour {
 					}
 				}
 				if (ei[1] == lastPt) {pt = 1;}
-
+				// map segment vertices must be in clockwise order
 				points.Add(new Vector3(
 							(float)Level.Endpoints[ei[pt]].X/1024f,
 							0,
@@ -587,9 +576,7 @@ public class Map : MonoBehaviour {
 				mss.transparent = Line[currentLine].Transparent;
 				mss.solid = Line[currentLine].Solid;
 				Side side = new Side();
-				if (p == 61 && Line[currentLine].Solid && Line[currentLine].Transparent ) {
-					;
-				}
+				//get texture + lighting information for side
 				if (Line[currentLine].ClockwisePolygonSideIndex >= 0 ) {
 					side = Level.Sides[Line[currentLine].ClockwisePolygonSideIndex];
 				} else if (Line[currentLine].CounterclockwisePolygonSideIndex >= 0 ) {
@@ -614,10 +601,8 @@ public class Map : MonoBehaviour {
 					mss.lowerLight = mss.upperLight;
 				}
 
-				if (side != null && (side.IsControlPanel|| side.IsPlatformSwitch() || side.IsTagSwitch() || side.IsLightSwitch())) {
-						// if (p == 4) {
-						// 	;
-						// }
+				//get control panel information if needed
+				if (side != null && (side.IsControlPanel || side.IsPlatformSwitch() || side.IsTagSwitch() || side.IsLightSwitch())) {
 					mss.controlPanel = new ControlPanel();
 					mss.controlPanel.permutation = side.ControlPanelPermutation;
 					mss.controlPanel.type = side.ControlPanelType;
@@ -660,10 +645,9 @@ public class Map : MonoBehaviour {
 							mss.controlPanel.canOnlyBeHitByProjectiles = true;
 							break;
 					}
-					// Debug.Log(p);
-					// Debug.Log(mss.controlPanel.permutation);
 				}
 
+				//connedtion information is used for occlusion culling
 				seg.sides.Add(mss);
 				if (Line[currentLine].ClockwisePolygonOwner == p) {
 					mss.connectionID = Line[currentLine].CounterclockwisePolygonOwner;
@@ -673,20 +657,16 @@ public class Map : MonoBehaviour {
 				pt = Mathf.Abs(pt - 1);
 				lastPt = ei[pt];
 
+				//find next line that connects to the endpoint of this one to make the next side
 				Line.RemoveAt(currentLine);
-
 				for (int i = 0; i < Line.Count; i++) {
 					if (Line[i].EndpointIndexes[0] == ei[pt] || Line[i].EndpointIndexes[1] == ei[pt]){
 						currentLine = i;
 					}
 				}
-
-
 			}
-			int collectionNo = Level.Polygons[p].CeilingTexture.Collection;
-			int texNo = Level.Polygons[p].CeilingTexture.Bitmap;
-			// Debug.Log(collectionNo);
-			// Debug.Log(texNo);
+			 
+			//get floor and ceiling texture data
 			seg.ceiling.upperMaterial = getTexture(Level.Polygons[p].CeilingTexture);
 			seg.floor.upperMaterial = getTexture(Level.Polygons[p].FloorTexture);
 
@@ -697,10 +677,11 @@ public class Map : MonoBehaviour {
 			seg.ceiling.light = lights[Level.Polygons[p].CeilingLight];
 			seg.floor.lightID = Level.Polygons[p].FloorLight;
 			seg.floor.light = lights[Level.Polygons[p].FloorLight];
-			//seg.levelSegments = segments;
 			seg.vertices = points;
 			seg.centerPoint = new Vector3(0,(float)Level.Polygons[p].FloorHeight/1024f,0);
 			seg.id = p;
+
+			//convert points to be relative to the polygon average point
 			seg.calculatePoints();
 		
 			if (p % 77 == 0 ){
@@ -709,9 +690,11 @@ public class Map : MonoBehaviour {
 			}
 
 		}
-
 		load = load + "\nGenerating Polygons "+Level.Polygons.Count+"/"+Level.Polygons.Count;
 
+		//if a polygon is a platform we need to change its floor/ceiling heights to actually be
+		//the volume that the platform would be moving up and down in if it were an actual 
+		//object - which it will be. 
 		int count = 0;		
 		foreach(Weland.Platform pl in Level.Platforms) {
 			count++;
@@ -721,23 +704,20 @@ public class Map : MonoBehaviour {
 				yield return null;
 			}
 		}
-
 		load = load + "\nRecalculate Platform Volumes "+count+"/"+Level.Platforms.Count;
 		count = 0;
+
 		foreach(MapSegment s in segments) {
 			count++;
-			// if (s.id == 61) {
-			// 	;
-			// }
 			s.generateMeshes();
 			if (count % 77 == 0 ){
 				loadingText = load + "\nGenerating Meshes "+count+"/"+segments.Count;
 				yield return null;
 			}
 		}
-
 		load = load + "\nGenerating Meshes "+count+"/"+segments.Count;
 		count = 0;
+
 		foreach(MapSegment s in segments) {
 			count++;
 			s.checkIfImpossible();
@@ -746,9 +726,9 @@ public class Map : MonoBehaviour {
 				yield return null;
 			}
 		}
-
 		load = load + "\nFinding Impossible Space "+count+"/"+segments.Count;
 		count = 0;
+
 		foreach(MapSegment s in segments) {
 			count++;
 			s.calculateVisibility();
@@ -757,9 +737,9 @@ public class Map : MonoBehaviour {
 				yield return null;
 			}
 		}
-
 		load = load + "\nOcclusion Culling "+count+"/"+segments.Count;
 		count = 0;
+	
 		foreach(Weland.Platform pl in Level.Platforms) {
 			count++;
 			segments[pl.PolygonIndex].showHide(true);
@@ -769,6 +749,7 @@ public class Map : MonoBehaviour {
 				yield return null;
 			}
 		}
+		
 		foreach(Weland.Platform pl in Level.Platforms) {
 			if (segments[pl.PolygonIndex].platform.initiallyActive) {
 				segments[pl.PolygonIndex].platform.activate();
@@ -776,9 +757,6 @@ public class Map : MonoBehaviour {
 		}
 
 	}
-
-
-
 
 	IEnumerator spawnEntitiesFromMarathonMap(Weland.Level Level, Weland.ShapesFile shapes) {
 		string load = loadingText;
@@ -800,29 +778,24 @@ public class Map : MonoBehaviour {
 				player.GetComponent<playerController>().currentPolygon = obj.PolygonIndex;
 			}
 
-
 			if (obj.Type == ObjectType.Item ) {
 				GameObject item = createMapItemFromSpriteSequence(7,GlobalData.itemSequences[obj.Index-1],shapes, "itemObject");
-
 				Vector3 rpos = pos;
 				item.transform.position = rpos;
 				item.transform.rotation = facing;
-
 				item.name = "item" + i;
 			}
 
 			if (obj.Type == ObjectType.Sound ) {
+
 			}
 
 			if (obj.Type == ObjectType.Scenery ) {
-				// Debug.Log("scenery");
-				// Debug.Log(obj.Index);
 				GameObject item = createMapItemFromSpriteSequence(GlobalData.sceneryCollections[obj.Index],
 																	GlobalData.scenerySequences[obj.Index],
 																	shapes, "sceneryObject");
 
 				Vector3 rpos = pos;
-				// rpos.y += 0.1f;
 				if (obj.FromCeiling) {
 					rpos.y = segments[obj.PolygonIndex].centerPoint.y + segments[obj.PolygonIndex].height.y;
 				}
@@ -871,7 +844,7 @@ public class Map : MonoBehaviour {
 
 			if (GlobalData.landscapeCollections.Contains(texture.Collection)) {
 				RenderSettings.skybox.mainTexture = materials[retval].mainTexture;
-				return  Resources.Load<Material>("transparent");
+				return  Resources.Load<Material>("Materials/transparent");
 			} else {
 				return materials[retval];
 			}

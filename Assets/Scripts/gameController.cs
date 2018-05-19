@@ -15,16 +15,14 @@ public static class GlobalData
 
 	public static Map map = null;
 
-	public static bool skipOcclusion = true;
-	public static int occlusionOverDraw = 3;
-
+	public static bool skipOcclusion = false;
+	public static int occlusionOverDraw = 1;
+	public static float occlusionDensity = 0.5f;
 	public static bool captureMouse = true;
-
 	public static bool globalLighting = true;
 	public static bool playerLight = true;
 	public static int spriteType = 2;
 	public static int landscapeType = 5;
-
 
 
 

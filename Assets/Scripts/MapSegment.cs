@@ -65,27 +65,25 @@ public class MapSegment : MonoBehaviour {
 	}
 
 	void Update () {
-		floor.setLight();
-		ceiling.setLight();
-		foreach (MapSegmentSide side in sides) {
-			// if (id == 61 && side.connectionID == 62) {
-			// 	;
-			// }
-			side.setLight();
-		}
+		if (!hidden) {
+			floor.setLight();
+			ceiling.setLight();
+			foreach (MapSegmentSide side in sides) {
+				side.setLight();
+			}
 
-		if (liquid != null && liquid.volume != null) {
+			if (liquid != null && liquid.volume != null) {
 
-			float min = liquid.low;
-			float max = liquid.high;
-			Vector3 liquidHeight = new Vector3(
-				liquid.volume.transform.position.x,
-				centerPoint.y - (max - min) + ((max - min) * liquid.mediaLight.intensity()),
-				liquid.volume.transform.position.z
-			);
+				float min = liquid.low;
+				float max = liquid.high;
+				Vector3 liquidHeight = new Vector3(
+					liquid.volume.transform.position.x,
+					centerPoint.y - (max - min) + ((max - min) * liquid.mediaLight.intensity()),
+					liquid.volume.transform.position.z
+				);
 
-
-			liquid.volume.transform.position = liquidHeight;
+				liquid.volume.transform.position = liquidHeight;
+			}
 		}
 	}
 
@@ -325,19 +323,18 @@ public class MapSegment : MonoBehaviour {
 	}
 
 	public void recalculatePlatformVolume (){
+		//platfroms will be converted into proper objects moving in a polygon
+		//so we need to make sure that the polygon heights match what is pretending to go on 
+		//in the map, rather thatn what actually is.
+		//the floor should be the lowest connecting polygon and the ceiling should 
+		//be the highest connecting pollygon if the platform comes from the 
+		//floor/ceiling respectively
 		foreach (MapSegmentSide s in sides) {
 			if (s.connection == null && s.connectionID >= 0) {
 				s.connection = GlobalData.map.segments[s.connectionID];
 			}
 			if (s.connection != null){
 				MapSegment conn = s.connection;
-
-					// if (id == 6) {
-					// 	Debug.Log(centerPoint);
-					// 	Debug.Log(conn.centerPoint);
-					// 	Debug.Log(height);
-
-					// }
 
 				if (conn.centerPoint.y < centerPoint.y 
 							&& platform.comesFromFloor) {
@@ -354,20 +351,12 @@ public class MapSegment : MonoBehaviour {
 	}
 
 	public void makePlatformObjects() {
-		// if (id == 32) {
-		// 	Debug.Log(height);
-		// 	Debug.Log(platform.maximumHeight);
-		// 	Debug.Log(platform.minimumHeight);
-		// }
 		GameObject part = null;
 		Vector3 pHeight = height;
 		Vector3 splitPoint = new Vector3(height.x, 
 										platform.minimumHeight + (platform.maximumHeight - platform.minimumHeight)/2,
 										height.z); 
 		splitPoint.y -= gameObject.transform.position.y;
-		// Debug.Log(platform.maximumHeight);
-		// Debug.Log(platform.minimumHeight);
-		// Debug.Log(platform.minimumHeight + (platform.maximumHeight - platform.minimumHeight)/2);
 		List<Vector3> PlatVertices = new List<Vector3>(vertices);
 		PlatVertices.Reverse();
 		bool split = platform.comesFromFloor && platform.comesFromCeiling;
@@ -583,7 +572,7 @@ public class MapSegment : MonoBehaviour {
 				matOffset = ceiling.upperOffset + new Vector2(centerPoint.z, centerPoint.x);
 			}
 		}
-		if (mat == null) {mat = Resources.Load("texture") as Material;}
+		if (mat == null) {mat = Resources.Load("Materials/texture") as Material;}
 		meshItem.GetComponent<MeshRenderer>().material = mat;
 		meshItem.GetComponent<MeshRenderer>().material.SetTextureOffset("_MainTex", matOffset);
 
@@ -663,7 +652,7 @@ public class MapSegment : MonoBehaviour {
 			if (wall.connection.transform.position.y > gameObject.transform.position.y 
 				&& connBottom) {
 				if (wall.solid && wall.lowerMaterial == null ) {
-					wall.lowerMaterial = Resources.Load<Material>("transparent");
+					wall.lowerMaterial = Resources.Load<Material>("Materials/transparent");
 				}
 				wallHeightLower = new Vector3(height.x, height.y, height.z);
 				wallHeightLower.y = wall.connection.transform.position.y - gameObject.transform.position.y;
@@ -683,7 +672,7 @@ public class MapSegment : MonoBehaviour {
 			if (wall.connection.transform.position.y+wall.connection.height.y < gameObject.transform.position.y+height.y
 				&& connTop) {
 				if (wall.solid && wall.upperMaterial == null ) {
-					wall.upperMaterial = Resources.Load<Material>("transparent");
+					wall.upperMaterial = Resources.Load<Material>("Materials/transparent");
 				}
 				wallHeightUpper = new Vector3(height.x, height.y, height.z);
 				wallOffset = wall.connection.height + wall.connection.transform.position - gameObject.transform.position;
@@ -694,11 +683,12 @@ public class MapSegment : MonoBehaviour {
 				if (wallPart != null) {
 					wallPart.name = "upperWall";
 					sides[side].upperMeshItem = wallPart;
-				}
-				if (!GlobalData.skipOcclusion) {
-					if (wall.solid && wall.upperMaterial.name == "transparent" || 
-						(wall.transparent && connTop && !connBottom)) {
-						wallPart.SetActive(false);
+				
+					if (!GlobalData.skipOcclusion) {
+						if (wall.solid && wall.upperMaterial.name == "transparent" || 
+							(wall.transparent && connTop && !connBottom)) {
+							wallPart.SetActive(false);
+						}
 					}
 				}
 			}
@@ -706,7 +696,7 @@ public class MapSegment : MonoBehaviour {
 			Vector3 wallHeightMiddle = height - wallHeightLower - wallHeightUpper;
 			if ( wallHeightMiddle.y>0) {
 				if (wall.solid && wall.middeMaterial == null ) {
-					wall.middeMaterial = Resources.Load<Material>("transparent");
+					wall.middeMaterial = Resources.Load<Material>("Materials/transparent");
 				}
 
 				wallPart = addWallPart(point1, point2, 
@@ -729,7 +719,7 @@ public class MapSegment : MonoBehaviour {
 			}
 		} else {
 			if (wall.connectionID == -1){
-				if (wall.upperMaterial == null) { wall.upperMaterial = Resources.Load<Material>("texture");}
+				if (wall.upperMaterial == null) { wall.upperMaterial = Resources.Load<Material>("Materials/texture");}
 				wallPart = addWallPart(point1, point2, height, wallOffset, wall.upperMaterial, wall.upperOffset, gameObject);
 				wallPart.name = "wall";
 				sides[side].upperMeshItem = wallPart;
@@ -816,6 +806,9 @@ public class MapSegment : MonoBehaviour {
 
 
 	public void calculateVisibility() {
+		if (id == 489) {
+			;
+		}
 
 		if (activePolygons.Length == 0) {
 			activePolygons = new bool[GlobalData.map.segments.Count];
@@ -831,7 +824,7 @@ public class MapSegment : MonoBehaviour {
 		viscalc = GameObject.CreatePrimitive(PrimitiveType.Cube);
 		viscalc.transform.parent = transform;
 		viscalc.transform.position = transform.position + (height/2);
-		viscalc.transform.localScale=new Vector3(0.005f,0.005f,0.005f);
+		viscalc.transform.localScale=new Vector3(0.05f,0.05f,0.05f);
 
 
 	// Debug.Log("----------------------------------------");
@@ -860,7 +853,7 @@ public class MapSegment : MonoBehaviour {
 						GlobalData.map.segments[side.connectionID].activePolygons = new bool[GlobalData.map.segments.Count];
 					}
 					GlobalData.map.segments[side.connectionID].activePolygons[id] = true;
-					addToPolygonList(side.connectionID);
+					activeCount += addToPolygonList(side.connectionID);
 					GlobalData.map.segments[id].viewEdge = 1;
 			}
 		}
@@ -869,7 +862,7 @@ public class MapSegment : MonoBehaviour {
 		while (processedCount < activeCount) {
 			float distance = 7777777;
 			int closest = -1;
-			int connections = 0;
+			//int connections = 0;
 			for (int i = 0; i < activePolygons.Length; i++) {
 				if (activePolygons[i] && !processedPolys[i]){
 					if (distances[i] == 0 ) {
@@ -888,7 +881,7 @@ public class MapSegment : MonoBehaviour {
 
 
 			if (closest >=0){
-				connections = addToPolygonList(closest);
+				activeCount += addToPolygonList(closest);
 				processedPolys[closest] = true; 
 			}
 			processedCount++;
@@ -928,21 +921,20 @@ public class MapSegment : MonoBehaviour {
 				}
 				point1 = GlobalData.map.segments[PolygonID].transform.TransformPoint(point1);
 				point2 = GlobalData.map.segments[PolygonID].transform.TransformPoint(point2);
-
-				// if ( GlobalData.map.segments[side.connectionID].impossible) {
-
-				// }
-
-
+				
 				isVisible = getRectVisibility(point1, point2, seg.height);
-				if (id == 16) {
-					if (seg.id == 39 || seg.id == 40) {
+
+				if (id == 489) {
+					if (PolygonID == 465 || seg.id == 467) {
 					;
-					}
+					}				
+
 				}
 				if (isVisible) {
 					if (!backlink) {
-						activePolygons[side.connectionID] = true; activeCount++;
+						activePolygons[side.connectionID] = true; 
+						//activeCount++;
+						addCount++;
 						if (GlobalData.map.segments[side.connectionID].activePolygons.Length == 0) {
 							GlobalData.map.segments[side.connectionID].activePolygons = new bool[GlobalData.map.segments.Count];
 						}
@@ -950,7 +942,6 @@ public class MapSegment : MonoBehaviour {
 
 						seg.viewEdge = 0;
 						GlobalData.map.segments[side.connectionID].viewEdge = 1;
-						addCount++;
 					} else {
 						GlobalData.map.segments[side.connectionID].viewEdge = 0;
 						GlobalData.map.segments[side.connectionID].viewEdge = 0;
@@ -958,13 +949,14 @@ public class MapSegment : MonoBehaviour {
 					}
 				} else if (seg.viewEdge < overDraw) {
 					if (!backlink) {
-						activePolygons[side.connectionID] = true; activeCount++;
+						activePolygons[side.connectionID] = true; 
+						//activeCount++;
+						addCount++;
 						if (GlobalData.map.segments[side.connectionID].activePolygons.Length == 0) {
 							GlobalData.map.segments[side.connectionID].activePolygons = new bool[GlobalData.map.segments.Count];
 						}
 						GlobalData.map.segments[side.connectionID].activePolygons[id] = true;
 						GlobalData.map.segments[side.connectionID].viewEdge = seg.viewEdge + 1;
-						addCount++;
 					}
 				}
 			}
@@ -990,7 +982,7 @@ public class MapSegment : MonoBehaviour {
 		
 
 		Vector3 midpoint = p3 + point2 + h3;
-
+		//get points just inside rectangle to prevent colliding with corner of adjacent polygons
 		points[0] = p1 + point2  + h1;
 		points[1] = p2 + point2  + h1;
 		points[2] = p1 + point2  + h2;
@@ -1002,57 +994,105 @@ public class MapSegment : MonoBehaviour {
 
 
 		Vector3 castPoint, crossPoint;
-		float rayCount = 3f;
-		float heightCount = 2f;
-		float crossCount = 2f;
+		
+		//float rayCount = 4f;
+		float heightCount = height.y/GlobalData.occlusionDensity + 1;
+		float crossCount;
 
 		isVisible = false;
 
 		List<Vector3> checkpoints = new List<Vector3>();
-		checkpoints.Add(viscalc.transform.position);
+		checkpoints.Add(centerPoint + (height/2));
 		foreach(Vector3 v in vertices) {
-
+			crossCount = Vector3.Distance(gameObject.transform.TransformPoint(v), centerPoint)/GlobalData.occlusionDensity + 1;
 			for (int c = 1; c <=crossCount; c++) {
 				crossPoint = ((gameObject.transform.TransformPoint(v)-centerPoint)*((1f/crossCount)*(float)c) + centerPoint);
 				for (int h = 1; h <=heightCount; h++) {
-					checkpoints.Add(crossPoint + (height*0.95f)*(1f/heightCount));
+					checkpoints.Add(crossPoint + ((height*0.95f)*(1f/heightCount))*h);
+
+
+
 				}
 			}
 		}
 		//Color colour = Random.ColorHSV();
+		//if (id > 2) {return false;}
+		// if (id == 489) {
+		// 	float xAmt = Vector3.Distance(points[0], points[1])/GlobalData.occlusionDensity;
+		// 	float yAmt = Vector3.Distance(points[2], points[0])/GlobalData.occlusionDensity;
+
+		// 	GameObject casmPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+		// 	casmPoint.transform.parent = transform;
+		// 	casmPoint.transform.position = midpoint;
+		// 	casmPoint.transform.localScale=new Vector3(0.05f,0.05f,0.05f);
+		// 	for (int x = 0; x <= Vector3.Distance(point1, point2)/GlobalData.occlusionDensity; x++) {
+		// 		for (int y = 0; y <= rectHeight.y/GlobalData.occlusionDensity; y++) {
+		// 			castPoint = (points[0] + 
+		// 			((points[1] - points[0])/xAmt)*x + 
+		// 			((points[2] - points[0])/yAmt)*y);
+		// 			GameObject casPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+		// 			casPoint.transform.parent = transform;
+		// 			casPoint.transform.position = castPoint;
+		// 			casPoint.transform.localScale=new Vector3(0.05f,0.05f,0.05f);
+		// 		}
+		// 	}
+		// }
+
+
 
 		foreach(Vector3 cp in checkpoints) {
+					// if (id == 489) {
+					// 	GameObject dispPoint = GameObject.CreatePrimitive(PrimitiveType.Cube);
+					// 	dispPoint.transform.parent = transform;
+					// 	dispPoint.transform.position = cp;
+					// 	dispPoint.transform.localScale=new Vector3(0.04f,0.04f,0.04f);
+					// }
 			viscalc.transform.position = cp;
 			viscalc.name = "viscalc";
 			isVisible = (Physics.Raycast(midpoint, viscalc.transform.position-midpoint, out hit, 50)) 
 				&& (hit.collider.gameObject == viscalc || hit.collider.gameObject.name == "viscalc") ;
-			if(	id == 38 ) {
-				Debug.DrawRay(midpoint, viscalc.transform.position-midpoint, Color.magenta, 10);
-			
-				if (Physics.Raycast(midpoint, viscalc.transform.position-midpoint, out hit, 50) && hit.collider.gameObject.name != "wall") {
-					;
-				}
-			}
 			if (isVisible) {
-				if (id == 38) {
-					Debug.DrawRay(midpoint, viscalc.transform.position-midpoint, Color.green ,10);
-				}
 				return true;
 			}
-			for (int i = 1; i < rayCount; i++) {
-				for (int p = 0; p < points.Length && !isVisible; p++){
-					castPoint = (points[p]-midpoint)*((1f/rayCount)*(float)i) + midpoint;
+			//for (int p = 0; p < points.Length && !isVisible; p++){
+			float xAmt = Vector3.Distance(points[0], points[1])/GlobalData.occlusionDensity;
+			float yAmt = Vector3.Distance(points[2], points[0])/GlobalData.occlusionDensity;
+			for (int x = 0; x <= xAmt + 1; x++) {
+				for (int y = 0; y <= yAmt + 1; y++) {
+
+					Vector3 xpt = ((points[1] - points[0])/xAmt)*x;
+					Vector3 ypt = ((points[2] - points[0])/yAmt)*y;
+					if (x > xAmt) {xpt = ((points[1] - points[0])/xAmt)*xAmt;}
+					if (y > yAmt) {ypt = ((points[2] - points[0])/yAmt)*yAmt;}
+					castPoint = points[0] + xpt + ypt;
+
+					if (id == 489){
+					if (castPoint.x > 3 && castPoint.x < 4 &&
+						castPoint.y > -5 && castPoint.y < -4 &&
+						castPoint.z > 8 && castPoint.z < 9) {
+						if (cp.x > 9 && cp.x < 10 )
+							if (cp.y > -6 && cp.y < -5 )
+								if (cp.z > 2 && cp.z < 3
+								) {
+							isVisible = (Physics.Raycast(castPoint, viscalc.transform.position-castPoint, out hit, 50)) 
+								&& hit.collider.gameObject == viscalc ;
+;
+								}
+						}
+					}
+
 					isVisible = (Physics.Raycast(castPoint, viscalc.transform.position-castPoint, out hit, 50)) 
 								&& hit.collider.gameObject == viscalc ;
-					if (id == 38) {
-						Debug.DrawRay(castPoint, viscalc.transform.position-castPoint, Color.blue, 10);
+
+					if (id == 0 && !isVisible) {
+					Debug.DrawRay(castPoint, viscalc.transform.position-castPoint, Color.blue, 30);
 					}
 					if (isVisible) {
-						if (id == 38) {
-						Debug.DrawRay(castPoint, viscalc.transform.position-castPoint, Color.green ,10);
+						if (id == 489) {
+						Debug.DrawRay(castPoint, viscalc.transform.position-castPoint, Color.green ,30);
 						}
 						return true;
-						}
+					}
 				}
 			}
 		}

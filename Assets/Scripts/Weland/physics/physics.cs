@@ -47,23 +47,6 @@ namespace Weland {
 	}
 
 	List<uint> ChunkFilter = new List<uint> {
-	    // saved game / optimized map tags
-	    Endpoint.Tag,
-	    Wadfile.Chunk("plyr"),
-	    Wadfile.Chunk("dwol"),
-	    Wadfile.Chunk("mobj"),
-	    Wadfile.Chunk("door"),
-	    Wadfile.Chunk("iidx"),
-	    Wadfile.Chunk("alin"),
-	    Wadfile.Chunk("apol"),
-	    Wadfile.Chunk("mOns"),
-	    Wadfile.Chunk("fx  "),
-	    Wadfile.Chunk("bang"),
-	    Platform.DynamicTag,
-	    Wadfile.Chunk("weap"),
-	    Wadfile.Chunk("cint"),
-	    Wadfile.Chunk("slua"),
-
 	    // embedded physics
 	    Wadfile.Chunk("MNpx"),
 	    Wadfile.Chunk("FXpx"),
@@ -76,6 +59,7 @@ namespace Weland {
 	}
 
 	public class Monster {
+		
 	}
 
 	public class Effect {
