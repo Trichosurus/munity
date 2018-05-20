@@ -152,10 +152,7 @@ namespace Weland {
 		for (int i = 0; i < idxCount; i++) {
 			short frameIndex = reader.ReadInt16();
 			FrameIndexes.Add(frameIndex);
-		}
-
-		int ppp = 1;
-		
+		}		
 	    }
 
 		public int getRealViewCount(short sequenceType) {

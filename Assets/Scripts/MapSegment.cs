@@ -645,12 +645,20 @@ public class MapSegment : MonoBehaviour {
 							!wall.connection.platform.comesFromFloor)||
 							wall.connection.platform == null || wall.solid; 
 
-		if (id == 61 && wall.connectionID == 62) {
-			id = id;
-		}
+			connBottom = (wall.connection.transform.position.y > gameObject.transform.position.y 
+				&& connBottom);
+			connTop = (wall.connection.transform.position.y+wall.connection.height.y < gameObject.transform.position.y+height.y
+				&& connTop);
 
-			if (wall.connection.transform.position.y > gameObject.transform.position.y 
-				&& connBottom) {
+			//occasionally a secondary texture may be defined in the side when there is no secondary wall
+			//check if this is the case and use primary instead if necessary
+			if (connBottom && !connTop) {
+				wall.lowerMaterial = wall.upperMaterial;
+				wall.lowerLight = wall.upperLight;
+				wall.lowerOffset = wall.upperOffset;
+			}
+
+			if (connBottom) {
 				if (wall.solid && wall.lowerMaterial == null ) {
 					wall.lowerMaterial = Resources.Load<Material>("Materials/transparent");
 				}
@@ -669,8 +677,7 @@ public class MapSegment : MonoBehaviour {
 				}
 			}
 
-			if (wall.connection.transform.position.y+wall.connection.height.y < gameObject.transform.position.y+height.y
-				&& connTop) {
+			if (connTop) {
 				if (wall.solid && wall.upperMaterial == null ) {
 					wall.upperMaterial = Resources.Load<Material>("Materials/transparent");
 				}

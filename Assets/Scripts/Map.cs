@@ -80,30 +80,6 @@ public class Map : MonoBehaviour {
 		}
 	}
 
-	Texture2D rotateTexture(Texture2D originalTexture, bool clockwise)
-		{
-			Color32[] original = originalTexture.GetPixels32();
-			Color32[] rotated = new Color32[original.Length];
-			int w = originalTexture.width;
-			int h = originalTexture.height;
-	
-			int iRotated, iOriginal;
-	
-			for (int j = 0; j < h; ++j)
-			{
-				for (int i = 0; i < w; ++i)
-				{
-					iRotated = (i + 1) * h - j - 1;
-					iOriginal = clockwise ? original.Length - 1 - (j * w + i) : j * w + i;
-					rotated[iRotated] = original[iOriginal];
-				}
-			}
-	
-			Texture2D rotatedTexture = new Texture2D(h, w);
-			rotatedTexture.SetPixels32(rotated);
-			rotatedTexture.Apply();
-			return rotatedTexture;
-		}
 	IEnumerator makeAudioDefinitionsFromSoundsFile(SoundsFile sounds) {
 		//Debug.Log(sounds.SourceCount);
 		string load = loadingText;
@@ -138,6 +114,30 @@ public class Map : MonoBehaviour {
 		loadingText = load + "Loading Sounds... " + sounds.SoundCount + "/" + sounds.SoundCount;
 
 	}
+	Texture2D rotateTexture(Texture2D originalTexture, bool clockwise)
+		{
+			Color32[] original = originalTexture.GetPixels32();
+			Color32[] rotated = new Color32[original.Length];
+			int w = originalTexture.width;
+			int h = originalTexture.height;
+	
+			int iRotated, iOriginal;
+	
+			for (int j = 0; j < h; ++j)
+			{
+				for (int i = 0; i < w; ++i)
+				{
+					iRotated = (i + 1) * h - j - 1;
+					iOriginal = clockwise ? original.Length - 1 - (j * w + i) : j * w + i;
+					rotated[iRotated] = original[iOriginal];
+				}
+			}
+	
+			Texture2D rotatedTexture = new Texture2D(h, w);
+			rotatedTexture.SetPixels32(rotated);
+			rotatedTexture.Apply();
+			return rotatedTexture;
+		}
 
 	IEnumerator makeMaterialsFromShapesFile(ShapesFile shapes) {
 		string load = loadingText;
@@ -577,9 +577,14 @@ public class Map : MonoBehaviour {
 				mss.solid = Line[currentLine].Solid;
 				Side side = new Side();
 				//get texture + lighting information for side
-				if (Line[currentLine].ClockwisePolygonSideIndex >= 0 ) {
+				if (p == 3 ) {
+					;
+				}
+				if ((Line[currentLine].ClockwisePolygonSideIndex >= 0  && Line[currentLine].ClockwisePolygonOwner == p ) 
+					|| (Level.Polygons[p].Type == PolygonType.Platform && Line[currentLine].ClockwisePolygonSideIndex >= 0) ) {
 					side = Level.Sides[Line[currentLine].ClockwisePolygonSideIndex];
-				} else if (Line[currentLine].CounterclockwisePolygonSideIndex >= 0 ) {
+				} else if ((Line[currentLine].CounterclockwisePolygonSideIndex >= 0   && Line[currentLine].CounterclockwisePolygonOwner == p)
+						||(Level.Polygons[p].Type == PolygonType.Platform && Line[currentLine].CounterclockwisePolygonSideIndex >= 0) ) {
 					side = Level.Sides[Line[currentLine].CounterclockwisePolygonSideIndex];
 				}
 					mss.upperMaterial = getTexture(side.Primary.Texture);
@@ -889,13 +894,7 @@ public class Map : MonoBehaviour {
 		return item;
 	}
 
-	public void ClearLog()
-	{
-		var assembly = Assembly.GetAssembly(typeof(UnityEditor.ActiveEditorTracker));
-		var type = assembly.GetType("UnityEditorInternal.LogEntries");
-		var method = type.GetMethod("Clear");
-		method.Invoke(new object(), null);
-	}
+
 }
 
 
