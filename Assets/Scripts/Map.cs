@@ -577,9 +577,6 @@ public class Map : MonoBehaviour {
 				mss.solid = Line[currentLine].Solid;
 				Side side = new Side();
 				//get texture + lighting information for side
-				if (p == 3 ) {
-					;
-				}
 				if ((Line[currentLine].ClockwisePolygonSideIndex >= 0  && Line[currentLine].ClockwisePolygonOwner == p ) 
 					|| (Level.Polygons[p].Type == PolygonType.Platform && Line[currentLine].ClockwisePolygonSideIndex >= 0) ) {
 					side = Level.Sides[Line[currentLine].ClockwisePolygonSideIndex];

@@ -338,12 +338,28 @@ public class MapSegment : MonoBehaviour {
 
 				if (conn.centerPoint.y < centerPoint.y 
 							&& platform.comesFromFloor) {
-					height.y += (centerPoint.y - conn.centerPoint.y);
+					float heightAdjust = (centerPoint.y - conn.centerPoint.y);
+					height.y += heightAdjust;
+					foreach (MapSegmentSide side in sides) {
+						if (side.connectionID == -1) {
+						side.upperOffset.y -= heightAdjust;
+						side.middleOffset.y -= heightAdjust;
+						side.lowerOffset.y -= heightAdjust;
+						}
+					}
 					centerPoint.y = conn.centerPoint.y;
 				}
 				if (conn.centerPoint.y + conn.height.y > centerPoint.y + height.y
 							&& platform.comesFromCeiling) {
-					height.y += (conn.height.y - conn.centerPoint.y) - (height.y - centerPoint.y);
+					float heightAdjust = (conn.height.y - conn.centerPoint.y) - (height.y - centerPoint.y);
+					height.y += heightAdjust;
+					foreach (MapSegmentSide side in sides) {
+						if (side.connectionID == -1) {
+						side.upperOffset.y -= heightAdjust;
+						side.middleOffset.y -= heightAdjust;
+						side.lowerOffset.y -= heightAdjust;
+						}
+					}
 				}
 			}
 		}
@@ -394,21 +410,20 @@ public class MapSegment : MonoBehaviour {
 			platform.upperPlatform =  new GameObject("upperPlatform");
 			platform.upperPlatform.transform.parent = gameObject.transform;
 
-			part = makePolygon(true, PlatVertices, pHeight, platform.upperPlatform);
+			part = makePolygon(true, PlatVertices, pHeight, platform.upperPlatform, ceiling.upperMaterial, ceiling.upperOffset);
 			if (part != null) {
 				part.name = "platBottom";
 				platform.upperBottom.meshItem = part;
-				platform.upperBottom.light = floor.light;
-				platform.upperBottom.lightID = floor.lightID;
+				platform.upperBottom.light = ceiling.light;
+				platform.upperBottom.lightID = ceiling.lightID;
 			}
-			part = makePolygon(false, PlatVertices, pHeight, platform.upperPlatform);
+			part = makePolygon(false, PlatVertices, pHeight, platform.upperPlatform, floor.upperMaterial, floor.upperOffset);
 			if (part != null) {
 				part.name = "platTop";
 				platform.upperTop.meshItem = part;
 				platform.upperTop.light = floor.light;
 				platform.upperTop.lightID = floor.lightID;
-
-				}
+			}
 		}
 
 		PlatVertices.Reverse();
@@ -430,9 +445,9 @@ public class MapSegment : MonoBehaviour {
 			
 			if (platform.comesFromFloor) {
 				if (split) {
-				part = addWallPart(point1, point2, splitPoint, new Vector3(0,0,0), wall.lowerMaterial, wall.lowerOffset, platform.lowerPlatform);
+					part = addWallPart(point1, point2, splitPoint, new Vector3(0,0,0), wall.lowerMaterial, wall.lowerOffset, platform.lowerPlatform);
 				} else {
-				part = addWallPart(point1, point2, pHeight, new Vector3(0,0,0), wall.lowerMaterial, wall.lowerOffset, platform.lowerPlatform);
+					part = addWallPart(point1, point2, pHeight, new Vector3(0,0,0), wall.lowerMaterial, wall.lowerOffset, platform.lowerPlatform);
 				}
 				if (part != null) {
 					MapSegmentSide side = new MapSegmentSide();
