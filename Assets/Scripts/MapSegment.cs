@@ -729,12 +729,13 @@ public class MapSegment : MonoBehaviour {
 				if (wallPart != null) {
 					wallPart.name = "middleWall";
 					sides[side].middleMeshItem = wallPart;
-				}
+				
 
-				if (!GlobalData.skipOcclusion) {
-					if (wall.solid && wall.middeMaterial.name == "transparent" || 
-							(wall.transparent && !connTop && !connBottom)) {
-						wallPart.SetActive(false);
+					if (!GlobalData.skipOcclusion) {
+						if (wall.solid && wall.middeMaterial.name == "transparent" || 
+								(wall.transparent && !connTop && !connBottom)) {
+							wallPart.SetActive(false);
+						}
 					}
 				}
 				

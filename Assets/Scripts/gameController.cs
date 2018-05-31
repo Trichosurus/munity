@@ -15,7 +15,7 @@ public static class GlobalData
 
 	public static Map map = null;
 
-	public static bool skipOcclusion = true;
+	public static bool skipOcclusion = false;
 	public static int occlusionOverDraw = 1;
 	public static float occlusionDensity = 0.5f;
 	public static bool captureMouse = true;
@@ -209,7 +209,7 @@ public class gameController : MonoBehaviour {
 			tw.WriteLine("imagesFilePath=" + GlobalData.imagesFilePath);
 			tw.Close(); 
 		} else {
-			string[] lines = System.IO.File.ReadAllLines(path);
+			string[] lines = File.ReadAllLines(path);
 			foreach (string line in lines) {
 				if (line.StartsWith("shapesFilePath=")) {GlobalData.shapesFilePath = line.Replace("shapesFilePath=","").Trim();}
 				if (line.StartsWith("mapsFilePath=")) {GlobalData.mapsFilePath = line.Replace("mapsFilePath=","").Trim();}
@@ -218,8 +218,6 @@ public class gameController : MonoBehaviour {
 				if (line.StartsWith("imagesFilePath=")) {GlobalData.imagesFilePath = line.Replace("imagesFilePath=","").Trim();}
 			}
 		}
-
-
 	}
 	// Update is called once per frame
 	void Update () {

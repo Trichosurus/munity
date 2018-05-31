@@ -5,9 +5,8 @@ using Weland;
 using System.Reflection;
 using System;
 using System.IO;
-
-
-
+using System.Security.Cryptography;
+using System.Runtime.Serialization.Formatters.Binary;
 public class Map : MonoBehaviour {
 	public GameObject polygon;
 	List<int> collectionMapping = new List<int>{};
@@ -19,6 +18,9 @@ public class Map : MonoBehaviour {
 	public List<audioDefinition> audioDefinitions = new List<audioDefinition>();
 
 	private string loadingText = "";
+	public int mapNo = 0;
+
+	BinaryFormatter formatter = new BinaryFormatter();
 
 	// Use this for initialization
 	void Start () {
@@ -53,7 +55,7 @@ public class Map : MonoBehaviour {
 			}
 	    }
 	    Level Level = new Level();
-		Level.Load(wadfile.Directory[0]);
+		Level.Load(wadfile.Directory[mapNo]);
 
 		Debug.Log(Level.Name);
 		// Debug.Log(Level.Environment);
@@ -731,12 +733,39 @@ public class Map : MonoBehaviour {
 		load = load + "\nFinding Impossible Space "+count+"/"+segments.Count;
 		count = 0;
 
-		foreach(MapSegment s in segments) {
-			count++;
-			s.calculateVisibility();
-			if (!GlobalData.skipOcclusion && count % 7 == 0) {
-				loadingText = load + "\nOcclusion Culling "+count+"/"+segments.Count;
-				yield return null;
+
+
+		string mapHash = CalculateMD5(GlobalData.mapsFilePath);
+		mapHash = Application.persistentDataPath + "/" + mapHash  + "-" + mapNo + ".cache";
+		if (!File.Exists(mapHash)) {
+			activePolygonList apl = new activePolygonList();
+			apl.activePolygons = new List<bool[]>();
+			for (int i = 0; i < segments.Count; i++) {
+				count++;
+				segments[i].calculateVisibility();
+
+				apl.activePolygons.Add(segments[i].activePolygons);
+
+				if (!GlobalData.skipOcclusion && count % 7 == 0) {
+					loadingText = load + "\nOcclusion Culling "+count+"/"+segments.Count;
+					yield return null;
+				}
+			}
+			BinaryFormatter bf = new BinaryFormatter();
+			FileStream fs = File.Open(mapHash, FileMode.Create);
+			bf.Serialize(fs, apl);
+			fs.Close();
+		} else {
+			
+			FileStream fs = File.Open(mapHash, FileMode.Open);
+			BinaryFormatter bf = new BinaryFormatter();
+			activePolygonList apl = (activePolygonList)bf.Deserialize(fs);
+			fs.Close();
+
+			for (int i = 0; i < apl.activePolygons.Count; i++) {
+				if (segments.Count > i) {
+					segments[i].activePolygons = apl.activePolygons[i];
+				}
 			}
 		}
 		load = load + "\nOcclusion Culling "+count+"/"+segments.Count;
@@ -759,6 +788,21 @@ public class Map : MonoBehaviour {
 		}
 
 	}
+	[System.Serializable]
+	struct activePolygonList {
+		public List<bool[]> activePolygons;
+		
+	}
+
+	string CalculateMD5(string filename) {
+		using (var md5 = MD5.Create()) {
+			using (var stream = File.OpenRead(filename)) {
+				var hash = md5.ComputeHash(stream);
+				return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+			}
+		}
+	}
+
 
 	IEnumerator spawnEntitiesFromMarathonMap(Weland.Level Level, Weland.ShapesFile shapes) {
 		string load = loadingText;
