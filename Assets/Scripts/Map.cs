@@ -324,7 +324,7 @@ public class Map : MonoBehaviour {
 			if(Level.Polygons[p].Type == Weland.PolygonType.Platform) {
 				foreach (Weland.Platform pl in Level.Platforms) {
 					if (pl.PolygonIndex == p) {
-						seg.platform = new Platform();
+						seg.platform = new PlatformObject();
 						seg.platform.comesFromCeiling = pl.ComesFromCeiling;
 						seg.platform.comesFromFloor = pl.ComesFromFloor;
 						seg.platform.initiallyExtended = pl.InitiallyExtended;
@@ -788,6 +788,8 @@ public class Map : MonoBehaviour {
 		}
 
 	}
+
+	//struct for saving occlusion data cache
 	[System.Serializable]
 	struct activePolygonList {
 		public List<bool[]> activePolygons;
@@ -855,17 +857,10 @@ public class Map : MonoBehaviour {
 			if (obj.Type == ObjectType.Goal ) {
 			}
 
-
 			if (obj.Type == ObjectType.Monster ) {
 				Debug.Log("monster");
 				Debug.Log(obj.Index);
 			}
-
-
-
-
-
-
 
 			if (i % 7 == 0 ){
 				loadingText = load + i+"/"+Level.Objects.Count;

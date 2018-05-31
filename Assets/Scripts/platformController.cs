@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class platformController : MonoBehaviour {
 	public bool inTransit = false;
-	private Platform platform = null;
+	private PlatformObject platform = null;
 	private bool fromTop = false;
 	private bool hasPartner = false;
 	public float delayedTime = 0;

@@ -55,10 +55,16 @@
      <Compile Include="Assets\Scripts\dataFilesObject.cs" />
      <Compile Include="Assets\Scripts\gameController.cs" />
      <Compile Include="Assets\Scripts\itemController.cs" />
+     <Compile Include="Assets\Scripts\LightFunction.cs" />
+     <Compile Include="Assets\Scripts\Liquid.cs" />
      <Compile Include="Assets\Scripts\Map.cs" />
+     <Compile Include="Assets\Scripts\mapLight.cs" />
      <Compile Include="Assets\Scripts\MapSegment.cs" />
+     <Compile Include="Assets\Scripts\MapSegmentFloorCeiling.cs" />
+     <Compile Include="Assets\Scripts\MapSegmentSide.cs" />
      <Compile Include="Assets\Scripts\mouselook.cs" />
      <Compile Include="Assets\Scripts\platformController.cs" />
+     <Compile Include="Assets\Scripts\PlatformObject.cs" />
      <Compile Include="Assets\Scripts\playerController.cs" />
      <Compile Include="Assets\Scripts\settingsScreen.cs" />
      <Compile Include="Assets\Scripts\spriteController.cs" />
