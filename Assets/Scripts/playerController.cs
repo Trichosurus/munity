@@ -206,24 +206,6 @@ public class playerController : MonoBehaviour {
 				GlobalData.map.segments[i].showHide(false);
 				//float distance;
 				distances[i] = 7777777;
-				//for (int s = 0; s < GlobalData.map.segments[i].sides.Count; s++) {
-					//if (GlobalData.map.segments[i].sides[s].connectionID != -1) {
-						//Vector3 v1 = GlobalData.map.segments[i].vertices[s];
-						// Vector2 v2;
-						// if (s < GlobalData.map.segments[i].sides.Count-1) {
-						// 	v2 = GlobalData.map.segments[i].vertices[s+1];
-						// } else {
-						// 	v2 = GlobalData.map.segments[i].vertices[0];
-						// }
-					//	distance = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.TransformPoint(v1));
-					//	if (distance < distances[i]) {distances[i] = distance;}
-					//}
-					// foreach (Vector3 v in GlobalData.map.segments[i].vertices) {
-					// 	distance = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.TransformPoint(v));
-					// 	if (distance < distances[i]) { distances[i] = distance;}
-					// }
-				//}
-				//distances[i] = Vector3.Distance(gameObject.transform.position, GlobalData.map.segments[i].transform.position);
 
 			}
 		}
@@ -242,10 +224,6 @@ public class playerController : MonoBehaviour {
 				if (pol.sides[s].connectionID >= 0 && 
 				GlobalData.map.segments[pol.sides[s].connectionID].impossible) {
 					if (!collides.Contains(pol.sides[s].connectionID) ) {
-						//GlobalData.map.segments[pol.sides[s].connectionID].showHide(true);
-					// } else {
-					// 	deferred.Add(pol.sides[s].connectionID);
-					// }
 						distances[pol.sides[s].connectionID] = 0;
 					}
 				}

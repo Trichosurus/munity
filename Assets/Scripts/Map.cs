@@ -733,6 +733,12 @@ public class Map : MonoBehaviour {
 		load = load + "\nFinding Impossible Space "+count+"/"+segments.Count;
 		count = 0;
 
+		List<List<int>> collisionsList = new List<List<int>>();
+		for(int s = 0; s < segments.Count; s++) {
+			if (segments[s].impossible){
+				getCollisions(ref collisionsList, s);
+			}
+		}
 
 
 		string mapHash = CalculateMD5(GlobalData.mapsFilePath);
@@ -788,6 +794,37 @@ public class Map : MonoBehaviour {
 		}
 
 	}
+
+
+	void getCollisions (ref List<List<int>> collisionsList, int seg, int fromCL = -1) {
+		int cl = -1;
+		for (int i = 0; i < collisionsList.Count; i++) {
+			if (collisionsList[i].Contains(seg)) {
+				cl = i; 
+				break;
+			}
+		}
+		if (cl == -1 ) {
+			collisionsList.Add(new List<int>());
+			cl = collisionsList.Count-1;
+			collisionsList[cl].Add(seg);
+		}
+		foreach(int i in segments[seg].collidesWith) {
+			if (!collisionsList[cl].Contains(i)){
+				collisionsList[cl].Add(i);
+			}
+		}
+		
+		// foreach(MapSegmentSide side in segments[seg].sides) {
+		// 	if (side.connectionID >= 0 && segments[side.connectionID].impossible) {
+		// 		if (!collisionsList[cl].Contains(side.connectionID)) {
+		// 			getCollisions(ref collisionsList,side.connectionID );
+		// 		}
+		// 	}
+		// }
+		
+	}
+	
 
 	//struct for saving occlusion data cache
 	[System.Serializable]
