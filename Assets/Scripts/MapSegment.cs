@@ -16,7 +16,7 @@ public class MapSegment : MonoBehaviour {
 	public MapSegmentFloorCeiling ceiling = new MapSegmentFloorCeiling();
 	public MapSegmentFloorCeiling floor = new MapSegmentFloorCeiling();
 	
-	public List<impossibleVolume> impossibleVolumes = new List<impossibleVolume>();
+	public List<impossibleVolume> impossibleVolumes;
 	public Liquid liquid = null;
 	public bool impossible = false;
 	public List<int> collidesWith = new List<int>();
@@ -1234,8 +1234,10 @@ public class ControlPanel {
 
 }
 
-public struct impossibleVolume {
-	List<Vector3> intersections;
-	List<Vector3> CollisionPoints;
+public class impossibleVolume {
+	public List<Vector3> intersections = new List<Vector3>();
+	public List<Vector3> collisionPoints = new List<Vector3>();
+	public List<int> collisionPolygonsOther = new List<int>();
+	public List<int> collisionPolygonsSelf = new List<int>();
 
 }

@@ -736,10 +736,20 @@ public class Map : MonoBehaviour {
 		List<List<int>> collisionsList = new List<List<int>>();
 		for(int s = 0; s < segments.Count; s++) {
 			if (segments[s].impossible){
-				getCollisions(ref collisionsList, s);
+				List<int> connList = getConnectedVolumes(segments[s], true);
+				foreach(int i in connList) {
+					segments[s].impossibleVolumes = new List<impossibleVolume>();
+					impossibleVolume iv = new impossibleVolume();
+					iv.collisionPolygonsSelf = connList;
+					segments[s].impossibleVolumes.Add(iv); 
+				}
 			}
 		}
-
+		for(int s = 0; s < segments.Count; s++) {
+			if (segments[s].impossible){
+				getConnectedVolumes(segments[s], false);
+			}
+		}
 
 		string mapHash = CalculateMD5(GlobalData.mapsFilePath);
 		mapHash = Application.persistentDataPath + "/" + mapHash  + "-" + mapNo + ".cache";
@@ -795,35 +805,80 @@ public class Map : MonoBehaviour {
 
 	}
 
+	 List<int> getConnectedVolumes(MapSegment seg, bool self, List<int> connected = null) {
+		if (connected == null) {connected = new List<int>();}
+		if (self) { 
+		if (!connected.Contains(seg.id)) {connected.Add(seg.id);}
+		foreach(MapSegmentSide side in seg.sides) {
+			if (side.connection != null && side.connection.impossible && !connected.Contains(side.connectionID)) {
+				foreach(int i in side.connection.collidesWith) {
+					if (seg.collidesWith.Contains(i)) {
+						connected = getConnectedVolumes(side.connection, true, connected);
+						break;
+					}
+				}
+			}
+		}
+		} else {
+		int volCount = 0;
+		foreach (int i in seg.collidesWith) {
+			if (seg.impossibleVolumes.Count > volCount) {
+				seg.impossibleVolumes[volCount].collisionPolygonsOther = segments[i].impossibleVolumes[0].collisionPolygonsSelf;
+				volCount ++;
+			}
+			bool match = false;
+			foreach(impossibleVolume iv in seg.impossibleVolumes) {
+				HashSet<int> hsSelf = new HashSet<int>(iv.collisionPolygonsOther);
+				HashSet<int> hsOther = new HashSet<int>(segments[i].impossibleVolumes[0].collisionPolygonsSelf);
+				if (hsSelf == hsOther) {
+					match = true;				
+				}
+			}
+			if (!match) {
+				impossibleVolume iv = new impossibleVolume();
+				iv.collisionPolygonsSelf = seg.impossibleVolumes[0].collisionPolygonsSelf;
+				iv.collisionPolygonsOther = segments[i].impossibleVolumes[0].collisionPolygonsSelf;
+				seg.impossibleVolumes.Add(iv);
+			}
+		}
+		connected = seg.impossibleVolumes[0].collisionPolygonsSelf;
+		}
 
-	void getCollisions (ref List<List<int>> collisionsList, int seg, int fromCL = -1) {
-		int cl = -1;
-		for (int i = 0; i < collisionsList.Count; i++) {
-			if (collisionsList[i].Contains(seg)) {
-				cl = i; 
-				break;
-			}
-		}
-		if (cl == -1 ) {
-			collisionsList.Add(new List<int>());
-			cl = collisionsList.Count-1;
-			collisionsList[cl].Add(seg);
-		}
-		foreach(int i in segments[seg].collidesWith) {
-			if (!collisionsList[cl].Contains(i)){
-				collisionsList[cl].Add(i);
-			}
-		}
-		
-		// foreach(MapSegmentSide side in segments[seg].sides) {
-		// 	if (side.connectionID >= 0 && segments[side.connectionID].impossible) {
-		// 		if (!collisionsList[cl].Contains(side.connectionID)) {
-		// 			getCollisions(ref collisionsList,side.connectionID );
-		// 		}
-		// 	}
-		// }
-		
+		return connected;
 	}
+		
+	
+
+	// void getCollisions (ref List<List<int>> collisionsList, int seg, int fromCL = -1) {
+	// 	int cl = -1;
+	// 	for (int i = 0; i < collisionsList.Count; i++) {
+	// 		if (collisionsList[i].Contains(seg)) {
+	// 			cl = i; 
+	// 			break;
+	// 		}
+	// 	}
+	// 	if (cl == -1 ) {
+	// 		collisionsList.Add(new List<int>());
+	// 		cl = collisionsList.Count-1;
+	// 		collisionsList[cl].Add(seg);
+	// 	}
+	// 	foreach(int i in segments[seg].collidesWith) {
+	// 		if (!collisionsList[cl].Contains(i)){
+	// 			foreach (MapSegmentSide side in segments[seg].sides )
+	// 			collisionsList[cl].Add(i);
+	// 		}
+	// 	}
+		
+	// 	foreach(MapSegmentSide side in segments[seg].sides) {
+	// 		if (side.connectionID >= 0 && segments[side.connectionID].impossible) {
+	// 			if (!collisionsList[cl].Contains(side.connectionID)) {
+					
+	// 				getCollisions(ref collisionsList,side.connectionID );
+	// 			}
+	// 		}
+	// 	}
+		
+	// }
 	
 
 	//struct for saving occlusion data cache
