@@ -3,11 +3,6 @@ using System.IO;
 using System.Collections.Generic;
 
 namespace Weland {
-    interface ISerializableBE {
-	void Load(BinaryReaderBE reader);
-	void Save(BinaryWriterBE writer);
-    }
-
     public static class World {
 	public const short One = 1024;
 	public static short FromDouble(double d) {
