@@ -737,12 +737,10 @@ public class Map : MonoBehaviour {
 		for(int s = 0; s < segments.Count; s++) {
 			if (segments[s].impossible){
 				List<int> connList = getConnectedVolumes(segments[s], true);
-				foreach(int i in connList) {
-					segments[s].impossibleVolumes = new List<impossibleVolume>();
-					impossibleVolume iv = new impossibleVolume();
-					iv.collisionPolygonsSelf = connList;
-					segments[s].impossibleVolumes.Add(iv); 
-				}
+				segments[s].impossibleVolumes = new List<impossibleVolume>();
+				impossibleVolume iv = new impossibleVolume();
+				iv.collisionPolygonsSelf = connList;
+				segments[s].impossibleVolumes.Add(iv); 
 			}
 		}
 		for(int s = 0; s < segments.Count; s++) {
@@ -819,18 +817,16 @@ public class Map : MonoBehaviour {
 				}
 			}
 		}
+		//connected.Sort();
 		} else {
-		int volCount = 0;
+		// int volCount = 0;
+		seg.impossibleVolumes[0].collisionPolygonsOther = segments[seg.collidesWith[0]].impossibleVolumes[0].collisionPolygonsSelf;
 		foreach (int i in seg.collidesWith) {
-			if (seg.impossibleVolumes.Count > volCount) {
-				seg.impossibleVolumes[volCount].collisionPolygonsOther = segments[i].impossibleVolumes[0].collisionPolygonsSelf;
-				volCount ++;
-			}
 			bool match = false;
 			foreach(impossibleVolume iv in seg.impossibleVolumes) {
 				HashSet<int> hsSelf = new HashSet<int>(iv.collisionPolygonsOther);
 				HashSet<int> hsOther = new HashSet<int>(segments[i].impossibleVolumes[0].collisionPolygonsSelf);
-				if (hsSelf == hsOther) {
+				if (hsSelf.SetEquals(hsOther)) {
 					match = true;				
 				}
 			}
@@ -843,42 +839,10 @@ public class Map : MonoBehaviour {
 		}
 		connected = seg.impossibleVolumes[0].collisionPolygonsSelf;
 		}
-
+		
 		return connected;
 	}
 		
-	
-
-	// void getCollisions (ref List<List<int>> collisionsList, int seg, int fromCL = -1) {
-	// 	int cl = -1;
-	// 	for (int i = 0; i < collisionsList.Count; i++) {
-	// 		if (collisionsList[i].Contains(seg)) {
-	// 			cl = i; 
-	// 			break;
-	// 		}
-	// 	}
-	// 	if (cl == -1 ) {
-	// 		collisionsList.Add(new List<int>());
-	// 		cl = collisionsList.Count-1;
-	// 		collisionsList[cl].Add(seg);
-	// 	}
-	// 	foreach(int i in segments[seg].collidesWith) {
-	// 		if (!collisionsList[cl].Contains(i)){
-	// 			foreach (MapSegmentSide side in segments[seg].sides )
-	// 			collisionsList[cl].Add(i);
-	// 		}
-	// 	}
-		
-	// 	foreach(MapSegmentSide side in segments[seg].sides) {
-	// 		if (side.connectionID >= 0 && segments[side.connectionID].impossible) {
-	// 			if (!collisionsList[cl].Contains(side.connectionID)) {
-					
-	// 				getCollisions(ref collisionsList,side.connectionID );
-	// 			}
-	// 		}
-	// 	}
-		
-	// }
 	
 
 	//struct for saving occlusion data cache
