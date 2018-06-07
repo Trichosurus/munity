@@ -128,16 +128,13 @@ public class MapSegment : MonoBehaviour {
 		verts.Add(new Vector3(0,0,0));
 		foreach (Vector3 vert in verts) {
 			Vector3 startPoint = gameObject.transform.TransformPoint(vert);
-			if (id == 36) {
-				Debug.Log(centerPoint);
-			}
 
 			startPoint = (startPoint-centerPoint)*0.95f + centerPoint  + (height*0.05f);
-			// if (id == 22) {
+			Vector3 castPoint = gameObject.transform.TransformPoint(vert);
+			// if (id == 47) {
 			// 	Debug.Log(castPoint);
 			// }
-			Vector3 castPoint = gameObject.transform.TransformPoint(vert);
-			float rayCount = 4f;
+			float rayCount = 7f;
 
 			if (Physics.Raycast(centerPoint + height*0.5f, (castPoint+height*0.5f)-(centerPoint + height*0.5f), out hit,Vector3.Distance(centerPoint + height*0.5f, castPoint+height*0.5f)*0.95f)) {
 				if (hit.collider.transform.parent != null && hit.collider.transform.parent.gameObject.tag == "polygon") {
@@ -153,15 +150,16 @@ public class MapSegment : MonoBehaviour {
 						}
 
 						Debug.Log(id);
+						Debug.Log(hit.collider.transform.parent.GetComponent<MapSegment>().id);
 						Debug.DrawRay(centerPoint + height*0.5f, (castPoint+height*0.5f)-(centerPoint + height*0.5f), Color.yellow);				
-						return;					
+						continue;					
 
 					}
 				}
 			}
 
-			for (int i = 0; i < rayCount; i++) {
-				castPoint = (startPoint-centerPoint)*((1f/rayCount)*(float)i) + centerPoint  + (height*0.05f);
+			for (int i = 1; i <= rayCount; i++) {
+				castPoint = (startPoint-centerPoint)*((1f/(rayCount-0.001f))*(float)i) + centerPoint  + (height*0.05f);
 
 				if (Physics.Raycast(castPoint, Vector3.up, out hit, height.y)) {
 					if (hit.collider.transform.parent != null && hit.collider.transform.parent.gameObject != gameObject) {
@@ -178,10 +176,10 @@ public class MapSegment : MonoBehaviour {
 							hit.collider.transform.parent.GetComponent<MapSegment>().collidesWith.Add(id);
 						}
 	
-						return;
+						continue;
 					}
 				}
-				castPoint.y -=  (height.y*0.1f);
+				castPoint.y = centerPoint.y - (height.y*0.01f);
 				if (Physics.Raycast(castPoint, Vector3.down, out hit,10)) {
 					if (hit.collider.transform.parent != null && hit.collider.transform.parent.gameObject.tag == "polygon") {
 						if (hit.collider.name != "ceiling") {
@@ -197,7 +195,7 @@ public class MapSegment : MonoBehaviour {
 
 							Debug.Log(id);
 							Debug.DrawRay(castPoint, Vector3.down, Color.white);				
-							return;
+							continue;
 
 						}
 						
@@ -1122,115 +1120,6 @@ public class MapSegment : MonoBehaviour {
 		return isVisible;
 
 	}
-
-}
-
-
-
-
-public class ControlPanel {
-
-	public short type = 0;
-	public short permutation = 0;
-	public int controlPanelStatus = 0;
-	public bool controlPanel = false;
-	public bool repairSwitch = false;
-	public bool destructiveSwitch = false;
-	public bool active = false;
-	public int lightSwitch = -1;
-	public int platformSwitch = -1;
-	public int tagSwitch = -1;
-	public bool canBeDestroyed = false;
-	public bool canOnlyBeHitByProjectiles = false;
-	public bool dirty = false;
-	public bool savePoint = false;
-	public bool terminal = false;
-	public Material activeMat = new Material(Shader.Find("Custom/StandardClippableV2"));
-	public Material inactiveMat = new Material(Shader.Find("Custom/StandardClippableV2"));
-
-
-	private bool toggled = false;
-	public void toggle(GameObject wall, bool playerTouched = false) {
-		// if (toggled) {return;}
-		// toggled = true;
-		// active = !active;
-		if (playerTouched) {
-			if (platformSwitch > -1) {
-				MapSegment pol = GlobalData.map.segments[platformSwitch];
-				if (pol.platform != null) {
-					if (!active) {
-						pol.platform.activate();
-					} else {
-						pol.platform.deActivate();
-					}
-				}
-			}
-			if (lightSwitch > -1) {
-				GlobalData.map.lights[lightSwitch].toggle();
-			}
-			if (tagSwitch > -1) {
-				foreach(mapLight light in GlobalData.map.lights) {
-					if (light.mapTag == tagSwitch) {
-						light.toggle();
-					}
-				}
-				foreach(MapSegment seg in GlobalData.map.segments) {
-					if (seg.platform != null && seg.platform.mapTag == tagSwitch) {
-						seg.platform.activate();
-					}
-				}
-
-			}
-
-
-
-		} else {
-			active = !active;
-			Vector2 offset = wall.GetComponent<MeshRenderer>().material.mainTextureOffset;
-			if (active) {
-				wall.GetComponent<MeshRenderer>().material = activeMat;
-			} else {
-				wall.GetComponent<MeshRenderer>().material = inactiveMat;
-			}
-			wall.GetComponent<MeshRenderer>().material.mainTextureOffset = offset;
-
-		}
-		// Vector2 offset = wall.GetComponent<MeshRenderer>().material.mainTextureOffset;
-		// if (active) {
-			// wall.GetComponent<MeshRenderer>().material = activeMat;
-			// if (platformSwitch > -1) {
-				// MapSegment pol = GlobalData.map.segments[platformSwitch];
-				// if (playerTouched && pol.platform != null) {
-					// pol.platform.activate();
-				// }
-				// foreach (MapSegment seg in GlobalData.map.segments) {
-				// 	foreach (MapSegmentSide side in seg.sides) {
-				// 		if (side.controlPanel != null && side.controlPanel.platformSwitch == platformSwitch) {
-				// 			if (side.controlPanel != this) {
-				// 				side.controlPanel.toggle(side.meshItem);
-				// 				break;
-				// 			}
-				// 		}
-				// 	}
-				// }
-			// }
-		// } else {
-		// 	wall.GetComponent<MeshRenderer>().material = inactiveMat;
-		// }
-		// wall.GetComponent<MeshRenderer>().material.mainTextureOffset = offset;
-		// toggled = false;
-	}
-    // public enum ControlPanelClass : short {
-	// Oxygen,
-	// Shield,
-	// DoubleShield,
-	// TripleShield,
-	// LightSwitch,
-	// PlatformSwitch,
-	// TagSwitch,
-	// PatternBuffer,
-	// Terminal
-    // }
 
 }
 

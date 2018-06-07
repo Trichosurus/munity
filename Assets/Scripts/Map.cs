@@ -377,51 +377,34 @@ public class Map : MonoBehaviour {
 				// Material mat = new Material(Shader.Find("Custom/StandardClippableV2"));
 
 				Weland.ShapeDescriptor tex = new Weland.ShapeDescriptor();
-		
+				int mediaType = 0;
 				switch (media.Type) {
 					case MediaType.Water: 
-						tex.Collection = (byte)GlobalData.mediaCollections[0];
-						tex.Bitmap = (byte)GlobalData.mediaBitmaps[0];
-						seg.liquid.surface = getTexture(tex);
-						seg.liquid.colour = GlobalData.mediaColours[0];
-						seg.liquid.density = GlobalData.mediaDensities[0];
+						mediaType = 0;
 						break;
 					case MediaType.Lava: 
-						tex.Collection = (byte)GlobalData.mediaCollections[1];
-						tex.Bitmap = (byte)GlobalData.mediaBitmaps[1];
-						seg.liquid.surface = getTexture(tex);
-						seg.liquid.colour = GlobalData.mediaColours[1];
-						seg.liquid.density = GlobalData.mediaDensities[1];
+						mediaType = 1;
 						break;
 					case MediaType.Goo: 
-						tex.Collection = (byte)GlobalData.mediaCollections[2];
-						tex.Bitmap = (byte)GlobalData.mediaBitmaps[2];
-						seg.liquid.surface = getTexture(tex);
-						seg.liquid.colour = GlobalData.mediaColours[2];
-						seg.liquid.density = GlobalData.mediaDensities[2];
+						mediaType = 2;
 						break;
 					case MediaType.Sewage: 
-						tex.Collection = (byte)GlobalData.mediaCollections[3];
-						tex.Bitmap = (byte)GlobalData.mediaBitmaps[3];
-						seg.liquid.surface = getTexture(tex);
-						seg.liquid.colour = GlobalData.mediaColours[3];
-						seg.liquid.density = GlobalData.mediaDensities[3];
+						mediaType = 3;
 						break;
 					case MediaType.Jjaro: 
-						tex.Collection = (byte)GlobalData.mediaCollections[4];
-						tex.Bitmap = (byte)GlobalData.mediaBitmaps[4];
-						seg.liquid.surface = getTexture(tex);
-						seg.liquid.colour = GlobalData.mediaColours[4];
-						seg.liquid.density = GlobalData.mediaDensities[4];
+						mediaType = 4;
 						break;
 					default: 
-						tex.Collection = (byte)GlobalData.mediaCollections[0];
-						tex.Bitmap = (byte)GlobalData.mediaBitmaps[0];
-						seg.liquid.surface = getTexture(tex);
-						seg.liquid.colour = GlobalData.mediaColours[0];
-						seg.liquid.density = GlobalData.mediaDensities[0];
+						mediaType = 0;
 						break;
 				}
+
+				tex.Collection = (byte)GlobalData.mediaCollections[mediaType];
+				tex.Bitmap = (byte)GlobalData.mediaBitmaps[mediaType];
+				seg.liquid.surface = getTexture(tex);
+				seg.liquid.colour = GlobalData.mediaColours[mediaType];
+				seg.liquid.density = GlobalData.mediaDensities[mediaType];
+
 
 				seg.liquid.parent = seg;
 			}
@@ -500,7 +483,7 @@ public class Map : MonoBehaviour {
 			//find the top most point so we can sort them clockwise to make
 			int zPt = 0;
 			int xPt = 0;
-						for (int ep = 0; ep <  Level.Polygons[p].VertexCount; ep++) {
+			for (int ep = 0; ep <  Level.Polygons[p].VertexCount; ep++) {
 				int x = Level.Endpoints[Level.Polygons[p].EndpointIndexes[ep]].X;
 				int z = Level.Endpoints[Level.Polygons[p].EndpointIndexes[ep]].Y;
 
@@ -724,7 +707,9 @@ public class Map : MonoBehaviour {
 
 		foreach(MapSegment s in segments) {
 			count++;
+			s.showHide(false);
 			s.checkIfImpossible();
+			s.showHide(true);
 			if (count % 77 == 0 ){
 				loadingText = load + "\nFinding Impossible Space "+count+"/"+segments.Count;
 				yield return null;
@@ -743,6 +728,12 @@ public class Map : MonoBehaviour {
 				segments[s].impossibleVolumes.Add(iv); 
 			}
 		}
+		for(int s = 0; s < segments.Count; s++) {
+			if (segments[s].impossible){
+				getConnectedVolumes(segments[s], false);
+			}
+		}
+
 		for(int s = 0; s < segments.Count; s++) {
 			if (segments[s].impossible){
 				getConnectedVolumes(segments[s], false);
@@ -803,53 +794,61 @@ public class Map : MonoBehaviour {
 
 	}
 
-	 List<int> getConnectedVolumes(MapSegment seg, bool self, List<int> connected = null) {
+	void assembleVolumeSides (MapSegment seg, bool self = true) {
+		foreach (impossibleVolume iv in seg.impossibleVolumes) {
+			List<int> segList;
+			if (self) {
+				segList = iv.collisionPolygonsSelf;
+			} else {
+				segList = iv.collisionPolygonsOther;
+			}
+		}
+	}
+
+	List<int> getConnectedVolumes(MapSegment seg, bool self, List<int> connected = null) {
 		if (connected == null) {connected = new List<int>();}
 		if (self) { 
-		if (!connected.Contains(seg.id)) {connected.Add(seg.id);}
-		foreach(MapSegmentSide side in seg.sides) {
-			if (side.connection != null && side.connection.impossible && !connected.Contains(side.connectionID)) {
-				foreach(int i in side.connection.collidesWith) {
-					if (seg.collidesWith.Contains(i)) {
-						connected = getConnectedVolumes(side.connection, true, connected);
-						break;
+			if (!connected.Contains(seg.id)) {connected.Add(seg.id);}
+			foreach(MapSegmentSide side in seg.sides) {
+				if (side.connection != null && side.connection.impossible && !connected.Contains(side.connectionID)) {
+					foreach(int i in side.connection.collidesWith) {
+						if (seg.collidesWith.Contains(i)) {
+							connected = getConnectedVolumes(side.connection, true, connected);
+							break;
+						}
 					}
 				}
 			}
-		}
 		//connected.Sort();
 		} else {
 		// int volCount = 0;
-		seg.impossibleVolumes[0].collisionPolygonsOther = segments[seg.collidesWith[0]].impossibleVolumes[0].collisionPolygonsSelf;
-		foreach (int i in seg.collidesWith) {
-			bool match = false;
-			foreach(impossibleVolume iv in seg.impossibleVolumes) {
-				HashSet<int> hsSelf = new HashSet<int>(iv.collisionPolygonsOther);
-				HashSet<int> hsOther = new HashSet<int>(segments[i].impossibleVolumes[0].collisionPolygonsSelf);
-				if (hsSelf.SetEquals(hsOther)) {
-					match = true;				
+			seg.impossibleVolumes[0].collisionPolygonsOther = segments[seg.collidesWith[0]].impossibleVolumes[0].collisionPolygonsSelf;
+			foreach (int i in seg.collidesWith) {
+				bool match = false;
+				foreach(impossibleVolume iv in seg.impossibleVolumes) {
+					HashSet<int> hsSelf = new HashSet<int>(iv.collisionPolygonsOther);
+					HashSet<int> hsOther = new HashSet<int>(segments[i].impossibleVolumes[0].collisionPolygonsSelf);
+					if (hsSelf.SetEquals(hsOther)) {
+						match = true;				
+					}
+				}
+				if (!match) {
+					impossibleVolume iv = new impossibleVolume();
+					iv.collisionPolygonsSelf = seg.impossibleVolumes[0].collisionPolygonsSelf;
+					iv.collisionPolygonsOther = segments[i].impossibleVolumes[0].collisionPolygonsSelf;
+					seg.impossibleVolumes.Add(iv);
 				}
 			}
-			if (!match) {
-				impossibleVolume iv = new impossibleVolume();
-				iv.collisionPolygonsSelf = seg.impossibleVolumes[0].collisionPolygonsSelf;
-				iv.collisionPolygonsOther = segments[i].impossibleVolumes[0].collisionPolygonsSelf;
-				seg.impossibleVolumes.Add(iv);
-			}
-		}
-		connected = seg.impossibleVolumes[0].collisionPolygonsSelf;
+			connected = seg.impossibleVolumes[0].collisionPolygonsSelf;
 		}
 		
 		return connected;
 	}
 		
-	
-
 	//struct for saving occlusion data cache
 	[System.Serializable]
 	struct activePolygonList {
-		public List<bool[]> activePolygons;
-		
+		public List<bool[]> activePolygons;	
 	}
 
 	string CalculateMD5(string filename) {
