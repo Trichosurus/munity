@@ -79,7 +79,7 @@ namespace Weland {
                 model.Load(args[0]);
 
                 Console.WriteLine("{0} monster definitions", model.monsterDefinitions.Count);
-                Console.WriteLine(new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(model));
+                //Console.WriteLine(new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(model));
             } else {
                 Console.WriteLine("Usage: PhysicsModel <filename>");
             }

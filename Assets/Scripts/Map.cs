@@ -46,16 +46,15 @@ public class Map : MonoBehaviour {
 		yield return StartCoroutine(makeMaterialsFromShapesFile(shapes));
 
 		loadingText += "\nLoading Map... ";
-		Wadfile wadfile = new Wadfile();
-		wadfile.Load(GlobalData.mapsFilePath);
-	    foreach (var kvp in wadfile.Directory) {
+		MapFile mapfile = new MapFile();
+		mapfile.Load(GlobalData.mapsFilePath);
+	    foreach (var kvp in mapfile.Directory) {
 			if (kvp.Value.Chunks.ContainsKey(MapInfo.Tag)) {
-				string String = kvp.Value.LevelName;
 				int levelNumber = kvp.Key;
 			}
 	    }
 	    Level Level = new Level();
-		Level.Load(wadfile.Directory[mapNo]);
+		Level.Load(mapfile.Directory[mapNo]);
 
 		Debug.Log(Level.Name);
 		// Debug.Log(Level.Environment);

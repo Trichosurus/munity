@@ -68,8 +68,6 @@ namespace Weland {
 	public class Shot {
 	}
 
-	public class PhysicsModel {
-	}
 
 	public class Weapon {
 	}
