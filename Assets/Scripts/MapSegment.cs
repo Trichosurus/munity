@@ -1124,9 +1124,158 @@ public class MapSegment : MonoBehaviour {
 }
 
 public class impossibleVolume {
-	public List<Vector3> intersections = new List<Vector3>();
+	public List<Vector3[]> sidesSelf = new List<Vector3[]>();
+	public List<Vector3[]> sidesOther = new List<Vector3[]>();
 	public List<Vector3> collisionPoints = new List<Vector3>();
 	public List<int> collisionPolygonsOther = new List<int>();
 	public List<int> collisionPolygonsSelf = new List<int>();
+
+	public void assembleVolumeSides (MapSegment seg, bool self = true) {
+		foreach (impossibleVolume iv in seg.impossibleVolumes) {
+			List<int> segList;
+			List<Vector3[]> lineList = new List<Vector3[]>();
+			if (self) {
+				segList = iv.collisionPolygonsSelf;
+			} else {
+				segList = iv.collisionPolygonsOther;
+			}
+			Vector3[] currentPoints = new Vector3[2];
+			int[] currentLine = new int[2];
+			currentLine[0] = -1;
+			currentLine[1] = -1;
+
+			for (int i = 0; i < segList.Count; i++){
+			for (int s = 0; s < GlobalData.map.segments[segList[i]].sides.Count; s++) {
+				if (sideValid(segList[i], s, segList)) {
+					currentLine[0] = segList[i];
+					currentLine[1] = s;
+					break;
+				}
+			}
+			if (currentLine[0] >=0) {break;}
+			}
+			currentPoints = getLinePoints(GlobalData.map.segments[currentLine[0]], currentLine[1]);
+			lineList.Add(currentPoints);
+			currentPoints = new Vector3[2];
+			currentLine[1]++;
+			int count = 0;
+			while (currentPoints[0] != lineList[0][0] || currentPoints[1] != lineList[0][1] && count < 666666) {
+				
+				if (!sideValid(currentLine[0], currentLine[1], segList)) {
+					int connID = -1;
+					if (GlobalData.map.segments[currentLine[0]].sides.Count <= currentLine[1]) {
+						connID = GlobalData.map.segments[currentLine[0]].sides[0].connectionID;
+					} else {
+						connID = GlobalData.map.segments[currentLine[0]].sides[currentLine[1]].connectionID;
+					}
+					currentLine[1] = getConnectingLine(currentLine[0], currentLine[1], connID);
+					currentLine[0] = connID;
+				}
+
+				currentPoints = getLinePoints(GlobalData.map.segments[currentLine[0]], currentLine[1]);
+				lineList.Add(currentPoints);
+
+				currentLine[1]++;
+				if (GlobalData.map.segments[currentLine[0]].sides.Count <= currentLine[1]) {
+					currentLine[1] = 0;
+				}
+				currentPoints = getLinePoints(GlobalData.map.segments[currentLine[0]], currentLine[1]);
+				count++;
+			}
+			if (self) {
+				iv.sidesSelf = lineList;
+			} else {
+				iv.sidesOther = lineList;
+			}
+		}
+	}
+
+	int getConnectingLine(int segID, int sideNo, int connID) {
+		MapSegment seg = GlobalData.map.segments[segID];
+		MapSegment conn = GlobalData.map.segments[connID];
+
+		Vector3 point = new Vector3();
+		point = seg.transform.TransformPoint(seg.vertices[sideNo]);
+		// if (sideNo < seg.sides.Count-1) {
+		// 	point = seg.transform.TransformPoint(seg.vertices[sideNo+1]);
+		// } else {
+		// 	point = seg.transform.TransformPoint(seg.vertices[0]);
+		// }
+		int matchPoint = -1;
+		for (int s = 0; s < conn.sides.Count; s++) {
+			Vector3 connPoint = conn.transform.TransformPoint(conn.vertices[s]);
+			if (conn.transform.TransformPoint(conn.vertices[s]) == point) {
+				matchPoint = s;
+			}
+		}
+		
+		if (conn.sides[matchPoint].connectionID != segID) {
+			return matchPoint;
+		}
+		matchPoint++;
+		if (matchPoint >= conn.sides.Count) {matchPoint = 0;}
+		return matchPoint;
+
+	}
+
+	bool sideValid(int segID, int sideNo, List<int> segList) {
+		if (GlobalData.map.segments[segID].sides.Count <= sideNo) {
+			sideNo = sideNo - GlobalData.map.segments[segID].sides.Count;
+		}
+		return (GlobalData.map.segments[segID].sides[sideNo].connectionID < 0 ||
+				!segList.Contains(GlobalData.map.segments[segID].sides[sideNo].connectionID));
+	}
+
+	Vector3[] getLinePoints(MapSegment seg, int sideNo) {
+		Vector3[] points = new Vector3[2]; 
+		points[0] = seg.transform.TransformPoint(seg.vertices[sideNo]);
+		if (sideNo < seg.vertices.Count-1) {
+			points[1] = seg.transform.TransformPoint(seg.vertices[sideNo+1]);
+		} else {
+			points[1] = seg.transform.TransformPoint(seg.vertices[0]);
+		}
+		return points;
+	}
+
+	public List<int> getConnectedVolumes(MapSegment seg, bool self, List<int> connected = null) {
+		if (connected == null) {connected = new List<int>();}
+		if (self) { 
+			if (!connected.Contains(seg.id)) {connected.Add(seg.id);}
+			foreach(MapSegmentSide side in seg.sides) {
+				if (side.connection != null && side.connection.impossible && !connected.Contains(side.connectionID)) {
+					foreach(int i in side.connection.collidesWith) {
+						if (seg.collidesWith.Contains(i)) {
+							connected = getConnectedVolumes(side.connection, true, connected);
+							break;
+						}
+					}
+				}
+			}
+		//connected.Sort();
+		} else {
+		// int volCount = 0;
+			seg.impossibleVolumes[0].collisionPolygonsOther = GlobalData.map.segments[seg.collidesWith[0]].impossibleVolumes[0].collisionPolygonsSelf;
+			foreach (int i in seg.collidesWith) {
+				bool match = false;
+				foreach(impossibleVolume iv in seg.impossibleVolumes) {
+					HashSet<int> hsSelf = new HashSet<int>(iv.collisionPolygonsOther);
+					HashSet<int> hsOther = new HashSet<int>(GlobalData.map.segments[i].impossibleVolumes[0].collisionPolygonsSelf);
+					if (hsSelf.SetEquals(hsOther)) {
+						match = true;				
+					}
+				}
+				if (!match) {
+					impossibleVolume iv = new impossibleVolume();
+					iv.collisionPolygonsSelf = seg.impossibleVolumes[0].collisionPolygonsSelf;
+					iv.collisionPolygonsOther = GlobalData.map.segments[i].impossibleVolumes[0].collisionPolygonsSelf;
+					seg.impossibleVolumes.Add(iv);
+				}
+			}
+			connected = seg.impossibleVolumes[0].collisionPolygonsSelf;
+		}
+		
+		return connected;
+	}
+
 
 }

@@ -720,22 +720,25 @@ public class Map : MonoBehaviour {
 		List<List<int>> collisionsList = new List<List<int>>();
 		for(int s = 0; s < segments.Count; s++) {
 			if (segments[s].impossible){
-				List<int> connList = getConnectedVolumes(segments[s], true);
-				segments[s].impossibleVolumes = new List<impossibleVolume>();
 				impossibleVolume iv = new impossibleVolume();
+				List<int> connList = iv.getConnectedVolumes(segments[s], true);
+				segments[s].impossibleVolumes = new List<impossibleVolume>();
 				iv.collisionPolygonsSelf = connList;
 				segments[s].impossibleVolumes.Add(iv); 
 			}
 		}
 		for(int s = 0; s < segments.Count; s++) {
 			if (segments[s].impossible){
-				getConnectedVolumes(segments[s], false);
+				segments[s].impossibleVolumes[0].getConnectedVolumes(segments[s], false);
 			}
 		}
 
 		for(int s = 0; s < segments.Count; s++) {
 			if (segments[s].impossible){
-				getConnectedVolumes(segments[s], false);
+				foreach(impossibleVolume iv in segments[s].impossibleVolumes) {
+					iv.assembleVolumeSides(segments[s], true);
+					iv.assembleVolumeSides(segments[s], false);
+				}
 			}
 		}
 
@@ -793,56 +796,9 @@ public class Map : MonoBehaviour {
 
 	}
 
-	void assembleVolumeSides (MapSegment seg, bool self = true) {
-		foreach (impossibleVolume iv in seg.impossibleVolumes) {
-			List<int> segList;
-			if (self) {
-				segList = iv.collisionPolygonsSelf;
-			} else {
-				segList = iv.collisionPolygonsOther;
-			}
-		}
-	}
 
-	List<int> getConnectedVolumes(MapSegment seg, bool self, List<int> connected = null) {
-		if (connected == null) {connected = new List<int>();}
-		if (self) { 
-			if (!connected.Contains(seg.id)) {connected.Add(seg.id);}
-			foreach(MapSegmentSide side in seg.sides) {
-				if (side.connection != null && side.connection.impossible && !connected.Contains(side.connectionID)) {
-					foreach(int i in side.connection.collidesWith) {
-						if (seg.collidesWith.Contains(i)) {
-							connected = getConnectedVolumes(side.connection, true, connected);
-							break;
-						}
-					}
-				}
-			}
-		//connected.Sort();
-		} else {
-		// int volCount = 0;
-			seg.impossibleVolumes[0].collisionPolygonsOther = segments[seg.collidesWith[0]].impossibleVolumes[0].collisionPolygonsSelf;
-			foreach (int i in seg.collidesWith) {
-				bool match = false;
-				foreach(impossibleVolume iv in seg.impossibleVolumes) {
-					HashSet<int> hsSelf = new HashSet<int>(iv.collisionPolygonsOther);
-					HashSet<int> hsOther = new HashSet<int>(segments[i].impossibleVolumes[0].collisionPolygonsSelf);
-					if (hsSelf.SetEquals(hsOther)) {
-						match = true;				
-					}
-				}
-				if (!match) {
-					impossibleVolume iv = new impossibleVolume();
-					iv.collisionPolygonsSelf = seg.impossibleVolumes[0].collisionPolygonsSelf;
-					iv.collisionPolygonsOther = segments[i].impossibleVolumes[0].collisionPolygonsSelf;
-					seg.impossibleVolumes.Add(iv);
-				}
-			}
-			connected = seg.impossibleVolumes[0].collisionPolygonsSelf;
-		}
-		
-		return connected;
-	}
+
+
 		
 	//struct for saving occlusion data cache
 	[System.Serializable]
