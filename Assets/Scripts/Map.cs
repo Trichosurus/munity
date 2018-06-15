@@ -738,6 +738,7 @@ public class Map : MonoBehaviour {
 				foreach(impossibleVolume iv in segments[s].impossibleVolumes) {
 					iv.assembleVolumeSides(segments[s], true);
 					iv.assembleVolumeSides(segments[s], false);
+					iv.calculateCollisionPoints();
 				}
 			}
 		}

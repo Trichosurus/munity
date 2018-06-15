@@ -1159,8 +1159,11 @@ public class impossibleVolume {
 			currentPoints = new Vector3[2];
 			currentLine[1]++;
 			int count = 0;
-			while (currentPoints[0] != lineList[0][0] || currentPoints[1] != lineList[0][1] && count < 666666) {
-				
+			while (currentPoints[0] != lineList[0][0] || currentPoints[1] != lineList[0][1] && count < 666) {
+				if (currentLine[0] == 63) {
+					;
+				}
+
 				if (!sideValid(currentLine[0], currentLine[1], segList)) {
 					int connID = -1;
 					if (GlobalData.map.segments[currentLine[0]].sides.Count <= currentLine[1]) {
@@ -1171,8 +1174,11 @@ public class impossibleVolume {
 					currentLine[1] = getConnectingLine(currentLine[0], currentLine[1], connID);
 					currentLine[0] = connID;
 				}
-
+				
 				currentPoints = getLinePoints(GlobalData.map.segments[currentLine[0]], currentLine[1]);
+				if (currentPoints[0] == lineList[0][0] && currentPoints[1] == lineList[0][1]) {
+					break;
+				}
 				lineList.Add(currentPoints);
 
 				currentLine[1]++;
@@ -1277,5 +1283,40 @@ public class impossibleVolume {
 		return connected;
 	}
 
+	public void calculateCollisionPoints() {
+		//List<Vector2> intersectPoints = new List<Vector2>();
+		foreach (Vector3[] self in sidesSelf) {
+			float a1 = self[1].z - self[0].z;
+			float b1 = self[0].x - self[1].x;
+			float c1 = a1*self[0].x + b1*self[0].z;
+
+			foreach (Vector3[] other in sidesOther) {
+
+				float a2 = other[0].z - other[1].z;
+				float b2 = other[1].x - other[0].x;
+				float c2 = a2*other[1].x + b2*other[1].z;
+
+				float delta = a1*b2 - a2*b1;
+				if(delta != 0) {
+					Vector2 intersect = new Vector2((b2*c1 - b1*c2)/delta, (a1*c2 - a2*c1)/delta);
+					
+					float d1 = Vector2.Distance(new Vector2(self[0].x, self[0].z), intersect);
+					float d2 = Vector2.Distance(new Vector2(self[1].x, self[1].z), intersect);
+					float d3 = Vector2.Distance(new Vector2(self[0].x, self[0].z), new Vector2(self[1].x, self[1].z));
+
+					float d4 = Vector2.Distance(new Vector2(other[1].x, other[1].z), intersect);
+					float d5 = Vector2.Distance(new Vector2(other[0].x, other[0].z), intersect);
+					float d6 = Vector2.Distance(new Vector2(other[1].x, other[1].z), new Vector2(other[0].x, other[0].z));
+
+					// if lenghts from end to point to end = length of line then valid point
+					//+- 0.01 to account for floating point errors 
+					if (d1 + d2 - 0.001 < d3 + 0.001 && d1 + d2 + 0.001 > d3 - 0.001
+						 && d4 + d5 - 0.001 < d6 + 0.001 && d4 + d5 + 0.001 > d6 - 0.001) {
+						collisionPoints.Add(intersect);
+					}					
+				}			
+			}
+		}
+	}
 
 }
