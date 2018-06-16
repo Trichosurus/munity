@@ -15,8 +15,8 @@ public class playerController : MonoBehaviour {
 
 	public int maxView = 3;
 
-	//private List<int> activePolygons = new List<int>();
-	private bool[] activePolygons = new bool[0];
+	private List<int> activePolygons;
+	// private bool[] activePolygons = new bool[0];
 	private	int activeCount = 0;
 	private	int processedCount = 0;
 
@@ -116,11 +116,8 @@ public class playerController : MonoBehaviour {
 		getCurrentPolygon();
 		if (currentPolygon >= 0) {
 			if (prevPolygon != currentPolygon) {
+				activePolygons = new List<int>(); 
 				drawActivePolygons();
-				// if (GlobalData.map.segments[currentPolygon].platform != null &&
-				// 		!GlobalData.map.segments[currentPolygon].platform.door) {
-				// 	GlobalData.map.segments[currentPolygon].platform.activate(-2);
-				// }
 				GlobalData.map.segments[currentPolygon].triggerBehaviour();
 			}
 
@@ -183,177 +180,288 @@ public class playerController : MonoBehaviour {
 				GlobalData.map.segments[i].showHide(active[i]);
 			} else {
 				GlobalData.map.segments[i].showHide(false);
+				activePolygons.Add(i);
 			}
 		}
-
-
 	}
-
 	void calculateVisibility() {
-	// Debug.Log("----------------------------------------");
-		activePolygons = new bool[GlobalData.map.segments.Count];
-		bool[] processedPolys = new bool[GlobalData.map.segments.Count];
-		List<int> collides = new List<int>();
-		List<int> deferred = new List<int>();
-		activeCount = 0;
-		processedCount = 0;
-		float[] distances = new float[GlobalData.map.segments.Count];
-		for (int i = 0; i < GlobalData.map.segments.Count; i++) {
-			if (GlobalData.map.segments[i].impossible &&
-					GlobalData.map.segments[currentPolygon].activePolygons[i]) {
-				activePolygons[i] = true;
-				activeCount++;
-				GlobalData.map.segments[i].showHide(false);
-				//float distance;
-				distances[i] = 7777777;
-
+		//get list of active volumes that are visible
+		List<impossibleVolume> ivs = new List<impossibleVolume>();
+		List<int> ap = new List<int>(activePolygons);
+		while (ap.Count > 0) {
+			foreach(impossibleVolume iv in GlobalData.map.segments[ap[0]].impossibleVolumes) {
+				ivs.Add(iv);
+				foreach(int pol in iv.collisionPolygonsSelf) {
+					ap.Remove(pol);
+					GlobalData.map.segments[pol].showHide(false);
+				}
 			}
 		}
+		int selfIV = -1;
+		List<float[]> distances = new List<float[]>();
+		//get the distances of the closest connection to each impossible volume
+		for (int i = 0; i < ivs.Count; i++) {
+			foreach (int pol in ivs[i].collisionPolygonsSelf) {
+				if (pol == currentPolygon) {selfIV = i;}
+				// foreach(MapSegmentSide side in GlobalData.map.segments[pol].sides) {
+				for (int s = 0; s < GlobalData.map.segments[pol].sides.Count; s++) {
+					MapSegmentSide side = GlobalData.map.segments[pol].sides[s];
+					if (side.connectionID > -1 
+					&& GlobalData.map.segments[currentPolygon].activePolygons[side.connectionID] 
+					&& !ivs[i].collisionPolygonsSelf.Contains(side.connectionID)) {
+							//calculatedistance
+						GameObject entryway = side.entryCollider;
+						if (entryway == null) {
+							entryway = new GameObject("sideCollider");
+							entryway.transform.position = GlobalData.map.segments[pol].transform.position;
+							BoxCollider box = entryway.AddComponent<BoxCollider>();
 
-		MapSegment pol  = GlobalData.map.segments[currentPolygon];
+							Vector3 v1 = GlobalData.map.segments[pol].vertices[s];
+							int s2 = s;
+							if (s+1 < GlobalData.map.segments[pol].vertices.Count) {
+								s2 = s+1;
+							} else {
+								s2 = 0;
+							}
+							Vector3 v2 = GlobalData.map.segments[pol].vertices[s2];
+							v1 = GlobalData.map.segments[pol].transform.TransformPoint(v1);
+							v2 = GlobalData.map.segments[pol].transform.TransformPoint(v2);
 
-		if (pol.impossible) {
-			activePolygons[currentPolygon] = true;
-			pol.showHide(true);
-			collides.AddRange(pol.collidesWith);
-			pol.setClippingPlanes(new List<Vector3>(), true);
-
-
+							box.transform.position = Vector3.Lerp(v1,v2,0.5f) + (GlobalData.map.segments[pol].height/2f);
+							box.size = new Vector3(Vector3.Distance(v1,v2), GlobalData.map.segments[pol].height.y, 0.02f);
+							float entrywayAngle = Mathf.Atan2(v2.x-v1.x, v2.z-v1.z) * Mathf.Rad2Deg;
+							box.transform.rotation = Quaternion.Euler(0,entrywayAngle+90,0);
+							box.enabled = false;
+							entryway.transform.parent = GlobalData.map.segments[pol].transform;
+							GlobalData.map.segments[pol].sides[s].entryCollider = entryway;
+						}
 		
-			for( int s = 0; s < pol.sides.Count; s++) {
-				if (pol.sides[s].connectionID >= 0 && 
-				GlobalData.map.segments[pol.sides[s].connectionID].impossible) {
-					if (!collides.Contains(pol.sides[s].connectionID) ) {
-						distances[pol.sides[s].connectionID] = 0;
+						Collider coll = entryway.GetComponent<Collider>();
+						coll.enabled = true;
+						Vector3 closestPoint = coll.ClosestPointOnBounds(gameObject.transform.position);
+						coll.enabled = false;
+						float d = Vector3.Distance(closestPoint,gameObject.transform.position);
+						// if (d < distance){
+							// distance = d;
+							distances.Add(new [] {d, i, pol, s});
+						// }
 					}
 				}
 			}
 		}
-		
-
-		while (processedCount < activeCount) {
-			float distance = 7777777;
-			int closest = -1;
-			// int connections = 0;
-			for (int i = 0; i < activePolygons.Length; i++) {
-				if (activePolygons[i] && !processedPolys[i]){
-
-					if (distances[i] == 7777777) {
-						for (int s = 0; s < GlobalData.map.segments[i].sides.Count; s++) {
-							int ct = GlobalData.map.segments[i].sides.Count;
-							int id = GlobalData.map.segments[i].sides[s].connectionID;
-
-							bool vis = true;
-							if (GlobalData.map.segments[i].sides[s].connectionID != -1) {
-								vis = GlobalData.map.segments[GlobalData.map.segments[i].sides[s].connectionID].hidden;
-							}
-							if (GlobalData.map.segments[i].sides[s].connectionID != -1 &&
-							(GlobalData.map.segments[GlobalData.map.segments[i].sides[s].connectionID].hidden == false ||
-								deferred.Contains(GlobalData.map.segments[i].sides[s].connectionID)) )
-							{
-								GameObject entryway = GlobalData.map.segments[i].sides[s].entryCollider;
-								if (entryway == null) {
-									entryway = new GameObject("sideCollider");
-									entryway.transform.position = GlobalData.map.segments[i].transform.position;
-									BoxCollider box = entryway.AddComponent<BoxCollider>();
-
-									Vector3 v1 = GlobalData.map.segments[i].vertices[s];
-									int s2 = s;
-									if (s+1 < GlobalData.map.segments[i].vertices.Count) {
-										s2 = s+1;
-									} else {
-										s2 = 0;
-									}
-									Vector3 v2 = GlobalData.map.segments[i].vertices[s2];
-									v1 = GlobalData.map.segments[i].transform.TransformPoint(v1);
-									v2 = GlobalData.map.segments[i].transform.TransformPoint(v2);
-
-									box.transform.position = Vector3.Lerp(v1,v2,0.5f) + (GlobalData.map.segments[i].height/2f);
-									box.size = new Vector3(Vector3.Distance(v1,v2), GlobalData.map.segments[i].height.y, 0.02f);
-									float entrywayAngle = Mathf.Atan2(v2.x-v1.x, v2.z-v1.z) * Mathf.Rad2Deg;
-									box.transform.rotation = Quaternion.Euler(0,entrywayAngle+90,0);
-									box.enabled = false;
-									entryway.transform.parent = GlobalData.map.segments[i].transform;
-									GlobalData.map.segments[i].sides[s].entryCollider = entryway;
-								}
-				
-								Collider coll = entryway.GetComponent<Collider>();
-								coll.enabled = true;
-								Vector3 closestPoint = coll.ClosestPointOnBounds(gameObject.transform.position);
-								coll.enabled = false;
-								float d = Vector3.Distance(closestPoint,gameObject.transform.position);
-								if (d < distances[i]){
-									distances[i] = d;
-								}
-
-							}
-
-						}
-					}
-
-					if (distances[i] < distance) {
-						distance = distances[i];
-						closest = i;
-					}
-				}
+		//distances.Sort();
+		List<float[]> temp = new List<float[]>();
+		while (distances.Count > 0) {
+			float d = 7777777f;
+			float[] lastf = distances[0];
+			foreach(float[] f in distances) {
+				if (f[0] < d) {d = f[0]; lastf = f;}
 			}
-			if (closest == -1) {break;}
-			activePolygons[closest] = false;
-			for( int s = 0; s < GlobalData.map.segments[closest].sides.Count; s++) {
-				if (GlobalData.map.segments[closest].sides[s].connectionID >= 0 &&
-					!GlobalData.map.segments[GlobalData.map.segments[closest].sides[s].connectionID].hidden) {
-					
-					Vector3 point1, point2;
-					point1 = GlobalData.map.segments[closest].vertices[s];
-					if (s+1 < GlobalData.map.segments[closest].vertices.Count) {
-						point2 = GlobalData.map.segments[closest].vertices[s+1];
-					} else {
-						point2 = GlobalData.map.segments[closest].vertices[0];
-					}
-					point1 = GlobalData.map.segments[closest].transform.TransformPoint(point1);
-					point2 = GlobalData.map.segments[closest].transform.TransformPoint(point2);
-					if (getRectVisibility(point1, point2, GlobalData.map.segments[closest].height)) {
-						if (!collides.Contains(closest)) {
-							GlobalData.map.segments[closest].showHide(true);
-							collides.AddRange(GlobalData.map.segments[closest].collidesWith);
-						} else {
-							deferred.Add(closest);
-						}
-						foreach(MapSegmentSide side in GlobalData.map.segments[closest].sides) {
-							if (side.connectionID != -1) {
-								distances[side.connectionID] = 0;
-							}
-						}
-						break;
-					}
-				}
-			}
-
-			GlobalData.map.segments[closest].setClippingPlanes(new List<Vector3>(), true);
-
-			processedPolys[closest] = true; 
-			processedCount++;
-
-			// drawPolygonList(true);
-
+			temp.Add(lastf);
+			distances.Remove(lastf);
 		}
-		// drawPolygonList(false);
-		//Debug.Log(deferred.Count);
+		distances = temp;
+		// if we are in impossible space, then draw the volume we are in before doing anything else
+		if (selfIV >=0) {
+			showVolume(ivs[selfIV]);
+		}
 
-		foreach (int i in deferred) {
-			float distance = 7777777;
-			int closest = -1;
-			foreach (int s in GlobalData.map.segments[i].collidesWith) {
-				if (distances[s] < distance && GlobalData.map.segments[s].hidden == false) {
-					distance = distances[s];
-					closest = s;
-				}
+		//draw impossible volumes in order of their closest connection to normal pols
+		for (int d = 0; d < distances.Count; d++) {
+			Vector3 point1, point2;
+			point1 = GlobalData.map.segments[(int)distances[d][2]].vertices[(int)distances[d][3]];
+			if ((int)distances[d][3]+1 < GlobalData.map.segments[(int)distances[d][2]].vertices.Count) {
+				point2 = GlobalData.map.segments[(int)distances[d][2]].vertices[(int)distances[d][3]+1];
+			} else {
+				point2 = GlobalData.map.segments[(int)distances[d][2]].vertices[0];
 			}
-			if (closest > -1) {
-				clipSegments(GlobalData.map.segments[i], GlobalData.map.segments[closest]);
+			point1 = GlobalData.map.segments[(int)distances[d][2]].transform.TransformPoint(point1);
+	 		point2 = GlobalData.map.segments[(int)distances[d][2]].transform.TransformPoint(point2);
+
+			if (getRectVisibility(point1, point2, GlobalData.map.segments[(int)distances[d][2]].height)) {
+				showVolume(ivs[(int)distances[d][1]]);
 			}
 		}
+
 	}
+
+	void showVolume(impossibleVolume iv, bool show = true) {
+		foreach (int pol in iv.collisionPolygonsSelf) {
+			if (GlobalData.map.segments[currentPolygon].collidesWith == null 
+			|| !GlobalData.map.segments[currentPolygon].collidesWith.Contains(pol)) {
+				GlobalData.map.segments[pol].showHide(show);
+			} else {
+				GlobalData.map.segments[pol].showHide(false);
+			}
+		}
+	
+	}
+	
+	// void calculateVisibility() {
+	// // Debug.Log("----------------------------------------");
+	// 	activePolygons = new bool[GlobalData.map.segments.Count];
+	// 	bool[] processedPolys = new bool[GlobalData.map.segments.Count];
+	// 	List<int> collides = new List<int>();
+	// 	List<int> deferred = new List<int>();
+	// 	activeCount = 0;
+	// 	processedCount = 0;
+	// 	float[] distances = new float[GlobalData.map.segments.Count];
+	// 	for (int i = 0; i < GlobalData.map.segments.Count; i++) {
+	// 		if (GlobalData.map.segments[i].impossible &&
+	// 				GlobalData.map.segments[currentPolygon].activePolygons[i]) {
+	// 			activePolygons[i] = true;
+	// 			activeCount++;
+	// 			GlobalData.map.segments[i].showHide(false);
+	// 			//float distance;
+	// 			distances[i] = 7777777;
+
+	// 		}
+	// 	}
+
+	// 	MapSegment pol  = GlobalData.map.segments[currentPolygon];
+
+	// 	if (pol.impossible) {
+	// 		activePolygons[currentPolygon] = true;
+	// 		pol.showHide(true);
+	// 		collides.AddRange(pol.collidesWith);
+	// 		pol.setClippingPlanes(new List<Vector3>(), true);
+
+
+		
+	// 		for( int s = 0; s < pol.sides.Count; s++) {
+	// 			if (pol.sides[s].connectionID >= 0 && 
+	// 			GlobalData.map.segments[pol.sides[s].connectionID].impossible) {
+	// 				if (!collides.Contains(pol.sides[s].connectionID) ) {
+	// 					distances[pol.sides[s].connectionID] = 0;
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+		
+
+	// 	while (processedCount < activeCount) {
+	// 		float distance = 7777777;
+	// 		int closest = -1;
+	// 		// int connections = 0;
+	// 		for (int i = 0; i < activePolygons.Length; i++) {
+	// 			if (activePolygons[i] && !processedPolys[i]){
+
+	// 				if (distances[i] == 7777777) {
+	// 					for (int s = 0; s < GlobalData.map.segments[i].sides.Count; s++) {
+	// 						int ct = GlobalData.map.segments[i].sides.Count;
+	// 						int id = GlobalData.map.segments[i].sides[s].connectionID;
+
+	// 						bool vis = true;
+	// 						if (GlobalData.map.segments[i].sides[s].connectionID != -1) {
+	// 							vis = GlobalData.map.segments[GlobalData.map.segments[i].sides[s].connectionID].hidden;
+	// 						}
+	// 						if (GlobalData.map.segments[i].sides[s].connectionID != -1 &&
+	// 						(GlobalData.map.segments[GlobalData.map.segments[i].sides[s].connectionID].hidden == false ||
+	// 							deferred.Contains(GlobalData.map.segments[i].sides[s].connectionID)) )
+	// 						{
+	// 							GameObject entryway = GlobalData.map.segments[i].sides[s].entryCollider;
+	// 							if (entryway == null) {
+	// 								entryway = new GameObject("sideCollider");
+	// 								entryway.transform.position = GlobalData.map.segments[i].transform.position;
+	// 								BoxCollider box = entryway.AddComponent<BoxCollider>();
+
+	// 								Vector3 v1 = GlobalData.map.segments[i].vertices[s];
+	// 								int s2 = s;
+	// 								if (s+1 < GlobalData.map.segments[i].vertices.Count) {
+	// 									s2 = s+1;
+	// 								} else {
+	// 									s2 = 0;
+	// 								}
+	// 								Vector3 v2 = GlobalData.map.segments[i].vertices[s2];
+	// 								v1 = GlobalData.map.segments[i].transform.TransformPoint(v1);
+	// 								v2 = GlobalData.map.segments[i].transform.TransformPoint(v2);
+
+	// 								box.transform.position = Vector3.Lerp(v1,v2,0.5f) + (GlobalData.map.segments[i].height/2f);
+	// 								box.size = new Vector3(Vector3.Distance(v1,v2), GlobalData.map.segments[i].height.y, 0.02f);
+	// 								float entrywayAngle = Mathf.Atan2(v2.x-v1.x, v2.z-v1.z) * Mathf.Rad2Deg;
+	// 								box.transform.rotation = Quaternion.Euler(0,entrywayAngle+90,0);
+	// 								box.enabled = false;
+	// 								entryway.transform.parent = GlobalData.map.segments[i].transform;
+	// 								GlobalData.map.segments[i].sides[s].entryCollider = entryway;
+	// 							}
+				
+	// 							Collider coll = entryway.GetComponent<Collider>();
+	// 							coll.enabled = true;
+	// 							Vector3 closestPoint = coll.ClosestPointOnBounds(gameObject.transform.position);
+	// 							coll.enabled = false;
+	// 							float d = Vector3.Distance(closestPoint,gameObject.transform.position);
+	// 							if (d < distances[i]){
+	// 								distances[i] = d;
+	// 							}
+
+	// 						}
+
+	// 					}
+	// 				}
+
+	// 				if (distances[i] < distance) {
+	// 					distance = distances[i];
+	// 					closest = i;
+	// 				}
+	// 			}
+	// 		}
+	// 		if (closest == -1) {break;}
+	// 		activePolygons[closest] = false;
+	// 		for( int s = 0; s < GlobalData.map.segments[closest].sides.Count; s++) {
+	// 			if (GlobalData.map.segments[closest].sides[s].connectionID >= 0 &&
+	// 				!GlobalData.map.segments[GlobalData.map.segments[closest].sides[s].connectionID].hidden) {
+					
+	// 				Vector3 point1, point2;
+	// 				point1 = GlobalData.map.segments[closest].vertices[s];
+	// 				if (s+1 < GlobalData.map.segments[closest].vertices.Count) {
+	// 					point2 = GlobalData.map.segments[closest].vertices[s+1];
+	// 				} else {
+	// 					point2 = GlobalData.map.segments[closest].vertices[0];
+	// 				}
+	// 				point1 = GlobalData.map.segments[closest].transform.TransformPoint(point1);
+	// 				point2 = GlobalData.map.segments[closest].transform.TransformPoint(point2);
+	// 				if (getRectVisibility(point1, point2, GlobalData.map.segments[closest].height)) {
+	// 					if (!collides.Contains(closest)) {
+	// 						GlobalData.map.segments[closest].showHide(true);
+	// 						collides.AddRange(GlobalData.map.segments[closest].collidesWith);
+	// 					} else {
+	// 						deferred.Add(closest);
+	// 					}
+	// 					foreach(MapSegmentSide side in GlobalData.map.segments[closest].sides) {
+	// 						if (side.connectionID != -1) {
+	// 							distances[side.connectionID] = 0;
+	// 						}
+	// 					}
+	// 					break;
+	// 				}
+	// 			}
+	// 		}
+
+	// 		GlobalData.map.segments[closest].setClippingPlanes(new List<Vector3>(), true);
+
+	// 		processedPolys[closest] = true; 
+	// 		processedCount++;
+
+	// 		// drawPolygonList(true);
+
+	// 	}
+	// 	// drawPolygonList(false);
+	// 	//Debug.Log(deferred.Count);
+
+	// 	foreach (int i in deferred) {
+	// 		float distance = 7777777;
+	// 		int closest = -1;
+	// 		foreach (int s in GlobalData.map.segments[i].collidesWith) {
+	// 			if (distances[s] < distance && GlobalData.map.segments[s].hidden == false) {
+	// 				distance = distances[s];
+	// 				closest = s;
+	// 			}
+	// 		}
+	// 		if (closest > -1) {
+	// 			clipSegments(GlobalData.map.segments[i], GlobalData.map.segments[closest]);
+	// 		}
+	// 	}
+	// }
 
 	void clipSegments(MapSegment segment1, MapSegment segment2) {
 		GameObject camera;
@@ -626,14 +734,14 @@ public class playerController : MonoBehaviour {
 	}
 
 
-	void drawPolygonList (bool showOnly) {
-		for (int i = 0; i < activePolygons.Length; i++) {
-			if (GlobalData.map.segments[i].impossible && GlobalData.map.segments[currentPolygon].activePolygons[i] &&
-					(activePolygons[i] || !showOnly)) {
-				GlobalData.map.segments[i].showHide(activePolygons[i]);
-			}
-		}
-	}
+	// void drawPolygonList (bool showOnly) {
+	// 	for (int i = 0; i < activePolygons.Length; i++) {
+	// 		if (GlobalData.map.segments[i].impossible && GlobalData.map.segments[currentPolygon].activePolygons[i] &&
+	// 				(activePolygons[i] || !showOnly)) {
+	// 			GlobalData.map.segments[i].showHide(activePolygons[i]);
+	// 		}
+	// 	}
+	// }
 
 
 	bool getRectVisibility (Vector3 point1, Vector3 point2, Vector3 height) {

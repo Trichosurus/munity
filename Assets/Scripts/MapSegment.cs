@@ -125,6 +125,11 @@ public class MapSegment : MonoBehaviour {
 		//if (impossible) {return;}
 		RaycastHit hit;
 		List<Vector3> verts = new List<Vector3>(vertices);
+		for (int i = 0; i < vertices.Count; i++) {
+			int j = i + 1; 
+			if (j >= vertices.Count) {j = 0;}
+			verts.Add(Vector3.Lerp(vertices[i],vertices[j],0.5f) );
+		}
 		verts.Add(new Vector3(0,0,0));
 		foreach (Vector3 vert in verts) {
 			Vector3 startPoint = gameObject.transform.TransformPoint(vert);
@@ -136,7 +141,10 @@ public class MapSegment : MonoBehaviour {
 			// }
 			float rayCount = 7f;
 
-			if (Physics.Raycast(centerPoint + height*0.5f, (castPoint+height*0.5f)-(centerPoint + height*0.5f), out hit,Vector3.Distance(centerPoint + height*0.5f, castPoint+height*0.5f)*0.95f)) {
+			if (Physics.Raycast(centerPoint + height*0.5f, 
+								(castPoint+height*0.5f)-(centerPoint + height*0.5f), 
+								out hit,
+								Vector3.Distance(centerPoint + height*0.5f, castPoint+height*0.5f)*0.95f)) {
 				if (hit.collider.transform.parent != null && hit.collider.transform.parent.gameObject.tag == "polygon") {
 					if (hit.collider.transform.parent.GetComponent<MapSegment>() != null &&
 						hit.collider.transform.parent.GetComponent<MapSegment>().id != id) {
@@ -1312,7 +1320,7 @@ public class impossibleVolume {
 					//+- 0.01 to account for floating point errors 
 					if (d1 + d2 - 0.001 < d3 + 0.001 && d1 + d2 + 0.001 > d3 - 0.001
 						 && d4 + d5 - 0.001 < d6 + 0.001 && d4 + d5 + 0.001 > d6 - 0.001) {
-						collisionPoints.Add(intersect);
+						collisionPoints.Add(new Vector3(intersect.x, 0, intersect.y));
 					}					
 				}			
 			}
