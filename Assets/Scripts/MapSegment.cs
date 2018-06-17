@@ -1293,11 +1293,13 @@ public class impossibleVolume {
 
 	public void calculateCollisionPoints() {
 		//List<Vector2> intersectPoints = new List<Vector2>();
+		
+		List<Vector3> collisions;
 		foreach (Vector3[] self in sidesSelf) {
 			float a1 = self[1].z - self[0].z;
 			float b1 = self[0].x - self[1].x;
 			float c1 = a1*self[0].x + b1*self[0].z;
-
+			collisions = new List<Vector3>();
 			foreach (Vector3[] other in sidesOther) {
 
 				float a2 = other[0].z - other[1].z;
@@ -1320,10 +1322,31 @@ public class impossibleVolume {
 					//+- 0.01 to account for floating point errors 
 					if (d1 + d2 - 0.001 < d3 + 0.001 && d1 + d2 + 0.001 > d3 - 0.001
 						 && d4 + d5 - 0.001 < d6 + 0.001 && d4 + d5 + 0.001 > d6 - 0.001) {
-						collisionPoints.Add(new Vector3(intersect.x, 0, intersect.y));
+						collisions.Add(new Vector3(intersect.x, 0, intersect.y));
 					}					
 				}			
 			}
+			// get points in clockwise order for use later on
+			float distance = 777777f;
+			while (collisions.Count > 0) {
+				distance = 777777f;	
+				Vector3 cp = new Vector3(0,-1,0);
+				foreach (Vector3 col in collisions) {
+					float d = Vector3.Distance(self[0], col);
+					if (d < distance) {
+						distance = d;
+						cp = col;
+					}
+				}
+				if (cp != new Vector3(0,-1,0)) {
+					collisionPoints.Add(cp);
+					collisions.Remove(cp);
+				} else {
+					break;
+				}
+			}
+
+
 		}
 	}
 
