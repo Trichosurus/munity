@@ -180,7 +180,7 @@ public class playerController : MonoBehaviour {
 				GlobalData.map.segments[i].showHide(active[i]);
 			} else {
 				GlobalData.map.segments[i].showHide(false);
-				activePolygons.Add(i);
+				if (active[i]) {activePolygons.Add(i);};
 			}
 		}
 	}
@@ -369,6 +369,9 @@ public class playerController : MonoBehaviour {
 		points[2] = GlobalData.map.segments[(int)distances[volOther][2]].transform.TransformPoint(points[2]);
 		points[3] = GlobalData.map.segments[(int)distances[volOther][2]].transform.TransformPoint(points[3]);
 		distance = 7777777;
+		if (iv.collisionPolygonsSelf[0] == 43) {
+			;
+		}
 		foreach (Vector3 point in points) {
 			foreach (Vector3 p in points) {
 				float d = Vector3.Distance(point,p);
@@ -382,18 +385,16 @@ public class playerController : MonoBehaviour {
 
 		sideAngles.Add(Mathf.Atan2(pp.x-point1.x, pp.z-point1.z) * Mathf.Rad2Deg);
 		sideAngles.Add(Mathf.Atan2(pp.x-point2.x, pp.z-point2.z) * Mathf.Rad2Deg);
+		sideAngles.Add(Mathf.Atan2(point1.x-point2.x, point1.z-point2.z) * Mathf.Rad2Deg);
 
 		for (int i = 0; i < sideAngles.Count; i++) {
 			if (sideAngles[i] < 0) {sideAngles[i] = 360f + sideAngles[i];}
 			Debug.Log(sideAngles[i]);
 		}
+			if (clipAngles[4] < 0) {clipAngles[4] = 360f + clipAngles[4];}
 		//Debug.Log(ivs[(int)distances[volSelf][1]].collisionPolygonsSelf[0] + "::" + ivs[(int)distances[volOther][1]].collisionPolygonsSelf[0] + "::" + sideAngles[0] + "::" + sideAngles[1] + "::" + sideAngles[2] + "::" + sideAngles[3]);
 		// Debug.Log(ivs[(int)distances[volSelf][1]].collisionPolygonsSelf[0] + "::" + ivs[(int)distances[volOther][1]].collisionPolygonsSelf[0] + "::" + point1 + "::" + point2 + "::" + point3 + "::" + point4);
-		bool left = false;
-
-		int s1 = 1;
-		int s2 = 2;
-		Debug.Log (sideAngles[1] - sideAngles[0]);
+		Debug.Log(point1 + "::" + point2);
 		// Debug.Log (sideAngles[3] - sideAngles[2]);
 
 		// if (sideAngles[1] - sideAngles[0] < -180 || sideAngles[1] - sideAngles[0] >=0) {
@@ -406,10 +407,17 @@ public class playerController : MonoBehaviour {
 		// Debug.Log(s1 + "::" + s2);
 		// Debug.Log(180 - Mathf.Abs(Mathf.Abs(sideAngles[1] - sideAngles[0]) - 180));
 		// Debug.Log(180 - Mathf.Abs(Mathf.Abs(sideAngles[3] - sideAngles[2]) - 180));
-		// Debug.Log(180 - Mathf.Abs(Mathf.Abs(sideAngles[s1] - sideAngles[s2]) - 180));
+		Debug.Log(iv.collisionPolygonsSelf[0]);
 		Debug.Log(sideAngles[0] + "::" + sideAngles[1]);
+		Debug.Log(sideAngles[2]);
+		Debug.Log(clipAngles[0] + "::" + clipAngles[1] + "::" + clipAngles[2]);
+		Debug.Log(clipAngles[3] + "::" + clipAngles[4]);
+		Debug.Log(clipAngles[4]); 
 		
-		if (sideAngles[1] - sideAngles[0] > -180 && sideAngles[1] - sideAngles[0] < 0) {
+		Debug.Log(sideAngles[1] - sideAngles[0]);
+		//if (sideAngles[1] - sideAngles[0] > -180 && sideAngles[1] - sideAngles[0] < 0 || sideAngles[1] - sideAngles[0] > 180 ) {
+		if ((sideAngles[2] > 180 && clipAngles[4] < 180)
+		|| (sideAngles[2] <= 180 && clipAngles[4] >= 180)) {
 			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[1], clipAngles[3], true, true, iv.collisionPolygonsSelf);
 			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[2], clipAngles[4], true, false, iv.collisionPolygonsOther);
 			Debug.Log("self");
@@ -446,267 +454,6 @@ public class playerController : MonoBehaviour {
 		}
 	}
 	
-
-
-	// void clipSegments(MapSegment segment1, MapSegment segment2) {
-	// 	GameObject camera;
-	// 	camera = transform.Find("playerCamera").gameObject;
-
-	// 	List<Vector2> intersectPoints = new List<Vector2>();
-	// 	Vector3 point1a, point2a, point1b, point2b;
-
-	// 	List<int> linesA = new List<int>();
-	// 	List<int> linesB = new List<int>();
-
-
-	// 	//find intersections between polygons
-	// 	for (int a = 0; a < segment1.sides.Count; a++) {
-	// 		point1a = segment1.vertices[a];
-	// 		if (a < segment1.vertices.Count-1) {
-	// 			point2a = segment1.vertices[a+1];
-	// 		} else {
-	// 			point2a = segment1.vertices[0];
-	// 		}
-			
-	// 		point1a = segment1.transform.TransformPoint(point1a);
-	// 		point2a = segment1.transform.TransformPoint(point2a);
-
-	// 		float a1 = point2a.z - point1a.z;
-	// 		float b1 = point1a.x - point2a.x;
-	// 		float c1 = a1*point1a.x + b1*point1a.z;
-
-	// 		for (int b = 0; b < segment2.sides.Count; b++) {
-	// 			point1b = segment2.vertices[b];
-	// 			if (b < segment2.vertices.Count-1) {
-	// 				point2b = segment2.vertices[b+1];
-	// 			} else {
-	// 				point2b = segment2.vertices[0];
-	// 			}
-				
-	// 			point1b = segment2.transform.TransformPoint(point1b);
-	// 			point2b = segment2.transform.TransformPoint(point2b);
-
-	// 			float a2 = point2b.z - point1b.z;
-	// 			float b2 = point1b.x - point2b.x;
-	// 			float c2 = a2*point1b.x + b2*point1b.z;
-
-
-	// 			float delta = a1*b2 - a2*b1;
-	// 			if(delta != 0) {
-	// 				Vector2 intersect = new Vector2((b2*c1 - b1*c2)/delta, (a1*c2 - a2*c1)/delta);
-					
-	// 				float d1 = Vector2.Distance(new Vector2(point1a.x, point1a.z), intersect);
-	// 				float d2 = Vector2.Distance(new Vector2(point2a.x, point2a.z), intersect);
-	// 				float d3 = Vector2.Distance(new Vector2(point1a.x, point1a.z), new Vector2(point2a.x, point2a.z));
-
-	// 				float d4 = Vector2.Distance(new Vector2(point1b.x, point1b.z), intersect);
-	// 				float d5 = Vector2.Distance(new Vector2(point2b.x, point2b.z), intersect);
-	// 				float d6 = Vector2.Distance(new Vector2(point1b.x, point1b.z), new Vector2(point2b.x, point2b.z));
-
-	// 				// if lenghts from end to point to end = length of line then valid point
-	// 				//+- 0.01 to account for floating point errors 
-	// 				if (d1 + d2 - 0.001 < d3 + 0.001 && d1 + d2 + 0.001 > d3 - 0.001
-	// 					 && d4 + d5 - 0.001 < d6 + 0.001 && d4 + d5 + 0.001 > d6 - 0.001) {
-	// 					intersectPoints.Add(intersect);
-	// 					linesA.Add(a);
-	// 					linesB.Add(b);
-	// 				}					
-	// 			}
-	// 		}
-	// 	}
-		
-	// 	Vector2 centerPoint = new Vector2(0,0);
-	// 	foreach(Vector2 point in intersectPoints) {
-	// 		centerPoint += point;
-	// 	}
-	// 	centerPoint /= intersectPoints.Count;
-	// 	List<float> clockwise = new List<float>();
-	// 	for (int i = 0; i < intersectPoints.Count; i++) {
-	// 		clockwise.Add(Vector2.SignedAngle(intersectPoints[i]-centerPoint, intersectPoints[0]-centerPoint));
-	// 	}
-		
-	// 	if (clockwise.Count == 0) {
-	// 		segment1.showHide(false);
-	// 		segment2.showHide(true);
-	// 		return;
-	// 	}
-
-	// 	//get relevant intersection points
-	// 	int[] closest = {-1,-1,-1};
-	// 	float distance = 7777777;
-	// 	Vector2 pp = new Vector2(gameObject.transform.position.x, gameObject.transform.position.z);
-	// 	for (int i = 0; i < intersectPoints.Count; i++) {
-	// 		float d = Vector2.Distance(pp, intersectPoints[i]);
-	// 		if (d < distance) {
-	// 			distance = d;
-	// 			closest[0] = i;
-	// 		}
-	// 	}
-
-
-	// 	float below = -777;
-	// 	float above = 777;
-	// 	float max = -666; 
-	// 	float min = 666;
-	// 	int clockMax = 0;
-	// 	int clockMin = 0;
-	// 	for (int i = 0; i < intersectPoints.Count; i++) {
-	// 		if (i != closest[0]) {
-	// 			if (clockwise[i] > clockwise[closest[0]] && clockwise[i] < above) {
-	// 				above = clockwise[i];
-	// 				closest[1] = i;
-	// 			} else if (clockwise[i] < clockwise[closest[0]] && clockwise[i] > below) {
-	// 				below = clockwise[i];
-	// 				closest[2] = i;
-	// 			}
-	// 		}
-	// 		if (clockwise[i] > max) {
-	// 			max = clockwise[i];
-	// 			clockMax = i;
-	// 		}
-	// 		if (clockwise[i] < min) {
-	// 			min = clockwise[i];
-	// 			clockMin = i;
-	// 		}
-	// 	}
-	// 	if (closest[1] == -1) {
-	// 		if (clockwise[closest[0]] == max) {
-	// 			closest[1] = clockMin;
-	// 		} else {
-	// 			closest[1] = clockMax;
-	// 		}
-	// 	}
-	// 	if (closest[2] == -1) {
-	// 		if (clockwise[closest[0]] == min) {
-	// 			closest[2] = clockMax;
-	// 		} else {
-	// 			closest[2] = clockMin;
-	// 		}
-	// 	}
-
-
-	// 	Vector2 polyCheck = new Vector2(intersectPoints[closest[1]].x, intersectPoints[closest[1]].y);
-	// 	polyCheck -= intersectPoints[closest[0]];
-	// 	polyCheck = new Vector2(0f-polyCheck.y, polyCheck.x);
-	// 	polyCheck = intersectPoints[closest[0]]/2f + intersectPoints[closest[1]]/2f + new Vector2(polyCheck.x * 0.001f, polyCheck.y * 0.001f);
-
-	// 	List<Vector2> checkPoly = new List<Vector2>();
-
-	// 	for(int i = 0; i < segment1.vertices.Count; i++) {
-	// 		checkPoly.Add(new Vector2(segment1.transform.TransformPoint(segment1.vertices[i]).x,segment1.transform.TransformPoint(segment1.vertices[i]).z));
-	// 	}
-	// 	bool s1 = ContainsPoint(checkPoly.ToArray(), polyCheck);
-	// 	bool left = false;
-	// 	 //dx=x2-x1 and dy=y2-y1,
-	// 	//sort clockwise
-	// 	float[] clipAngles = {0,0,0,0};
-	// 	clipAngles[0] = Mathf.Atan2(pp.x-intersectPoints[closest[0]].x, pp.y-intersectPoints[closest[0]].y) * Mathf.Rad2Deg;
-	// 	//Vector3 p0 = camera.GetComponent<Camera>().WorldToViewportPoint(new Vector3(intersectPoints[closest[0]].x, camera.transform.position.y, intersectPoints[closest[0]].y));
-	// 	//Vector3 p1 = new Vector3();
-	// 	if (clipAngles[0] < 0 && pp.y < intersectPoints[closest[0]].y) {clipAngles[0] += 360;}
-	// 	if (s1) {
-	// 		clipAngles[1] = Mathf.Atan2(pp.x-intersectPoints[closest[2]].x, pp.y-intersectPoints[closest[2]].y) * Mathf.Rad2Deg;
-	// 	if (clipAngles[1] < 0 && pp.y < intersectPoints[closest[2]].y) {clipAngles[1] += 360;}
-	// 		//p1 = camera.GetComponent<Camera>().WorldToViewportPoint(new Vector3(intersectPoints[closest[2]].x, camera.transform.position.y, intersectPoints[closest[2]].y));
-	// 	} else {
-	// 		clipAngles[1] = Mathf.Atan2(pp.x-intersectPoints[closest[1]].x, pp.y-intersectPoints[closest[1]].y) * Mathf.Rad2Deg;
-	// 	if (clipAngles[1] < 0 && pp.y < intersectPoints[closest[1]].y) {clipAngles[1] += 360;}
-	// 		//p1 = camera.GetComponent<Camera>().WorldToViewportPoint(new Vector3(intersectPoints[closest[1]].x, camera.transform.position.y, intersectPoints[closest[1]].y));
-	// 	}
-	// 	// Vector3 p2 = camera.GetComponent<Camera>().WorldToScreenPoint(new Vector3(intersectPoints[closest[2]].x, camera.transform.position.y, intersectPoints[closest[2]].y));
-
-		
-
-	// 	// int temp = closest[0];
-	// 	int[] clipPoints = {0,0,0};
-	// 	if (clipAngles[0] < clipAngles[1]) {
-	// 		left = true;
-	// 		clipPoints[0] = closest[0];
-	// 		if (s1) {
-	// 			clipPoints[1] = closest[2];
-	// 			clipPoints[2] = closest[1];
-	// 		} else {
-	// 			clipPoints[1] = closest[1];
-	// 			clipPoints[2] = closest[2];
-	// 		}
-	// 	} else {
-	// 		if (s1) {
-	// 			clipPoints[0] = closest[2];
-	// 			clipPoints[1] = closest[0];
-	// 			clipPoints[2] = closest[1];
-	// 		} else {
-	// 			clipPoints[0] = closest[1];
-	// 			clipPoints[1] = closest[0];
-	// 			clipPoints[2] = closest[2];
-	// 		}
-	// 	}
-	// 	// 	closest[0] = closest[1];
-	// 	// 	closest[1] = temp;
-	// 	// }
-
-	// 	// get angles for clipping planes
-	// 	clipAngles[0] = Mathf.Atan2(pp.x-intersectPoints[clipPoints[0]].x, pp.y-intersectPoints[clipPoints[0]].y) * Mathf.Rad2Deg;
-	// 	clipAngles[1] = Mathf.Atan2(pp.x-intersectPoints[clipPoints[1]].x, pp.y-intersectPoints[clipPoints[1]].y) * Mathf.Rad2Deg;
-	// 	clipAngles[2] = Mathf.Atan2(intersectPoints[clipPoints[1]].x-intersectPoints[clipPoints[0]].x, intersectPoints[clipPoints[1]].y-intersectPoints[clipPoints[0]].y) * Mathf.Rad2Deg;
-	// 	if (left) {
-	// 		clipAngles[3] = Mathf.Atan2(intersectPoints[clipPoints[2]].x-intersectPoints[clipPoints[0]].x, intersectPoints[clipPoints[2]].y-intersectPoints[clipPoints[0]].y) * Mathf.Rad2Deg;
-	// 	} else {
-	// 		clipAngles[3] = Mathf.Atan2(intersectPoints[clipPoints[2]].x-intersectPoints[clipPoints[1]].x, intersectPoints[clipPoints[2]].y-intersectPoints[clipPoints[1]].y) * Mathf.Rad2Deg;
-	// 	}
-	// 	// Debug.Log(angle1);
-	// 	// Debug.Log(angle2);
-	// 	List<Vector3> planes = new List<Vector3>();
-	// 	planes.Add(camera.transform.position);
-	// 	planes.Add(new Vector3(90, 180, 90-clipAngles[0]));
-	// 	planes.Add(camera.transform.position);
-	// 	planes.Add(new Vector3(90, 0, 90-clipAngles[1]));
-	// 	planes.Add(new Vector3(intersectPoints[clipPoints[0]].x, camera.transform.position.y, intersectPoints[clipPoints[0]].y));
-	// 	if (left) {
-	// 		planes.Add(new Vector3(90, 0, 90-clipAngles[3]));
-	// 	} else {
-	// 		planes.Add(new Vector3(90, 0, 90-clipAngles[3]));
-	// 	}
-
-	// 	segment1.setClippingPlanes(planes, true);
-
-	// 	planes.Clear();
-	// 	planes.Add(camera.transform.position);
-	// 	planes.Add(new Vector3(90, 0, 90-clipAngles[0]));
-	// 	planes.Add(camera.transform.position);
-	// 	planes.Add(new Vector3(90, 180, 90-clipAngles[1]));
-	// 	planes.Add(new Vector3(intersectPoints[clipPoints[0]].x, camera.transform.position.y, intersectPoints[clipPoints[0]].y));
-	// 	planes.Add(new Vector3(90, 180, 90-clipAngles[2]));
-
-	// 	segment2.setClippingPlanes(planes, false);
-
-	// 	segment1.showHide(true);
-	// 	segment2.showHide(true);
-
-
-
-	// 	Vector3 r0 = new Vector3(intersectPoints[clipPoints[0]].x, camera.transform.position.y, intersectPoints[clipPoints[0]].y);
-	// 	Vector3 r1 = new Vector3(intersectPoints[clipPoints[1]].x, camera.transform.position.y, intersectPoints[clipPoints[1]].y);
-	// 	Vector3 r2 = new Vector3(intersectPoints[clipPoints[2]].x, camera.transform.position.y, intersectPoints[clipPoints[2]].y);
-	// 	Debug.DrawRay(r0, camera.transform.position-r0, Color.magenta);
-	// 	Debug.DrawRay(r1, camera.transform.position-r1, Color.green);
-	// 	Debug.DrawRay(r2, camera.transform.position-r2, Color.cyan);
-	// 	//Debug.DrawRay(new Vector3(intersectPoints[clipPoints[3]].x, camera.transform.position.y, intersectPoints[clipPoints[3]].y), camera.transform.position, Color.magenta);
-
-	// 	Vector3 r3 = new Vector3(intersectPoints[clipPoints[0]].x, camera.transform.position.y, intersectPoints[clipPoints[0]].y);
-	// 	if (!left) {
-	// 		r3 = new Vector3(intersectPoints[clipPoints[1]].x, camera.transform.position.y, intersectPoints[clipPoints[1]].y);	
-	// 	}
-	// 	Debug.DrawRay(r0, r1-r0, Color.blue);
-	// 	Debug.DrawRay(r0, r2-r3, Color.yellow);
-
-	// 	// Debug.DrawRay(r0, r1-r0, Color.blue);
-	// 	// Debug.DrawRay(r0, r2-r0, Color.yellow);
-
-
-
-	// }
-
-
 	bool ContainsPoint(Vector2[] polyPoints, Vector2 p) { 
    		int j = polyPoints.Length-1; 
    		bool inside = false; 
