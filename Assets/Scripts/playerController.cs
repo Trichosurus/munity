@@ -40,8 +40,7 @@ public class playerController : MonoBehaviour {
 		//gameObject.GetComponent<CharacterController>().enabled = false;
 	}
 	
-		// Update is called once per frame
-
+	// Update is called once per frame
 	void Update () {
 		if (GlobalData.captureMouse) {
 			transform.Find("playerCamera").GetComponent<mouselook>().lockCursor = !Input.GetKey(KeyCode.LeftControl);
@@ -194,7 +193,13 @@ public class playerController : MonoBehaviour {
 				foreach(int pol in iv.collisionPolygonsSelf) {
 					ap.Remove(pol);
 					GlobalData.map.segments[pol].showHide(false);
+					GlobalData.map.segments[pol].setClippingPlanes(new List<Vector3>());//remove clipping 
+
 				}
+				// foreach(int pol in iv.collisionPolygonsOther) {
+				// 	ap.Remove(pol);
+				// 	GlobalData.map.segments[pol].showHide(false);
+				// }
 			}
 		}
 		int selfIV = -1;
@@ -251,21 +256,27 @@ public class playerController : MonoBehaviour {
 		}
 		//distances.Sort();
 		List<float[]> temp = new List<float[]>();
+		// List<float> added = new List<float>();
 		while (distances.Count > 0) {
 			float d = 7777777f;
 			float[] lastf = distances[0];
 			foreach(float[] f in distances) {
 				if (f[0] < d) {d = f[0]; lastf = f;}
 			}
+			// if (!added.Contains(lastf[1])) {
 			temp.Add(lastf);
+			// }
 			distances.Remove(lastf);
+			// added.Add(lastf[1]);
 		}
 		distances = temp;
 		// if we are in impossible space, then draw the volume we are in before doing anything else
 		if (selfIV >=0) {
 			showVolume(ivs[selfIV]);
 		}
-
+		List<int> clippedSegments = new List<int>();
+		List<int> shownSegments = new List<int>();
+		List<int> shownD = new List<int>();
 		//draw impossible volumes in order of their closest connection to normal pols
 		for (int d = 0; d < distances.Count; d++) {
 			Vector3 point1, point2;
@@ -278,24 +289,31 @@ public class playerController : MonoBehaviour {
 			point1 = GlobalData.map.segments[(int)distances[d][2]].transform.TransformPoint(point1);
 	 		point2 = GlobalData.map.segments[(int)distances[d][2]].transform.TransformPoint(point2);
 
-			if (getRectVisibility(point1, point2, GlobalData.map.segments[(int)distances[d][2]].height)) {
+			if (!shownSegments.Contains((int)distances[d][1]) && getRectVisibility(point1, point2, GlobalData.map.segments[(int)distances[d][2]].height)) {
+				shownSegments.Add((int)distances[d][1]);
 				showVolume(ivs[(int)distances[d][1]]);
 				foreach(int i in ivs[(int)distances[d][1]].collisionPolygonsOther) {
 					if (!GlobalData.map.segments[i].hidden) {
 						int other = -1;
-						for (int o = 0; o < distances.Count; o++) {
-							if (o != d && ivs[(int)distances[o][1]].collisionPolygonsSelf.Contains(i)) {
+						foreach (int o in shownD) {
+							if (ivs[(int)distances[o][1]].collisionPolygonsSelf.Contains(i) 
+									  && ivs[(int)distances[o][1]].collisionPolygonsOther.Contains(ivs[(int)distances[d][1]].collisionPolygonsSelf[0])) {
 								other = o; 
 								break;
 							}
 						}
-						calculateClipping(ivs, distances, d, other);
+						// if (!clippedSegments.Contains(distances[d][2]) && !clippedSegments.Contains(distances[other][1])) {
+						if (other > -1) {
+						calculateClipping(ivs, distances, d, other, ref clippedSegments);
+							// clippedSegments.Add(distances[d][2]);
+							// clippedSegments.Add(distances[other][1]);
 						break;
+						}
 					}
 				}
+				shownD.Add(d);
 			}
 		}
-
 	}
 
 	void showVolume(impossibleVolume iv, bool show = true) {
@@ -306,12 +324,11 @@ public class playerController : MonoBehaviour {
 				GlobalData.map.segments[pol].showHide(false);
 			} else {
 				GlobalData.map.segments[pol].showHide(show);
-				GlobalData.map.segments[pol].setClippingPlanes(new List<Vector3>());
 			}
 		}
 	}
 
-	void calculateClipping (List<impossibleVolume> ivs, List<float[]> distances, int volSelf, int volOther) {
+	void calculateClipping (List<impossibleVolume> ivs, List<float[]> distances, int volSelf, int volOther, ref List<int> clippedSegments) {
 		impossibleVolume iv = ivs[(int)distances[volSelf][1]];
 		GameObject camera;
 		camera = transform.Find("playerCamera").gameObject;
@@ -320,32 +337,13 @@ public class playerController : MonoBehaviour {
 		//get clockwise entry point
 
 		List<float> clipAngles = new List<float>();
+
 		float distance = 7777777f;
-		int closest = 0;
-		for (int i = 0; i < iv.collisionPoints.Count; i++) {
-			//distances.Add(Vector2.Distance(new Vector2(vec.x, vec.z), new Vector2(pp.x, pp.z)));
-			float d = Vector2.Distance(new Vector2(iv.collisionPoints[i].x, iv.collisionPoints[i].z), new Vector2(pp.x, pp.z));
-			if (d < distance) {
-				distance = d;
-				closest = i;
-			}
-		}
-		int clockwise = closest +1;
-		int counterClockwise = closest -1;
-		if (clockwise >= iv.collisionPoints.Count) {clockwise = 0;}
-		if (counterClockwise < 0) {counterClockwise = iv.collisionPoints.Count-1;}
-
-		clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[closest].x, pp.z-iv.collisionPoints[closest].z) * Mathf.Rad2Deg);
-		clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[clockwise].x, pp.z-iv.collisionPoints[clockwise].z) * Mathf.Rad2Deg);
-		clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[counterClockwise].x, pp.z-iv.collisionPoints[counterClockwise].z) * Mathf.Rad2Deg);
-		clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-iv.collisionPoints[clockwise].x, iv.collisionPoints[closest].z-iv.collisionPoints[clockwise].z) * Mathf.Rad2Deg);
-		clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-iv.collisionPoints[counterClockwise].x, iv.collisionPoints[closest].z-iv.collisionPoints[counterClockwise].z) * Mathf.Rad2Deg);
-
 
 		List<float> sideAngles = new List<float>();
 		List<Vector3> points = new List<Vector3>();
-		Vector3 point1 = new Vector3(0,0,0);
-		Vector3	point2 = new Vector3(0,0,0);
+		Vector3 pointSelf = new Vector3(0,0,0);
+		Vector3	pointOther = new Vector3(0,0,0);
 
 
 		//Debug.Log(clipAngles[0] +"::"+ clipAngles[1] +"::"+ clipAngles[2]);
@@ -368,33 +366,55 @@ public class playerController : MonoBehaviour {
 		points[1] = GlobalData.map.segments[(int)distances[volSelf][2]].transform.TransformPoint(points[1]);
 		points[2] = GlobalData.map.segments[(int)distances[volOther][2]].transform.TransformPoint(points[2]);
 		points[3] = GlobalData.map.segments[(int)distances[volOther][2]].transform.TransformPoint(points[3]);
-		distance = 7777777;
 		if (iv.collisionPolygonsSelf[0] == 43) {
 			;
 		}
-		foreach (Vector3 point in points) {
-			foreach (Vector3 p in points) {
-				float d = Vector3.Distance(point,p);
+		for (int point = 0; point < 2; point++) {
+			for (int p = 2; p < 4; p++) {
+				float d = Vector3.Distance(points[point],points[p]);
 				if (d > 0 && d < distance) {
-					point1 = point;
-					point2 = p;
+					pointSelf = points[point];
+					pointOther = points[p];
 					distance = d;
 				}
 			}
 		}
 
-		sideAngles.Add(Mathf.Atan2(pp.x-point1.x, pp.z-point1.z) * Mathf.Rad2Deg);
-		sideAngles.Add(Mathf.Atan2(pp.x-point2.x, pp.z-point2.z) * Mathf.Rad2Deg);
-		sideAngles.Add(Mathf.Atan2(point1.x-point2.x, point1.z-point2.z) * Mathf.Rad2Deg);
-
-		for (int i = 0; i < sideAngles.Count; i++) {
-			if (sideAngles[i] < 0) {sideAngles[i] = 360f + sideAngles[i];}
-			Debug.Log(sideAngles[i]);
+		distance = 7777777;
+		int closest = 0;
+		for (int i = 0; i < iv.collisionPoints.Count; i++) {
+			//distances.Add(Vector2.Distance(new Vector2(vec.x, vec.z), new Vector2(pp.x, pp.z)));
+			float d = Vector2.Distance(new Vector2(iv.collisionPoints[i].x, iv.collisionPoints[i].z), new Vector2(pointSelf.x, pointSelf.z));
+			if (d < distance) {
+				distance = d;
+				closest = i;
+			}
 		}
-			if (clipAngles[4] < 0) {clipAngles[4] = 360f + clipAngles[4];}
+		int clockwise = closest +1;
+		int counterClockwise = closest -1;
+		if (clockwise >= iv.collisionPoints.Count) {clockwise = 0;}
+		if (counterClockwise < 0) {counterClockwise = iv.collisionPoints.Count-1;}
+
+		clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[closest].x, pp.z-iv.collisionPoints[closest].z) * Mathf.Rad2Deg);
+		clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[clockwise].x, pp.z-iv.collisionPoints[clockwise].z) * Mathf.Rad2Deg);
+		clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[counterClockwise].x, pp.z-iv.collisionPoints[counterClockwise].z) * Mathf.Rad2Deg);
+		clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-iv.collisionPoints[clockwise].x, iv.collisionPoints[closest].z-iv.collisionPoints[clockwise].z) * Mathf.Rad2Deg);
+		clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-iv.collisionPoints[counterClockwise].x, iv.collisionPoints[closest].z-iv.collisionPoints[counterClockwise].z) * Mathf.Rad2Deg);
+
+
+
+		sideAngles.Add(Mathf.Atan2(pp.x-pointSelf.x, pp.z-pointSelf.z) * Mathf.Rad2Deg);
+		sideAngles.Add(Mathf.Atan2(pp.x-pointOther.x, pp.z-pointOther.z) * Mathf.Rad2Deg);
+		sideAngles.Add(Mathf.Atan2(pointSelf.x-pointOther.x, pointSelf.z-pointOther.z) * Mathf.Rad2Deg);
+
+		// for (int i = 0; i < sideAngles.Count; i++) {
+		// 	if (sideAngles[i] < 0) {sideAngles[i] = 360f + sideAngles[i];}
+		// 	Debug.Log(sideAngles[i]);
+		// }
+		// 	if (clipAngles[4] < 0) {clipAngles[4] = 360f + clipAngles[4];}
 		//Debug.Log(ivs[(int)distances[volSelf][1]].collisionPolygonsSelf[0] + "::" + ivs[(int)distances[volOther][1]].collisionPolygonsSelf[0] + "::" + sideAngles[0] + "::" + sideAngles[1] + "::" + sideAngles[2] + "::" + sideAngles[3]);
-		// Debug.Log(ivs[(int)distances[volSelf][1]].collisionPolygonsSelf[0] + "::" + ivs[(int)distances[volOther][1]].collisionPolygonsSelf[0] + "::" + point1 + "::" + point2 + "::" + point3 + "::" + point4);
-		Debug.Log(point1 + "::" + point2);
+		// Debug.Log(ivs[(int)distances[volSelf][1]].collisionPolygonsSelf[0] + "::" + ivs[(int)distances[volOther][1]].collisionPolygonsSelf[0] + "::" + pointSelf + "::" + pointOther + "::" + point3 + "::" + point4);
+		Debug.Log(pointSelf + "::" + pointOther);
 		// Debug.Log (sideAngles[3] - sideAngles[2]);
 
 		// if (sideAngles[1] - sideAngles[0] < -180 || sideAngles[1] - sideAngles[0] >=0) {
@@ -416,19 +436,40 @@ public class playerController : MonoBehaviour {
 		
 		Debug.Log(sideAngles[1] - sideAngles[0]);
 		//if (sideAngles[1] - sideAngles[0] > -180 && sideAngles[1] - sideAngles[0] < 0 || sideAngles[1] - sideAngles[0] > 180 ) {
-		if ((sideAngles[2] > 180 && clipAngles[4] < 180)
-		|| (sideAngles[2] <= 180 && clipAngles[4] >= 180)) {
-			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[1], clipAngles[3], true, true, iv.collisionPolygonsSelf);
-			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[2], clipAngles[4], true, false, iv.collisionPolygonsOther);
+		// if ((sideAngles[2] > 180 && clipAngles[4] < 180)
+		// || (sideAngles[2] <= 180 && clipAngles[4] >= 180)) {
+			Debug.Log(angleDifference(sideAngles[0], clipAngles[1]));
+			Debug.Log(angleDifference(sideAngles[0], clipAngles[2]));
+			Debug.Log(angleDifference(sideAngles[0], sideAngles[1]));
+			Debug.Log(angleDifference(clipAngles[1], clipAngles[2]));
+			Debug.Log(angleDifference(sideAngles[2], clipAngles[1]));
+			
+		//if (Vector3.Angle(pp-pointSelf, pp-iv.collisionPoints[clockwise]) > Vector3.Angle(pp-pointOther, pp-iv.collisionPoints[clockwise])) {
+		//if (angleDifference(sideAngles[0], clipAngles[1]) < angleDifference(sideAngles[1], clipAngles[1])) {
+		bool self = (angleDifference(sideAngles[0], sideAngles[1]) < 0) != (angleDifference(sideAngles[2], clipAngles[1]) < 0);
+		if (self) {
+			if (angleDifference(sideAngles[0], sideAngles[1]) > 0) {
+				self = false;
+			}
+		} else {
+			if (!self && angleDifference(sideAngles[0], sideAngles[1]) > 0) {
+				self = true;
+			}
+		}
+	 
+
+		if (self) {
+			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[1], clipAngles[3], true, true, iv.collisionPolygonsSelf, ref clippedSegments);
+			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[2], clipAngles[4], true, false, iv.collisionPolygonsOther, ref clippedSegments);
 			Debug.Log("self");
 		} else {
-			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[1], clipAngles[3], true, true,iv.collisionPolygonsOther);
-			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[2], clipAngles[4], true, false, iv.collisionPolygonsSelf);
+			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[1], clipAngles[3], true, true,iv.collisionPolygonsOther, ref clippedSegments);
+			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[2], clipAngles[4], true, false, iv.collisionPolygonsSelf, ref clippedSegments);
 			Debug.Log("other");
 		}
 
-		Debug.DrawRay(point1,pp-point1,  Color.cyan);
-		Debug.DrawRay(point2,pp-point2,  Color.cyan);
+		Debug.DrawRay(pointSelf,pp-pointSelf,  Color.cyan);
+		Debug.DrawRay(pointOther,pp-pointOther,  Color.white);
 		// Debug.DrawRay(point3,pp-point3,  Color.cyan);
 		// Debug.DrawRay(point4,pp-point4,  Color.cyan);
 
@@ -439,7 +480,31 @@ public class playerController : MonoBehaviour {
 
 	}
 
-	void clipPlanes (Vector3 p1, Vector3 p2, Vector3 p3, float a1, float a2, float a3, bool additive, bool inverse, List<int> segments) {
+	float angleDifference (float angle1, float angle2, bool halfPositive = true) {
+		// 20, 30 = 10
+		// 30, 20 = -10
+		// -10, 10 = 20
+		// 10, -10 = -20
+		// -10, -20 = -10
+		// -20, -10 = 10
+		// 170, -170 = 20
+		// -170, 170 = -20
+
+		float ret = angle2 - angle1;
+		if (ret > 180) {
+			ret -= 360;
+		}
+		if (ret < -180) {
+			ret += 360;
+		}
+
+		return ret;
+	}
+
+
+
+
+	void clipPlanes (Vector3 p1, Vector3 p2, Vector3 p3, float a1, float a2, float a3, bool additive, bool inverse, List<int> segments, ref List<int> clippedSegments) {
 		float angle = 0f;
 		if (inverse) {angle = 180f;}
 		List<Vector3> planes = new List<Vector3>();
@@ -450,7 +515,15 @@ public class playerController : MonoBehaviour {
 		planes.Add(new Vector3(p3.x, p1.y, p3.z));
 		planes.Add(new Vector3(90, 0+angle, 90-a3));
 		foreach(int pol in segments) {
-			GlobalData.map.segments[pol].setClippingPlanes(planes, additive);
+			if (pol == 43) {
+				;
+			}
+			if (pol != currentPolygon) {
+				GlobalData.map.segments[pol].setClippingPlanes(planes, additive);
+				clippedSegments.Add(pol);
+			} else {
+				GlobalData.map.segments[pol].setClippingPlanes(new List<Vector3>());//dont clip the poly we are in
+			}
 		}
 	}
 	

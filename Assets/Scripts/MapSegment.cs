@@ -136,9 +136,7 @@ public class MapSegment : MonoBehaviour {
 
 			startPoint = (startPoint-centerPoint)*0.95f + centerPoint  + (height*0.05f);
 			Vector3 castPoint = gameObject.transform.TransformPoint(vert);
-			// if (id == 47) {
-			// 	Debug.Log(castPoint);
-			// }
+
 			float rayCount = 7f;
 
 			if (Physics.Raycast(centerPoint + height*0.5f, 
@@ -167,7 +165,7 @@ public class MapSegment : MonoBehaviour {
 			}
 
 			for (int i = 1; i <= rayCount; i++) {
-				castPoint = (startPoint-centerPoint)*((1f/(rayCount-0.001f))*(float)i) + centerPoint  + (height*0.05f);
+				castPoint = (startPoint-centerPoint)*((1f/(rayCount-0.001f))*(float)i) + centerPoint  + (height*0.005f);
 
 				if (Physics.Raycast(castPoint, Vector3.up, out hit, height.y)) {
 					if (hit.collider.transform.parent != null && hit.collider.transform.parent.gameObject != gameObject) {
@@ -187,8 +185,8 @@ public class MapSegment : MonoBehaviour {
 						continue;
 					}
 				}
-				castPoint.y = centerPoint.y - (height.y*0.01f);
-				if (Physics.Raycast(castPoint, Vector3.down, out hit,10)) {
+				castPoint.y = centerPoint.y - (height.y*0.001f);
+				if (Physics.Raycast(castPoint, Vector3.down, out hit,20)) {
 					if (hit.collider.transform.parent != null && hit.collider.transform.parent.gameObject.tag == "polygon") {
 						if (hit.collider.name != "ceiling") {
 							hit.collider.transform.parent.GetComponent<MapSegment>().impossible = true;
@@ -1137,6 +1135,7 @@ public class impossibleVolume {
 	public List<Vector3> collisionPoints = new List<Vector3>();
 	public List<int> collisionPolygonsOther = new List<int>();
 	public List<int> collisionPolygonsSelf = new List<int>();
+	public MapSegment parent;
 
 	public void assembleVolumeSides (MapSegment seg, bool self = true) {
 		foreach (impossibleVolume iv in seg.impossibleVolumes) {
@@ -1167,7 +1166,7 @@ public class impossibleVolume {
 			currentPoints = new Vector3[2];
 			currentLine[1]++;
 			int count = 0;
-			while (currentPoints[0] != lineList[0][0] || currentPoints[1] != lineList[0][1] && count < 666) {
+			while ((currentPoints[0] != lineList[0][0] || currentPoints[1] != lineList[0][1]) && count < 666) {
 				if (currentLine[0] == 63) {
 					;
 				}
@@ -1282,6 +1281,7 @@ public class impossibleVolume {
 					impossibleVolume iv = new impossibleVolume();
 					iv.collisionPolygonsSelf = seg.impossibleVolumes[0].collisionPolygonsSelf;
 					iv.collisionPolygonsOther = GlobalData.map.segments[i].impossibleVolumes[0].collisionPolygonsSelf;
+					iv.parent = seg;
 					seg.impossibleVolumes.Add(iv);
 				}
 			}
@@ -1322,7 +1322,7 @@ public class impossibleVolume {
 					//+- 0.01 to account for floating point errors 
 					if (d1 + d2 - 0.001 < d3 + 0.001 && d1 + d2 + 0.001 > d3 - 0.001
 						 && d4 + d5 - 0.001 < d6 + 0.001 && d4 + d5 + 0.001 > d6 - 0.001) {
-						collisions.Add(new Vector3(intersect.x, 0, intersect.y));
+						collisions.Add(new Vector3(intersect.x, parent.centerPoint.y, intersect.y));
 					}					
 				}			
 			}

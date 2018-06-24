@@ -721,6 +721,7 @@ public class Map : MonoBehaviour {
 		for(int s = 0; s < segments.Count; s++) {
 			if (segments[s].impossible){
 				impossibleVolume iv = new impossibleVolume();
+				iv.parent = segments[s];
 				List<int> connList = iv.getConnectedVolumes(segments[s], true);
 				segments[s].impossibleVolumes = new List<impossibleVolume>();
 				iv.collisionPolygonsSelf = connList;
@@ -730,6 +731,21 @@ public class Map : MonoBehaviour {
 		for(int s = 0; s < segments.Count; s++) {
 			if (segments[s].impossible){
 				segments[s].impossibleVolumes[0].getConnectedVolumes(segments[s], false);
+				for (int imp = 0; imp <  segments[s].impossibleVolumes.Count; imp++) {
+					foreach (int seg in segments[s].impossibleVolumes[imp].collisionPolygonsSelf) {
+						HashSet<int> hsSelf = new HashSet<int>(segments[s].impossibleVolumes[imp].collisionPolygonsOther);
+						bool exists = false;
+						foreach (impossibleVolume iv in segments[seg].impossibleVolumes) {
+							HashSet<int> hsOther = new HashSet<int>(iv.collisionPolygonsOther);
+							if (hsSelf.SetEquals(hsOther)) {
+								exists = true;				
+							}
+						}
+						if (!exists) {
+							segments[seg].impossibleVolumes.Add(segments[s].impossibleVolumes[imp]);
+						}
+					}
+				}
 			}
 		}
 
