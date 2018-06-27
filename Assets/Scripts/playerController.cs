@@ -289,7 +289,7 @@ public class playerController : MonoBehaviour {
 			point1 = GlobalData.map.segments[(int)distances[d][2]].transform.TransformPoint(point1);
 	 		point2 = GlobalData.map.segments[(int)distances[d][2]].transform.TransformPoint(point2);
 
-			if (!shownSegments.Contains((int)distances[d][1]) && getRectVisibility(point1, point2, GlobalData.map.segments[(int)distances[d][2]].height)) {
+			if (!shownSegments.Contains((int)distances[d][1]) && getRectVisibility(point1, point2, GlobalData.map.segments[(int)distances[d][2]].height, clippedSegments)) {
 				shownSegments.Add((int)distances[d][1]);
 				showVolume(ivs[(int)distances[d][1]]);
 				foreach(int i in ivs[(int)distances[d][1]].collisionPolygonsOther) {
@@ -304,7 +304,15 @@ public class playerController : MonoBehaviour {
 						}
 						// if (!clippedSegments.Contains(distances[d][2]) && !clippedSegments.Contains(distances[other][1])) {
 						if (other > -1) {
-						calculateClipping(ivs, distances, d, other, ref clippedSegments);
+							//if (!clippedSegments.Contains)
+							if (ivs[(int)distances[d][1]].collisionPolygonsSelf.Contains(6)) {
+;
+							}
+							if (ivs[(int)distances[other][1]].collisionPolygonsSelf.Contains(6)) {
+;
+							}
+
+							calculateClipping(ivs, distances, d, other, ref clippedSegments);
 							// clippedSegments.Add(distances[d][2]);
 							// clippedSegments.Add(distances[other][1]);
 						break;
@@ -407,45 +415,23 @@ public class playerController : MonoBehaviour {
 		sideAngles.Add(Mathf.Atan2(pp.x-pointOther.x, pp.z-pointOther.z) * Mathf.Rad2Deg);
 		sideAngles.Add(Mathf.Atan2(pointSelf.x-pointOther.x, pointSelf.z-pointOther.z) * Mathf.Rad2Deg);
 
-		// for (int i = 0; i < sideAngles.Count; i++) {
-		// 	if (sideAngles[i] < 0) {sideAngles[i] = 360f + sideAngles[i];}
-		// 	Debug.Log(sideAngles[i]);
-		// }
-		// 	if (clipAngles[4] < 0) {clipAngles[4] = 360f + clipAngles[4];}
-		//Debug.Log(ivs[(int)distances[volSelf][1]].collisionPolygonsSelf[0] + "::" + ivs[(int)distances[volOther][1]].collisionPolygonsSelf[0] + "::" + sideAngles[0] + "::" + sideAngles[1] + "::" + sideAngles[2] + "::" + sideAngles[3]);
-		// Debug.Log(ivs[(int)distances[volSelf][1]].collisionPolygonsSelf[0] + "::" + ivs[(int)distances[volOther][1]].collisionPolygonsSelf[0] + "::" + pointSelf + "::" + pointOther + "::" + point3 + "::" + point4);
-		Debug.Log(pointSelf + "::" + pointOther);
-		// Debug.Log (sideAngles[3] - sideAngles[2]);
-
-		// if (sideAngles[1] - sideAngles[0] < -180 || sideAngles[1] - sideAngles[0] >=0) {
-		// 	s1 = 0;
-		// }
-		// if (sideAngles[3] - sideAngles[2] < -180 || sideAngles[3] - sideAngles[2] >=0) {
-		// 	s2 = 3;
-		// }
-
-		// Debug.Log(s1 + "::" + s2);
-		// Debug.Log(180 - Mathf.Abs(Mathf.Abs(sideAngles[1] - sideAngles[0]) - 180));
-		// Debug.Log(180 - Mathf.Abs(Mathf.Abs(sideAngles[3] - sideAngles[2]) - 180));
-		Debug.Log(iv.collisionPolygonsSelf[0]);
-		Debug.Log(sideAngles[0] + "::" + sideAngles[1]);
-		Debug.Log(sideAngles[2]);
-		Debug.Log(clipAngles[0] + "::" + clipAngles[1] + "::" + clipAngles[2]);
-		Debug.Log(clipAngles[3] + "::" + clipAngles[4]);
-		Debug.Log(clipAngles[4]); 
-		
-		Debug.Log(sideAngles[1] - sideAngles[0]);
-		//if (sideAngles[1] - sideAngles[0] > -180 && sideAngles[1] - sideAngles[0] < 0 || sideAngles[1] - sideAngles[0] > 180 ) {
-		// if ((sideAngles[2] > 180 && clipAngles[4] < 180)
-		// || (sideAngles[2] <= 180 && clipAngles[4] >= 180)) {
+		if (iv.collisionPolygonsOther.Contains(58) || iv.collisionPolygonsSelf.Contains(58)) {
+			Debug.Log(pointSelf + "::" + pointOther);
+			Debug.Log(iv.collisionPolygonsSelf[0]);
+			Debug.Log(sideAngles[0] + "::" + sideAngles[1]);
+			Debug.Log(sideAngles[2]);
+			Debug.Log(clipAngles[0] + "::" + clipAngles[1] + "::" + clipAngles[2]);
+			Debug.Log(clipAngles[3] + "::" + clipAngles[4]);
+			Debug.Log(clipAngles[4]); 
+			
+			Debug.Log(sideAngles[1] - sideAngles[0]);
 			Debug.Log(angleDifference(sideAngles[0], clipAngles[1]));
 			Debug.Log(angleDifference(sideAngles[0], clipAngles[2]));
 			Debug.Log(angleDifference(sideAngles[0], sideAngles[1]));
 			Debug.Log(angleDifference(clipAngles[1], clipAngles[2]));
 			Debug.Log(angleDifference(sideAngles[2], clipAngles[1]));
+		}
 			
-		//if (Vector3.Angle(pp-pointSelf, pp-iv.collisionPoints[clockwise]) > Vector3.Angle(pp-pointOther, pp-iv.collisionPoints[clockwise])) {
-		//if (angleDifference(sideAngles[0], clipAngles[1]) < angleDifference(sideAngles[1], clipAngles[1])) {
 		bool self = (angleDifference(sideAngles[0], sideAngles[1]) < 0) != (angleDifference(sideAngles[2], clipAngles[1]) < 0);
 		if (self) {
 			if (angleDifference(sideAngles[0], sideAngles[1]) > 0) {
@@ -470,9 +456,6 @@ public class playerController : MonoBehaviour {
 
 		Debug.DrawRay(pointSelf,pp-pointSelf,  Color.cyan);
 		Debug.DrawRay(pointOther,pp-pointOther,  Color.white);
-		// Debug.DrawRay(point3,pp-point3,  Color.cyan);
-		// Debug.DrawRay(point4,pp-point4,  Color.cyan);
-
 
 		Debug.DrawRay(iv.collisionPoints[closest],pp-iv.collisionPoints[closest],  Color.blue);
 		Debug.DrawRay(iv.collisionPoints[clockwise],pp-iv.collisionPoints[clockwise],  Color.yellow);
@@ -515,14 +498,16 @@ public class playerController : MonoBehaviour {
 		planes.Add(new Vector3(p3.x, p1.y, p3.z));
 		planes.Add(new Vector3(90, 0+angle, 90-a3));
 		foreach(int pol in segments) {
-			if (pol == 43) {
+			if (pol == 6) {
 				;
 			}
-			if (pol != currentPolygon) {
-				GlobalData.map.segments[pol].setClippingPlanes(planes, additive);
-				clippedSegments.Add(pol);
-			} else {
+			if (pol == currentPolygon) {
 				GlobalData.map.segments[pol].setClippingPlanes(new List<Vector3>());//dont clip the poly we are in
+			} else {
+				if (!clippedSegments.Contains(pol)) {
+					GlobalData.map.segments[pol].setClippingPlanes(planes, additive);
+					clippedSegments.Add(pol);
+				}
 			}
 		}
 	}
@@ -539,7 +524,11 @@ public class playerController : MonoBehaviour {
 	}
 
 
-	bool getRectVisibility (Vector3 point1, Vector3 point2, Vector3 height) {
+	bool getRectVisibility (Vector3 point1, Vector3 point2, Vector3 height, List<int> clippedSegments) {
+		foreach(int i in clippedSegments) {
+			GlobalData.map.segments[i].showHide(false);
+		}
+		
 		bool isVisible = false;
 		RaycastHit hit;
 		GameObject camera;
@@ -592,15 +581,20 @@ public class playerController : MonoBehaviour {
 							&& hit.collider.gameObject == camera ;
 				if (isVisible) {
 					Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.red);
-					return true;
+					isVisible = true;
+					goto endLoop;
 				} else {
 					//Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.green);
 				}
 			}
 		}
-
+		endLoop:
+		
+		foreach(int i in clippedSegments) {
+			GlobalData.map.segments[i].showHide(true);
+		}
+		
 		return isVisible;
-
 	}
 	void castRay() {
 		RaycastHit hit;

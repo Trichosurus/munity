@@ -214,9 +214,6 @@ public class MapSegment : MonoBehaviour {
 	public void showHide(bool show = false) {
 		if ( show == hidden ) {
 			Component[] allChildren = gameObject.GetComponentsInChildren(typeof(Transform), true);
-				if (id == 436) {
-					;
-				}
 			foreach (Transform child in allChildren) {
 				// if (child.gameObject.name == "floor" || child.gameObject.name == "ceiling" || child.gameObject.name == "wall" 
 				// 		|| child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
@@ -691,7 +688,7 @@ public class MapSegment : MonoBehaviour {
 				if (!GlobalData.skipOcclusion) {
 					if (wall.solid && wall.lowerMaterial.name == "transparent" || 
 							(wall.transparent && connBottom && !connTop)) {
-						wallPart.SetActive(false);
+						if (wallPart != null) {wallPart.SetActive(false);}
 					}
 				}
 			}
