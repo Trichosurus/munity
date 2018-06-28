@@ -352,6 +352,8 @@ public class playerController : MonoBehaviour {
 		List<Vector3> points = new List<Vector3>();
 		Vector3 pointSelf = new Vector3(0,0,0);
 		Vector3	pointOther = new Vector3(0,0,0);
+		// Vector3 pointSelfFar = new Vector3(0,0,0);
+		// Vector3	pointOtherFar = new Vector3(0,0,0);
 
 
 		//Debug.Log(clipAngles[0] +"::"+ clipAngles[1] +"::"+ clipAngles[2]);
@@ -382,7 +384,9 @@ public class playerController : MonoBehaviour {
 				float d = Vector3.Distance(points[point],points[p]);
 				if (d > 0 && d < distance) {
 					pointSelf = points[point];
+					// pointSelfFar = points[Mathf.Abs(1-point)];
 					pointOther = points[p];
+					// pointOtherFar = points[Mathf.Abs(1-(p-2))+2];
 					distance = d;
 				}
 			}
@@ -406,10 +410,14 @@ public class playerController : MonoBehaviour {
 		clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[closest].x, pp.z-iv.collisionPoints[closest].z) * Mathf.Rad2Deg);
 		clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[clockwise].x, pp.z-iv.collisionPoints[clockwise].z) * Mathf.Rad2Deg);
 		clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[counterClockwise].x, pp.z-iv.collisionPoints[counterClockwise].z) * Mathf.Rad2Deg);
+		// clipAngles.Add(Mathf.Atan2(pp.x-pointOtherFar.x, pp.z-pointOtherFar.z) * Mathf.Rad2Deg);
+		// clipAngles.Add(Mathf.Atan2(pp.x-pointSelfFar.x, pp.z-pointSelfFar.z) * Mathf.Rad2Deg);
 		clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-iv.collisionPoints[clockwise].x, iv.collisionPoints[closest].z-iv.collisionPoints[clockwise].z) * Mathf.Rad2Deg);
 		clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-iv.collisionPoints[counterClockwise].x, iv.collisionPoints[closest].z-iv.collisionPoints[counterClockwise].z) * Mathf.Rad2Deg);
+		// clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-pointOther.x, iv.collisionPoints[closest].z-pointOther.z) * Mathf.Rad2Deg);
+		// clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-pointSelf.x, iv.collisionPoints[closest].z-pointSelf.z) * Mathf.Rad2Deg);
 
-
+		
 
 		sideAngles.Add(Mathf.Atan2(pp.x-pointSelf.x, pp.z-pointSelf.z) * Mathf.Rad2Deg);
 		sideAngles.Add(Mathf.Atan2(pp.x-pointOther.x, pp.z-pointOther.z) * Mathf.Rad2Deg);
@@ -443,6 +451,13 @@ public class playerController : MonoBehaviour {
 			}
 		}
 	 
+	 	Vector3 point3 = pp;
+	 	if ((angleDifference(clipAngles[0], sideAngles[0]) < 0) == (angleDifference(clipAngles[0], sideAngles[1]) < 0)) {
+			point3 = iv.collisionPoints[closest];
+		// 	Debug.Log("out");
+		// } else {
+		// 	Debug.Log("in");
+		}
 
 		if (self) {
 			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[1], clipAngles[3], true, true, iv.collisionPolygonsSelf, ref clippedSegments);
@@ -460,7 +475,9 @@ public class playerController : MonoBehaviour {
 		Debug.DrawRay(iv.collisionPoints[closest],pp-iv.collisionPoints[closest],  Color.blue);
 		Debug.DrawRay(iv.collisionPoints[clockwise],pp-iv.collisionPoints[clockwise],  Color.yellow);
 		Debug.DrawRay(iv.collisionPoints[counterClockwise],pp-iv.collisionPoints[counterClockwise],  Color.green);
-
+		
+		// Debug.DrawRay(iv.collisionPoints[closest],iv.collisionPoints[closest]-pointSelfFar,  Color.magenta);
+		// Debug.DrawRay(iv.collisionPoints[closest],iv.collisionPoints[closest]-pointOtherFar,  Color.grey);
 	}
 
 	float angleDifference (float angle1, float angle2, bool halfPositive = true) {

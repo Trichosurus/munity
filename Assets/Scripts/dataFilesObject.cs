@@ -26,6 +26,23 @@ public class dataFilesObject : MonoBehaviour {
 											new FileBrowser.Filter( "Images", ".imga", ".imgA" )
 									);
 			FileBrowser.SetDefaultFilter( type );
+			switch (type) {
+				case "Maps":
+				FileBrowser.SetDefaultFilter( ".sceA" );
+				break;
+				case "Shapes":
+				FileBrowser.SetDefaultFilter( ".shpA" );
+				break;
+				case "Sounds":
+				FileBrowser.SetDefaultFilter( ".sndA" );
+				break;
+				case "Physics":
+				FileBrowser.SetDefaultFilter( ".phyA" );
+				break;
+				case "Images":
+				FileBrowser.SetDefaultFilter( ".imgA" );
+				break;
+			}
 			// FileBrowser.SetExcludedExtensions( ".lnk", ".tmp", ".zip", ".rar", ".exe" );
 			// FileBrowser.AddQuickLink( "Data", "?game path?recources folder?", null );
 			StartCoroutine( ShowLoadDialogCoroutine() );

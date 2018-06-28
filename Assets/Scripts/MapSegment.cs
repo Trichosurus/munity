@@ -1135,6 +1135,9 @@ public class impossibleVolume {
 	public MapSegment parent;
 
 	public void assembleVolumeSides (MapSegment seg, bool self = true) {
+		if (seg.id == 98) {
+			;
+		}
 		foreach (impossibleVolume iv in seg.impossibleVolumes) {
 			List<int> segList;
 			List<Vector3[]> lineList = new List<Vector3[]>();
@@ -1162,9 +1165,12 @@ public class impossibleVolume {
 			lineList.Add(currentPoints);
 			currentPoints = new Vector3[2];
 			currentLine[1]++;
+			if (GlobalData.map.segments[currentLine[0]].sides.Count <= currentLine[1]) {
+				currentLine[1] = 0;
+			} 
 			int count = 0;
 			while ((currentPoints[0] != lineList[0][0] || currentPoints[1] != lineList[0][1]) && count < 666) {
-				if (currentLine[0] == 63) {
+				if (currentLine[0] == 98 && currentLine[1] == 3)  {
 					;
 				}
 
@@ -1183,9 +1189,10 @@ public class impossibleVolume {
 				if (currentPoints[0] == lineList[0][0] && currentPoints[1] == lineList[0][1]) {
 					break;
 				}
-				lineList.Add(currentPoints);
-
-				currentLine[1]++;
+				if (sideValid(currentLine[0], currentLine[1], segList)) {
+					lineList.Add(currentPoints);
+					currentLine[1]++;
+				}
 				if (GlobalData.map.segments[currentLine[0]].sides.Count <= currentLine[1]) {
 					currentLine[1] = 0;
 				}
@@ -1204,8 +1211,13 @@ public class impossibleVolume {
 		MapSegment seg = GlobalData.map.segments[segID];
 		MapSegment conn = GlobalData.map.segments[connID];
 
-		Vector3 point = new Vector3();
-		point = seg.transform.TransformPoint(seg.vertices[sideNo]);
+		if (sideNo < 0 || sideNo >= seg.vertices.Count) {
+			;
+		}
+
+
+		Vector3 point = seg.transform.TransformPoint(seg.vertices[sideNo]);
+		point.y = 0;
 		// if (sideNo < seg.sides.Count-1) {
 		// 	point = seg.transform.TransformPoint(seg.vertices[sideNo+1]);
 		// } else {
@@ -1214,11 +1226,14 @@ public class impossibleVolume {
 		int matchPoint = -1;
 		for (int s = 0; s < conn.sides.Count; s++) {
 			Vector3 connPoint = conn.transform.TransformPoint(conn.vertices[s]);
-			if (conn.transform.TransformPoint(conn.vertices[s]) == point) {
+			connPoint.y = 0;
+			if (connPoint == point) {
 				matchPoint = s;
 			}
 		}
-		
+		if (matchPoint == -1) {
+			;
+		}
 		if (conn.sides[matchPoint].connectionID != segID) {
 			return matchPoint;
 		}
