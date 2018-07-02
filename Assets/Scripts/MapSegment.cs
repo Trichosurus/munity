@@ -108,7 +108,7 @@ public class MapSegment : MonoBehaviour {
 			if (message.activatePlatform) {
 				platform.activate(message.senderID);
 			}
-			if (message.activatePlatform) {
+			if (message.deActivatePlatform) {
 				platform.deActivate(message.senderID);
 			}
 		}
@@ -176,6 +176,7 @@ public class MapSegment : MonoBehaviour {
 		for (int i = 0; i < vertices.Count; i++) {
 			int j = i + 1; 
 			if (j >= vertices.Count) {j = 0;}
+			verts.Add(vertices[i]);
 			verts.Add(Vector3.Lerp(vertices[i],vertices[j],0.5f) );
 		}
 		verts.Add(new Vector3(0,0,0));
@@ -263,22 +264,13 @@ public class MapSegment : MonoBehaviour {
 		if ( show == hidden ) {
 			Component[] allChildren = gameObject.GetComponentsInChildren(typeof(Transform), true);
 			foreach (Transform child in allChildren) {
-				// if (child.gameObject.name == "floor" || child.gameObject.name == "ceiling" || child.gameObject.name == "wall" 
-				// 		|| child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
-				if (child.gameObject.name != gameObject.name && child.gameObject.name != "upperPlatform" && child.gameObject.name != "lowerPlatform") {
+				if (child.gameObject.name != gameObject.name && child.gameObject.name != "Platform") {
 					if (noTrans && child.gameObject.tag == "transparent") {
 						child.gameObject.SetActive(false);
 					} else {
 						child.gameObject.SetActive(show);
 					}
 				}
-
-				// if (child.gameObject.name == "upperPlatform" || child.gameObject.name == "lowerPlatform") {
-				// 	Component[] platChildren = child.gameObject.GetComponentsInChildren(typeof(Transform), true);
-				// 	foreach (Transform plat in platChildren) {
-				// 			plat.gameObject.SetActive(show);
-				// 	}
-				// }
 			} 
 			hidden = !show;
 		}
@@ -554,7 +546,7 @@ public class MapSegment : MonoBehaviour {
 		// }
 
 		for (int i = 0; i < vertices.Count; i++) {
-			makeWall(i);
+			makeWall(i);			
 		}
 		generateLiquidVolumes();
 		generateColliders(gameObject);
@@ -677,11 +669,6 @@ public class MapSegment : MonoBehaviour {
 	}
 
 	public void makeWall(int side) {
-
-		if (id == 52) {
-			;
-		}
-
 		Vector3 point1, point2;
 		point1 = vertices[side];
 		if (side+1 < vertices.Count) {
@@ -728,6 +715,9 @@ public class MapSegment : MonoBehaviour {
 				wall.lowerMaterial = wall.upperMaterial;
 				wall.lowerLight = wall.upperLight;
 				wall.lowerOffset = wall.upperOffset;
+				if (sides[side].controlPanel != null && sides[side].controlPanel.sidePart == 0) {
+					sides[side].controlPanel.sidePart = 1;
+				}
 			}
 			bool transparent = false;
 			if (connBottom) {
@@ -742,6 +732,9 @@ public class MapSegment : MonoBehaviour {
 					wallPart.name = "lowerWall";
 					sides[side].lowerMeshItem = wallPart;
 					if (transparent) {wallPart.tag = "transparent";}
+					if (sides[side].controlPanel != null && sides[side].controlPanel.sidePart == 1) {
+						sides[side].controlPanel.wall = wallPart;
+					}
 				}
 			}
 			transparent = false;
@@ -760,6 +753,9 @@ public class MapSegment : MonoBehaviour {
 					wallPart.name = "upperWall";
 					sides[side].upperMeshItem = wallPart;
 					if (transparent) {wallPart.tag = "transparent";}
+					if (sides[side].controlPanel != null && sides[side].controlPanel.sidePart == 0) {
+						sides[side].controlPanel.wall = wallPart;
+					}
 				}
 			}
 			transparent = false;
@@ -779,6 +775,9 @@ public class MapSegment : MonoBehaviour {
 						wallPart.name = "middleWall";
 						sides[side].middleMeshItem = wallPart;
 						if (transparent) {wallPart.tag = "transparent";}
+						if (sides[side].controlPanel != null && sides[side].controlPanel.sidePart == 2) {
+							sides[side].controlPanel.wall = wallPart;
+						}
 
 					}
 				}
@@ -790,14 +789,18 @@ public class MapSegment : MonoBehaviour {
 				wallPart = addWallPart(point1, point2, height, wallOffset, wall.upperMaterial, wall.upperOffset, gameObject);
 				wallPart.name = "wall";
 				sides[side].upperMeshItem = wallPart;
+				if (sides[side].controlPanel != null ) {
+					sides[side].controlPanel.wall = wallPart;
+				}
 
 			}
 		}
 
-		// if (wallPart != null) {
-		// 	sides[side].upperMeshItem = wallPart;
-		// 	wallPart.name = "wall";
-		// }
+		if (sides[side].controlPanel != null) {
+			if (sides[side].controlPanel.wall != null ) {
+				sides[side].controlPanel.setDisplay();
+			}
+		}
 	}
 
 
@@ -856,8 +859,8 @@ public class MapSegment : MonoBehaviour {
 	public bool playerTouch(GameObject element) {
 		bool touched = false;
 		foreach (MapSegmentSide s in sides) {
-			if (s.controlPanel != null && (s.upperMeshItem == element || s.middleMeshItem == element || s.lowerMeshItem == element)) {
-		    	s.controlPanel.toggle(element, true);
+			if (s.controlPanel != null && s.controlPanel.wall == element) {
+		    	s.controlPanel.toggle(true);
 				touched = true;
 			}
 		}

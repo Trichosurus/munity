@@ -162,7 +162,7 @@ public class playerController : MonoBehaviour {
 				if (other.transform.parent.tag == "polygon") {
 					ms = other.transform.parent.GetComponent<MapSegment>();
 				} else if (other.transform.parent.name == "upperPlatform" || other.transform.parent.name == "lowerPlatform") {
-					ms =  other.transform.parent.parent.GetComponent<MapSegment>();
+					ms =  other.transform.parent.parent.parent.GetComponent<MapSegment>();
 				}
 				if (ms != null) {
 					touched = ms.playerTouch(other.gameObject);
@@ -194,12 +194,8 @@ public class playerController : MonoBehaviour {
 					ap.Remove(pol);
 					GlobalData.map.segments[pol].showHide(false);
 					GlobalData.map.segments[pol].setClippingPlanes(new List<Vector3>());//remove clipping 
-
 				}
-				// foreach(int pol in iv.collisionPolygonsOther) {
-				// 	ap.Remove(pol);
-				// 	GlobalData.map.segments[pol].showHide(false);
-				// }
+
 			}
 		}
 		int selfIV = -1;
@@ -600,14 +596,11 @@ public class playerController : MonoBehaviour {
 							&& hit.collider.gameObject == camera ;
 				if (isVisible) {
 					Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.red);
-					isVisible = true;
-					goto endLoop;
 				} else {
 					//Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.green);
 				}
 			}
 		}
-		endLoop:
 		
 		return isVisible;
 	}

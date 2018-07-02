@@ -69,10 +69,6 @@ public class PlatformObject : MonoBehaviour {
 
 
 	public void init () {
-		if (parent.id == 32) {
-			;
-		}
-
 		float travelDistance = (maximumHeight-minimumHeight);
 		float lheight = parent.height.y;
 		uMax = new Vector3(0,maximumHeight - parent.centerPoint.y,0);
@@ -208,7 +204,7 @@ public class PlatformObject : MonoBehaviour {
 		}
 
 		if (!active) {
-			deActivate();
+			deActivate(-4);
 		}
 
 		extending = !extending;
@@ -242,11 +238,9 @@ public class PlatformObject : MonoBehaviour {
 		if (!delaysBeforeActivation) {delayedTime = delay;}
 		hasActivated = true;
 		
-		foreach (MapSegment seg in GlobalData.map.segments) {
-			foreach (MapSegmentSide side in seg.sides) {
-				if (side.controlPanel != null  && side.controlPanel.platformSwitch == parent.id) {
-					side.controlPanel.toggle(side.upperMeshItem);
-				}
+		foreach (ControlPanel cp in GlobalData.map.controlPanels) {
+			if (cp.platformSwitch == parent.id || cp.tagSwitch == mapTag) {
+				cp.toggle();
 			}
 		}
 
@@ -265,29 +259,53 @@ public class PlatformObject : MonoBehaviour {
 			parent.sendMessage(message, exclude);
 		}
 
+		if (activatesLight) {
+			foreach (MapSegmentSide s in parent.sides) {
+				if (s.upperLight != null) s.upperLight.activate();
+				if (s.middleLight != null) s.middleLight.activate();
+				if (s.lowerLight != null) s.lowerLight.activate();
+			}
+			parent.floor.light.activate();
+			parent.ceiling.light.activate();
+
+		}
+
+
 	}
+
+
 
 
 	
 
 	public void deActivate(int activator = -1) {
+		if (activator > -4) {return;}
 		if (deactivatesAdjacentPlatformsWhenDeactivating) {
 			MapSegment.Message message = new MapSegment.Message();
 			message.deActivatePlatform = true;
 			parent.sendMessage(message);
 		}
 		if (deactivatesLight) {
-			//deacivate light
+			foreach (MapSegmentSide s in parent.sides) {
+				if (s.upperLight != null) s.upperLight.deActivate();
+				if (s.middleLight != null) s.middleLight.deActivate();
+				if (s.lowerLight != null) s.lowerLight.deActivate();
+			}
+			parent.floor.light.deActivate();
+			parent.ceiling.light.deActivate();
 		}
 		if (activatesAdjacentPlatformsWhenDeactivating) {
 			MapSegment.Message message = new MapSegment.Message();
 			message.activatePlatform = true;
 			parent.sendMessage(message);
 		}
-
-		//turn off switches
-
 		active = false;
+
+		foreach (ControlPanel cp in GlobalData.map.controlPanels) {
+			if (cp.platformSwitch == parent.id || cp.tagSwitch == mapTag) {
+				cp.toggle();
+			}
+		}
 	}
 
 }

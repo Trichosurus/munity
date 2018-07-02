@@ -10,15 +10,17 @@ using System.Runtime.Serialization.Formatters.Binary;
 public class Map : MonoBehaviour {
 	public GameObject polygon;
 	List<int> collectionMapping = new List<int>{};
-	List<int> transferModeMapping = new List<int> {0, 4, 5, 6, 9, 15, 16, 17, 18, 19, 20};
+	// List<int> transferModeMapping = new List<int> {0, 4, 5, 6, 9, 15, 16, 17, 18, 19, 20};
+	int collectionID = -1;
 	public List<Material> materials;
 	public List<MapSegment> segments;
 	public List<mapLight> lights;
 	public List<bool> tags;
 	public List<audioDefinition> audioDefinitions = new List<audioDefinition>();
+	public List<ControlPanel> controlPanels = new List<ControlPanel>();
 
 	private string loadingText = "";
-	public int mapNo = 0;
+	public int mapNo = 4;
 
 	BinaryFormatter formatter = new BinaryFormatter();
 
@@ -55,9 +57,9 @@ public class Map : MonoBehaviour {
 	    }
 	    Level Level = new Level();
 		Level.Load(mapfile.Directory[mapNo]);
-
+		collectionID = GlobalData.mediaCollections[Level.Environment];
 		Debug.Log(Level.Name);
-		// Debug.Log(Level.Environment);
+		Debug.Log(Level.Environment);
 
 		yield return createLightsFromMarathonMap(Level);
 
@@ -363,6 +365,7 @@ public class Map : MonoBehaviour {
 						seg.platform.secret = pl.IsSecret;
 						seg.platform.mapTag = pl.Tag;
 						seg.platform.usesNativePolygonHeights = pl.UsesNativePolygonHeights;
+						seg.platform.parent = seg;
 					}
 				}
 			}
@@ -381,33 +384,13 @@ public class Map : MonoBehaviour {
 				// Material mat = new Material(Shader.Find("Custom/StandardClippableV2"));
 
 				Weland.ShapeDescriptor tex = new Weland.ShapeDescriptor();
-				int mediaType = 0;
-				switch (media.Type) {
-					case MediaType.Water: 
-						mediaType = 0;
-						break;
-					case MediaType.Lava: 
-						mediaType = 1;
-						break;
-					case MediaType.Goo: 
-						mediaType = 2;
-						break;
-					case MediaType.Sewage: 
-						mediaType = 3;
-						break;
-					case MediaType.Jjaro: 
-						mediaType = 4;
-						break;
-					default: 
-						mediaType = 0;
-						break;
-				}
+		
 
-				tex.Collection = (byte)GlobalData.mediaCollections[mediaType];
-				tex.Bitmap = (byte)GlobalData.mediaBitmaps[mediaType];
+				tex.Collection = (byte)GlobalData.mediaCollections[(int)media.Type];
+				tex.Bitmap = (byte)GlobalData.mediaBitmaps[(int)media.Type];
 				seg.liquid.surface = getTexture(tex);
-				seg.liquid.colour = GlobalData.mediaColours[mediaType];
-				seg.liquid.density = GlobalData.mediaDensities[mediaType];
+				seg.liquid.colour = GlobalData.mediaColours[(int)media.Type];
+				seg.liquid.density = GlobalData.mediaDensities[(int)media.Type];
 
 
 				seg.liquid.parent = seg;
@@ -566,10 +549,10 @@ public class Map : MonoBehaviour {
 				mss.solid = Line[currentLine].Solid;
 				Side side = new Side();
 				//get texture + lighting information for side
-				if ((Line[currentLine].ClockwisePolygonSideIndex >= 0  && Line[currentLine].ClockwisePolygonOwner == p ) 
+				if ((Line[currentLine].ClockwisePolygonSideIndex >= 0 && Line[currentLine].ClockwisePolygonOwner == p ) 
 					|| (Level.Polygons[p].Type == PolygonType.Platform && Line[currentLine].ClockwisePolygonSideIndex >= 0) ) {
 					side = Level.Sides[Line[currentLine].ClockwisePolygonSideIndex];
-				} else if ((Line[currentLine].CounterclockwisePolygonSideIndex >= 0   && Line[currentLine].CounterclockwisePolygonOwner == p)
+				} else if ((Line[currentLine].CounterclockwisePolygonSideIndex >= 0 && Line[currentLine].CounterclockwisePolygonOwner == p)
 						||(Level.Polygons[p].Type == PolygonType.Platform && Line[currentLine].CounterclockwisePolygonSideIndex >= 0) ) {
 					side = Level.Sides[Line[currentLine].CounterclockwisePolygonSideIndex];
 				}
@@ -593,49 +576,105 @@ public class Map : MonoBehaviour {
 				}
 
 				//get control panel information if needed
-				if (side != null && (side.IsControlPanel || side.IsPlatformSwitch() || side.IsTagSwitch() || side.IsLightSwitch())) {
-					mss.controlPanel = new ControlPanel();
-					mss.controlPanel.permutation = side.ControlPanelPermutation;
-					mss.controlPanel.type = side.ControlPanelType;
-					mss.controlPanel.controlPanel = side.IsControlPanel;
-					if (side.IsPlatformSwitch()) {mss.controlPanel.platformSwitch = side.ControlPanelPermutation;}
-					if (side.IsTagSwitch()) {mss.controlPanel.tagSwitch = side.ControlPanelPermutation;}
-					if (side.IsLightSwitch()) {mss.controlPanel.lightSwitch = side.ControlPanelPermutation;}
-					mss.controlPanel.inactiveMat =  mss.upperMaterial;
-					for (int t = 0 ; t < materials.Count; t++) {
-						if (materials[t] == mss.controlPanel.inactiveMat) {
-							mss.controlPanel.activeMat =  materials[t-1];
-						}
+				if (side != null && (side.IsControlPanel && side.ControlPanelType >= 0)) {
+					ControlPanel cp = new ControlPanel();
+					cp.permutation = side.ControlPanelPermutation;
+					cp.type = side.ControlPanelType;
+					cp.controlPanel = side.IsControlPanel;
+
+					ShapeDescriptor inactive = new ShapeDescriptor();
+					ShapeDescriptor active = new ShapeDescriptor();
+					active.Collection = side.Primary.Texture.Collection;
+					inactive.Collection = side.Primary.Texture.Collection;
+
+					switch (side.GetControlPanelType()) {
+						case ControlPanelClass.Oxygen:
+							cp.oxygen = 1;
+							active.Bitmap = 2;
+							inactive.Bitmap = 3;
+							break;
+						case ControlPanelClass.Shield:
+							cp.shield = 1;
+							active.Bitmap = 2;
+							inactive.Bitmap = 3;
+							break;
+						case ControlPanelClass.DoubleShield:
+							cp.shield = 1;
+							active.Bitmap = 2;
+							inactive.Bitmap = 3;
+							break;
+						case ControlPanelClass.TripleShield:
+							cp.shield = 1;
+							active.Bitmap = 2;
+							inactive.Bitmap = 3;
+							break;
+						case ControlPanelClass.LightSwitch:
+							active.Bitmap = 0;
+							inactive.Bitmap = 1;
+							cp.lightSwitch = side.ControlPanelPermutation;
+							break;
+						case ControlPanelClass.PlatformSwitch:
+							active.Bitmap = 0;
+							inactive.Bitmap = 1;
+							cp.platformSwitch = side.ControlPanelPermutation;
+							break;
+						case ControlPanelClass.TagSwitch:
+							active.Bitmap = 0;
+							inactive.Bitmap = 1;
+							cp.tagSwitch = side.ControlPanelPermutation;
+							break;
+						case ControlPanelClass.PatternBuffer:
+							cp.patternBuffer = true;
+							active.Bitmap = 4;
+							inactive.Bitmap = 4;
+							break;
+						case ControlPanelClass.Terminal:
+							active.Bitmap = 4;
+							inactive.Bitmap = 4;
+							cp.terminal = side.ControlPanelPermutation;
+							break;
 					}
-					
+					cp.inactiveMat = getTexture(inactive);
+					cp.activeMat = getTexture(active);
 					switch(side.Flags) {
 						// case SideFlags.None:
 						// 	break;
 						case SideFlags.ControlPanelStatus:
-							mss.controlPanel.controlPanelStatus = 1;//?? what is this for?
+							cp.controlPanelStatus = 1;//?? what is this for?
 							break;
 						case SideFlags.Dirty:
-							mss.controlPanel.dirty = true;
+							cp.dirty = true;
 							break;
 						case SideFlags.IsDestructiveSwitch:
-							mss.controlPanel.destructiveSwitch = true;
+							cp.destructiveSwitch = true;
 							break;
 						// case SideFlags.IsLightedSwitch:
-						// 	mss.controlPanel.active = true;
+						// 	cp.active = true;
 						// 	break;
 						case SideFlags.IsRepairSwitch:
-							mss.controlPanel.repairSwitch = true;
+							cp.repairSwitch = true;
 							break;
 						case SideFlags.IsControlPanel:
-							//mss.controlPanel.controlPanel = true;
+							//cp.controlPanel = true;
 							break;
 						case SideFlags.SwitchCanBeDestroyed:
-							mss.controlPanel.canBeDestroyed = true;
+							cp.canBeDestroyed = true;
 							break;
 						case SideFlags.SwitchCanOnlyBeHitByProjectiles:
-							mss.controlPanel.canOnlyBeHitByProjectiles = true;
+							cp.canOnlyBeHitByProjectiles = true;
 							break;
 					}
+					if (side.Primary.Texture.Collection > 10 && side.Primary.Texture.Bitmap < 5) {
+						cp.sidePart = 0;
+					}
+					if (side.Secondary.Texture.Collection > 10 && side.Secondary.Texture.Bitmap < 5) {
+						cp.sidePart = 1;
+					}
+					if (side.Transparent.Texture.Collection > 10 && side.Transparent.Texture.Bitmap < 5) {
+						cp.sidePart = 2;
+					}					
+					controlPanels.Add(cp);
+					mss.controlPanel = cp;
 				}
 
 				//connedtion information is used for occlusion culling

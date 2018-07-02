@@ -4,7 +4,12 @@ using UnityEngine;
 
 
 public class ControlPanel {
+	public int sidePart = 0;
+	public int oxygen = 0;
+	public int shield = 0;
 
+	public bool patternBuffer = false;
+	public int terminal = -1; 
 	public short type = 0;
 	public short permutation = 0;
 	public int controlPanelStatus = 0;
@@ -18,93 +23,66 @@ public class ControlPanel {
 	public bool canBeDestroyed = false;
 	public bool canOnlyBeHitByProjectiles = false;
 	public bool dirty = false;
-	public bool savePoint = false;
-	public bool terminal = false;
 	public Material activeMat = new Material(Shader.Find("Custom/StandardClippableV2"));
 	public Material inactiveMat = new Material(Shader.Find("Custom/StandardClippableV2"));
+	public GameObject wall = null;
+	public void setDisplay() {
+		if (wall == null) {
+			;
+		}
+		Vector2 offset = wall.GetComponent<MeshRenderer>().material.mainTextureOffset;
+		if (active) {
+			wall.GetComponent<MeshRenderer>().material = activeMat;
+		} else {
+			wall.GetComponent<MeshRenderer>().material = inactiveMat;
+		}
+		wall.GetComponent<MeshRenderer>().material.mainTextureOffset = offset;
 
-
+	}
 	private bool toggled = false;
-	public void toggle(GameObject wall, bool playerTouched = false) {
+	public void toggle(bool playerTouched = false) {
 		// if (toggled) {return;}
 		// toggled = true;
 		// active = !active;
-		if (playerTouched) {
-			if (platformSwitch > -1) {
-				MapSegment pol = GlobalData.map.segments[platformSwitch];
-				if (pol.platform != null) {
+		if (platformSwitch > -1) {
+			MapSegment seg = GlobalData.map.segments[platformSwitch];
+			if (seg.platform != null) {
+				if (playerTouched) {
 					if (!active) {
-						pol.platform.activate();
+					seg.platform.activate();
 					} else {
-						pol.platform.deActivate();
+					seg.platform.deActivate();
 					}
 				}
+				active = seg.platform.active;
 			}
-			if (lightSwitch > -1) {
-				GlobalData.map.lights[lightSwitch].toggle();
-			}
-			if (tagSwitch > -1) {
-				foreach(mapLight light in GlobalData.map.lights) {
-					if (light.mapTag == tagSwitch) {
-						light.toggle();
-					}
+		}
+		if (lightSwitch > -1) {
+			if (playerTouched) {GlobalData.map.lights[lightSwitch].toggle();}
+			active = GlobalData.map.lights[lightSwitch].phase < 3;
+		}
+		if (tagSwitch > -1) {
+			foreach(mapLight light in GlobalData.map.lights) {
+				if (light.mapTag == tagSwitch) {
+					if (playerTouched) {light.toggle();}
+					active = light.phase < 3;
 				}
-				foreach(MapSegment seg in GlobalData.map.segments) {
-					if (seg.platform != null && seg.platform.mapTag == tagSwitch) {
+			}
+			foreach(MapSegment seg in GlobalData.map.segments) {
+				if (seg.platform != null && seg.platform.mapTag == tagSwitch) {
+					if (playerTouched) {
+						if (!active) {
 						seg.platform.activate();
+						} else {
+						seg.platform.deActivate();
+						}
 					}
+				active = seg.platform.active;
 				}
-
 			}
-
-
-
-		} else {
-			active = !active;
-			Vector2 offset = wall.GetComponent<MeshRenderer>().material.mainTextureOffset;
-			if (active) {
-				wall.GetComponent<MeshRenderer>().material = activeMat;
-			} else {
-				wall.GetComponent<MeshRenderer>().material = inactiveMat;
-			}
-			wall.GetComponent<MeshRenderer>().material.mainTextureOffset = offset;
 
 		}
-		// Vector2 offset = wall.GetComponent<MeshRenderer>().material.mainTextureOffset;
-		// if (active) {
-			// wall.GetComponent<MeshRenderer>().material = activeMat;
-			// if (platformSwitch > -1) {
-				// MapSegment pol = GlobalData.map.segments[platformSwitch];
-				// if (playerTouched && pol.platform != null) {
-					// pol.platform.activate();
-				// }
-				// foreach (MapSegment seg in GlobalData.map.segments) {
-				// 	foreach (MapSegmentSide side in seg.sides) {
-				// 		if (side.controlPanel != null && side.controlPanel.platformSwitch == platformSwitch) {
-				// 			if (side.controlPanel != this) {
-				// 				side.controlPanel.toggle(side.meshItem);
-				// 				break;
-				// 			}
-				// 		}
-				// 	}
-				// }
-			// }
-		// } else {
-		// 	wall.GetComponent<MeshRenderer>().material = inactiveMat;
-		// }
-		// wall.GetComponent<MeshRenderer>().material.mainTextureOffset = offset;
-		// toggled = false;
+		setDisplay();
 	}
-    // public enum ControlPanelClass : short {
-	// Oxygen,
-	// Shield,
-	// DoubleShield,
-	// TripleShield,
-	// LightSwitch,
-	// PlatformSwitch,
-	// TagSwitch,
-	// PatternBuffer,
-	// Terminal
-    // }
 
 }

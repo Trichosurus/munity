@@ -28,7 +28,11 @@ public class mapLight : MonoBehaviour {
 		becomingInactive.initialise();
 		primaryInactive.initialise();
 		secondaryInactive.initialise();
-		active = initiallyActive;
+		active = false;
+		if (initiallyActive) {
+			active = true;
+			if (phase == 0) {phase = 1;}//???this seems to be how it works
+		}
 	}
 
 	public void Update() {
@@ -116,6 +120,14 @@ public class mapLight : MonoBehaviour {
 			currentIntensity = intensity;
 		}
 	}
+	public void activate() {
+		active = false;
+		toggle();
+	}
+	public void deActivate() {
+		active = true;
+		toggle();
+	}
 
 	public void toggle() {
 		active = !active;
@@ -127,6 +139,12 @@ public class mapLight : MonoBehaviour {
 			becomingInactive.initialise(currentIntensity);
 			phase = 3;
 			elapsedTime = 0;
+		}
+
+		foreach (ControlPanel cp in GlobalData.map.controlPanels) {
+			if (cp.lightSwitch == id || cp.tagSwitch == mapTag) {
+				cp.toggle();
+			}
 		}
 	}
 

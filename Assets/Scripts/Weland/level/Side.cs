@@ -68,6 +68,10 @@ namespace Weland {
 	    }
 	}
 
+	public ControlPanelClass GetControlPanelType() {
+		return controlPanelClasses[ControlPanelType];
+	}
+
 	public bool IsPlatformSwitch() {
 		if (ControlPanelType >= 0) {
 	    	return controlPanelClasses[ControlPanelType] == ControlPanelClass.PlatformSwitch;
@@ -91,7 +95,6 @@ namespace Weland {
 			return false;
 		}
 	}
-
 
 
 	public SideType Type;
