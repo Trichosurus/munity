@@ -12,7 +12,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3000
+  m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
   m_SavedProperties:
@@ -71,13 +71,13 @@ Material:
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
-    - _planesAdditive: 1
+    - _planesAdditive: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _planeNorm: {r: 0.17364816, g: -0.00000004703179, b: 0.9848078, a: 0}
-    - _planeNorm2: {r: 0.17364809, g: -0.00000003958121, b: -0.9848078, a: 0}
-    - _planeNorm3: {r: -0.9999999, g: 0.00000011920929, b: 0.00000011920929, a: 0}
-    - _planePos: {r: 5, g: 0, b: 2, a: 0}
-    - _planePos2: {r: 5, g: 0, b: 1.81, a: 0}
-    - _planePos3: {r: 5, g: 0, b: 2, a: 0}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 0}
+    - _planeNorm: {r: 0, g: 0, b: 0, a: 0}
+    - _planeNorm2: {r: 0, g: -0.00000003958121, b: 0, a: 0}
+    - _planeNorm3: {r: 0, g: 0.00000011920929, b: 0.00000011920929, a: 0}
+    - _planePos: {r: 0, g: 0, b: 0, a: 0}
+    - _planePos2: {r: 0, g: 0, b: 0, a: 0}
+    - _planePos3: {r: 0, g: 0, b: 0, a: 0}

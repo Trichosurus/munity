@@ -142,7 +142,7 @@ public class playerController : MonoBehaviour {
 				// if (hit.collider.transform.parent.GetComponent<MapSegment>().id != currentPolygon) {
 				// 	Debug.Log(hit.collider.transform.parent.GetComponent<MapSegment>().id);
 				// }
-				currentPolygon = hit.collider.transform.parent.parent.GetComponent<MapSegment>().id;
+				currentPolygon = hit.collider.transform.parent.parent.GetComponent<PlatformObject>().parent.id;
 			}
 
 		}
@@ -185,10 +185,10 @@ public class playerController : MonoBehaviour {
 	}
 	void calculateVisibility() {
 		//get list of active volumes that are visible
-		List<impossibleVolume> ivs = new List<impossibleVolume>();
+		List<ImpossibleVolume> ivs = new List<ImpossibleVolume>();
 		List<int> ap = new List<int>(activePolygons);
 		while (ap.Count > 0) {
-			foreach(impossibleVolume iv in GlobalData.map.segments[ap[0]].impossibleVolumes) {
+			foreach(ImpossibleVolume iv in GlobalData.map.segments[ap[0]].ImpossibleVolumes) {
 				ivs.Add(iv);
 				foreach(int pol in iv.collisionPolygonsSelf) {
 					ap.Remove(pol);
@@ -271,27 +271,41 @@ public class playerController : MonoBehaviour {
 		}
 		distances = temp;
 		// if we are in impossible space, then draw the volume we are in before doing anything else
-		if (selfIV >=0) {
-			showVolume(ivs[selfIV]);
-		}
 		List<int> clippedSegments = new List<int>();
 		List<int> shownSegments = new List<int>();
 		List<int> shownD = new List<int>();
+
+		if (selfIV >=0) {
+			showVolume(ivs[selfIV], ref clippedSegments);
+		}
 		//draw impossible volumes in order of their closest connection to normal pols
 		for (int d = 0; d < distances.Count; d++) {
 			Vector3 point1, point2;
-			point1 = GlobalData.map.segments[(int)distances[d][2]].vertices[(int)distances[d][3]];
-			if ((int)distances[d][3]+1 < GlobalData.map.segments[(int)distances[d][2]].vertices.Count) {
-				point2 = GlobalData.map.segments[(int)distances[d][2]].vertices[(int)distances[d][3]+1];
-			} else {
-				point2 = GlobalData.map.segments[(int)distances[d][2]].vertices[0];
-			}
-			point1 = GlobalData.map.segments[(int)distances[d][2]].transform.TransformPoint(point1);
-	 		point2 = GlobalData.map.segments[(int)distances[d][2]].transform.TransformPoint(point2);
+			MapSegment seg = GlobalData.map.segments[(int)distances[d][2]];
+			MapSegment conn = seg.sides[(int)distances[d][3]].connection;
+			float height = seg.height.y;
 
-			if (!shownSegments.Contains((int)distances[d][1]) && getRectVisibility(point1, point2, GlobalData.map.segments[(int)distances[d][2]].height, clippedSegments)) {
+			point1 = seg.vertices[(int)distances[d][3]];
+			if ((int)distances[d][3]+1 < seg.vertices.Count) {
+				point2 = seg.vertices[(int)distances[d][3]+1];
+			} else {
+				point2 = seg.vertices[0];
+			}
+			point1 = seg.transform.TransformPoint(point1);
+	 		point2 = seg.transform.TransformPoint(point2);
+
+			if (conn.centerPoint.y > seg.centerPoint.y) {
+				point1.y = conn.centerPoint.y;
+				point2.y = conn.centerPoint.y;
+				height -= (conn.centerPoint.y - seg.centerPoint.y);
+			}
+			if (conn.centerPoint.y + conn.height.y < seg.centerPoint.y + seg.height.y) {
+				height -= ((seg.centerPoint.y + seg.height.y) - (conn.centerPoint.y + conn.height.y));
+			}
+
+			if (!shownSegments.Contains((int)distances[d][1]) && getRectVisibility(point1, point2, new Vector3(0,height,0))) {
 				shownSegments.Add((int)distances[d][1]);
-				showVolume(ivs[(int)distances[d][1]]);
+				showVolume(ivs[(int)distances[d][1]], ref clippedSegments);
 				foreach(int i in ivs[(int)distances[d][1]].collisionPolygonsOther) {
 					if (!GlobalData.map.segments[i].hidden) {
 						int other = -1;
@@ -304,17 +318,7 @@ public class playerController : MonoBehaviour {
 						}
 						// if (!clippedSegments.Contains(distances[d][2]) && !clippedSegments.Contains(distances[other][1])) {
 						if (other > -1) {
-							//if (!clippedSegments.Contains)
-							if (ivs[(int)distances[d][1]].collisionPolygonsSelf.Contains(6)) {
-;
-							}
-							if (ivs[(int)distances[other][1]].collisionPolygonsSelf.Contains(6)) {
-;
-							}
-
 							calculateClipping(ivs, distances, d, other, ref clippedSegments);
-							// clippedSegments.Add(distances[d][2]);
-							// clippedSegments.Add(distances[other][1]);
 						break;
 						}
 					}
@@ -322,13 +326,16 @@ public class playerController : MonoBehaviour {
 				shownD.Add(d);
 			}
 		}
+		foreach (int i in clippedSegments) {
+			GlobalData.map.segments[i].showHide(true);
+		}
 	}
 
-	void showVolume(impossibleVolume iv, bool show = true) {
+	void showVolume(ImpossibleVolume iv, ref List<int> clippedSegments, bool show = true) {
 		foreach (int pol in iv.collisionPolygonsSelf) {
-			if (GlobalData.map.segments[currentPolygon].collidesWith != null &&
+			if ((GlobalData.map.segments[currentPolygon].collidesWith != null &&
 			GlobalData.map.segments[currentPolygon].collidesWith.Contains(pol) &&
-			iv.collisionPolygonsSelf.Contains(currentPolygon)) {
+			iv.collisionPolygonsSelf.Contains(currentPolygon)) || clippedSegments.Contains(pol)) {
 				GlobalData.map.segments[pol].showHide(false);
 			} else {
 				GlobalData.map.segments[pol].showHide(show);
@@ -336,8 +343,8 @@ public class playerController : MonoBehaviour {
 		}
 	}
 
-	void calculateClipping (List<impossibleVolume> ivs, List<float[]> distances, int volSelf, int volOther, ref List<int> clippedSegments) {
-		impossibleVolume iv = ivs[(int)distances[volSelf][1]];
+	void calculateClipping (List<ImpossibleVolume> ivs, List<float[]> distances, int volSelf, int volOther, ref List<int> clippedSegments) {
+		ImpossibleVolume iv = ivs[(int)distances[volSelf][1]];
 		GameObject camera;
 		camera = transform.Find("playerCamera").gameObject;
 		Vector3 pp = camera.transform.position;
@@ -515,15 +522,13 @@ public class playerController : MonoBehaviour {
 		planes.Add(new Vector3(p3.x, p1.y, p3.z));
 		planes.Add(new Vector3(90, 0+angle, 90-a3));
 		foreach(int pol in segments) {
-			if (pol == 6) {
-				;
-			}
 			if (pol == currentPolygon) {
 				GlobalData.map.segments[pol].setClippingPlanes(new List<Vector3>());//dont clip the poly we are in
 			} else {
 				if (!clippedSegments.Contains(pol)) {
 					GlobalData.map.segments[pol].setClippingPlanes(planes, additive);
 					clippedSegments.Add(pol);
+					GlobalData.map.segments[pol].showHide(false);
 				}
 			}
 		}
@@ -541,10 +546,7 @@ public class playerController : MonoBehaviour {
 	}
 
 
-	bool getRectVisibility (Vector3 point1, Vector3 point2, Vector3 height, List<int> clippedSegments) {
-		foreach(int i in clippedSegments) {
-			GlobalData.map.segments[i].showHide(false);
-		}
+	bool getRectVisibility (Vector3 point1, Vector3 point2, Vector3 height) {
 		
 		bool isVisible = false;
 		RaycastHit hit;
@@ -606,10 +608,6 @@ public class playerController : MonoBehaviour {
 			}
 		}
 		endLoop:
-		
-		foreach(int i in clippedSegments) {
-			GlobalData.map.segments[i].showHide(true);
-		}
 		
 		return isVisible;
 	}

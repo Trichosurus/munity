@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlatformObject {
+public class PlatformObject : MonoBehaviour {
 	public float speed = 1;
 	public float delay = 0;
 	public float maximumHeight;
@@ -58,13 +58,170 @@ public class PlatformObject {
 	private int activatedBy = -1;
 
 
+
+
+
+	private bool inTransit = false;
+	private bool fromTop = false;
+	public float delayedTime = 0;
+
+	private Vector3 uMax, uMin, lMax, lMin;
+
+
+	public void init () {
+		if (parent.id == 32) {
+			;
+		}
+
+		float travelDistance = (maximumHeight-minimumHeight);
+		float lheight = parent.height.y;
+		uMax = new Vector3(0,maximumHeight - parent.centerPoint.y,0);
+		uMin = new Vector3(0,minimumHeight - parent.centerPoint.y,0);
+		lMax = new Vector3(0,maximumHeight - parent.centerPoint.y - lheight,0);
+		lMin = new Vector3(0,minimumHeight - parent.centerPoint.y - lheight,0);
+
+		if (comesFromCeiling && comesFromFloor) {
+			float midpoint = travelDistance/2f + (minimumHeight - parent.centerPoint.y);
+			lheight = parent.height.y-(parent.height.y-midpoint);
+			uMin = new Vector3(0,midpoint,0);
+			lMax = new Vector3(0,midpoint - lheight,0);
+			lMin = new Vector3(0,minimumHeight - parent.centerPoint.y - lheight,0);
+		}
+			
+
+		if (initiallyExtended) {
+			extending = false;
+			if (upperPlatform != null) {upperPlatform.transform.localPosition = uMin;}
+			if (lowerPlatform != null) {lowerPlatform.transform.localPosition = lMax;}
+		} else {
+			extending = true;
+			if (upperPlatform != null) {upperPlatform.transform.localPosition = uMax;}
+			if (lowerPlatform != null) {lowerPlatform.transform.localPosition = lMin;}
+	
+		}
+		// if (platform.initiallyActive) {
+		// 	platform.activate();
+		// }
+	}
+
+	Vector3 getMaxVector() {
+		Vector3 relativePos = new Vector3(0,0,0);
+		relativePos.y = maximumHeight - transform.position.y;
+		return relativePos;
+	}
+	Vector3 getMinVector() {
+		Vector3 relativePos = new Vector3(0,0,0);
+		relativePos.y = minimumHeight - transform.position.y;
+		return relativePos;
+	}
+	Vector3 getMidVector() {
+		Vector3 relativePos = new Vector3(0,0,0);
+		relativePos = (getMaxVector() - getMinVector()) * 0.5f + getMinVector();
+		return relativePos;
+	}
+
+	// Update is called once per frame
+	void Update () {
+
+		bool transit = true;
+		if (active) {
+			float dspeed = speed * Time.deltaTime;
+
+			delayedTime += Time.deltaTime;
+			if (delayedTime <= delay) {
+				dspeed = 0;
+			}
+
+			if (extending) {
+				if (comesFromCeiling) {
+					upperPlatform.transform.localPosition -= new Vector3(0,dspeed,0);
+					if (upperPlatform.transform.localPosition.y <= uMin.y) {
+						upperPlatform.transform.localPosition = uMin;
+						transit = false;
+					}
+				}
+				if (comesFromFloor) {
+					lowerPlatform.transform.localPosition += new Vector3(0,dspeed,0);
+					if (lowerPlatform.transform.localPosition.y >= lMax.y) {
+						lowerPlatform.transform.localPosition = lMax;
+						transit = false;
+					}
+				}
+			} else {
+				if (contractsSlower) {
+					dspeed = dspeed*0.66f;
+				}
+				if (comesFromCeiling) {
+					upperPlatform.transform.localPosition += new Vector3(0,dspeed,0);
+					if (upperPlatform.transform.localPosition.y >= uMax.y) {
+						upperPlatform.transform.localPosition = uMax;
+						transit = false;
+					}
+				}
+				if (comesFromFloor) {
+					lowerPlatform.transform.localPosition -= new Vector3(0,dspeed,0);
+					if (lowerPlatform.transform.localPosition.y <= lMin.y) {
+						lowerPlatform.transform.localPosition = lMin;
+						transit = false;
+					}
+				}
+			}
+
+			if (!transit ) {
+				inTransit = false;
+				hitEnd();
+			}
+		}
+
+		if (upperPlatform != null) {
+			upperBottom.setLight();
+			upperTop.setLight();
+			foreach (MapSegmentSide side in upperSides) {
+				side.setLight();
+			}
+		} 
+		if (lowerPlatform != null) {
+			lowerBottom.setLight();
+			lowerTop.setLight();
+			foreach (MapSegmentSide side in lowerSides) {
+				side.setLight();
+			}
+		}
+	}
+
+
+
+	private void hitEnd() {
+		if (deactivatesAtEachLevel || 
+			(deactivatesAtInitialLevel && (
+				(initiallyExtended && extending) ||
+				(!initiallyExtended && !extending)
+			))	) {
+				active = false;
+		}
+
+		if (activatesAdjacantPlatformsAtEachLevel) {
+			MapSegment.Message message = new MapSegment.Message();
+			message.activatePlatform = true;
+			List<int> exclude = new List<int>();
+			parent.sendMessage(message, exclude);
+		}
+
+		if (!active) {
+			deActivate();
+		}
+
+		extending = !extending;
+		delayedTime = 0;
+	}
+
+
 	public void playerTouch() {
 		//Debug.Log("platform");
 		//element.GetComponent<Mesh>().material =
 				Debug.Log("woo?");
 		if (door) {
 			if (!locked) {
-				
 				activate(-2);
 			} else {
 				//?? play locked sound??
@@ -80,16 +237,9 @@ public class PlatformObject {
  
 		activatedBy = activator;
 		active = true;
-		extending = !extending;
-		extended = !extended;
-		float delayTimer = 0;
-		if (!delaysBeforeActivation) {delayTimer = delay;}
-		if( upperPlatform != null ) {
-			upperPlatform.GetComponent<platformController>().delayedTime = delayTimer;
-		}
-		if (lowerPlatform != null) {
-			lowerPlatform.GetComponent<platformController>().delayedTime = delayTimer;
-		}
+		// extending = !extending;
+		delayedTime = 0;
+		if (!delaysBeforeActivation) {delayedTime = delay;}
 		hasActivated = true;
 		
 		foreach (MapSegment seg in GlobalData.map.segments) {
@@ -100,20 +250,20 @@ public class PlatformObject {
 			}
 		}
 
-		foreach (MapSegmentSide side in parent.sides) {
-			if (side.connection != null && side.connection.platform != null) {
-				if (side.connection.id != activatedBy || !doesNotActivateParent) {
-					if (activatesAdjacentPlatformsWhenActivating) {
-						side.connection.platform.activate(parent.id);
-					}
-					if (deactivatesAdjacentPlatformsWhenActivating) {
-						side.connection.platform.deActivate(parent.id);
-					}
-				}
-			}
-
+		if (activatesAdjacentPlatformsWhenActivating) {
+			MapSegment.Message message = new MapSegment.Message();
+			message.activatePlatform = true;
+			List<int> exclude = new List<int>();
+			if (doesNotActivateParent) {exclude.Add(activator);}
+			parent.sendMessage(message, exclude);
 		}
-
+		if (deactivatesAdjacentPlatformsWhenActivating) {
+			MapSegment.Message message = new MapSegment.Message();
+			message.deActivatePlatform = true;
+			List<int> exclude = new List<int>();
+			if (doesNotActivateParent) {exclude.Add(activator);}
+			parent.sendMessage(message, exclude);
+		}
 
 	}
 
@@ -121,77 +271,23 @@ public class PlatformObject {
 	
 
 	public void deActivate(int activator = -1) {
-		bool uptransit = false;
-		bool lotransit = false;
-		if (upperPlatform != null) {
-			uptransit = upperPlatform.GetComponent<platformController>().inTransit;
-			lotransit = uptransit;
+		if (deactivatesAdjacentPlatformsWhenDeactivating) {
+			MapSegment.Message message = new MapSegment.Message();
+			message.deActivatePlatform = true;
+			parent.sendMessage(message);
 		}
-		if (lowerPlatform != null) {
-			lotransit = lowerPlatform.GetComponent<platformController>().inTransit;
-			if (upperPlatform == null) {
-				uptransit = lotransit;
-			}
+		if (deactivatesLight) {
+			//deacivate light
 		}
-		bool deactivating = false;
-		if (uptransit == lotransit) {
-			//Debug.Log("stop?" + parent.id);
-			if (parent.id == 6) {
-				;
-			}
-			if (deactivatesAtEachLevel || 
-				(deactivatesAtInitialLevel && (
-					(initiallyExtended && extended) ||
-					(!initiallyExtended && !extended)
-				))	) {
-				deactivating = true;
-				active = false;
-			}
-
-
-			if (activatesAdjacantPlatformsAtEachLevel ||
-				((activatesAdjacentPlatformsWhenDeactivating ||	deactivatesAdjacentPlatformsWhenDeactivating)
-					 && deactivating))  {
-				foreach (MapSegmentSide side in parent.sides) {
-					if (side.connection != null && side.connection.platform != null) {
-						if (side.connection.id != parent.id || !doesNotActivateParent) {
-							if (activatesAdjacentPlatformsWhenDeactivating) {
-								side.connection.platform.activate(parent.id);
-							}
-							if (deactivatesAdjacentPlatformsWhenDeactivating) {
-								side.connection.platform.deActivate();
-							}
-
-						}
-					}
-				}
-			}
-
-			if (deactivating) {
-				foreach (MapSegment seg in GlobalData.map.segments) {
-					foreach (MapSegmentSide side in seg.sides) {
-						if (side.controlPanel != null  && side.controlPanel.platformSwitch == parent.id) {
-							side.controlPanel.toggle(side.upperMeshItem);
-						}
-					}
-				}
-			}
-
-			if (!deactivating) {
-				if (upperPlatform != null ) {
-					upperPlatform.GetComponent<platformController>().delayedTime = 0;
-				}
-				if (lowerPlatform != null) {
-					lowerPlatform.GetComponent<platformController>().delayedTime = 0;
-				}
-				//this.activate();
-				active = true;
-				extending = !extending;
-				extended = !extended;
-
-			}
-
-
+		if (activatesAdjacentPlatformsWhenDeactivating) {
+			MapSegment.Message message = new MapSegment.Message();
+			message.activatePlatform = true;
+			parent.sendMessage(message);
 		}
+
+		//turn off switches
+
+		active = false;
 	}
+
 }

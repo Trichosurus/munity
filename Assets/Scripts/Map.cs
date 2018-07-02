@@ -323,7 +323,12 @@ public class Map : MonoBehaviour {
 			if(Level.Polygons[p].Type == Weland.PolygonType.Platform) {
 				foreach (Weland.Platform pl in Level.Platforms) {
 					if (pl.PolygonIndex == p) {
-						seg.platform = new PlatformObject();
+
+						GameObject plat = Instantiate(new GameObject());
+						plat.name = "Platform";
+						plat.transform.parent = seg.transform;
+						plat.AddComponent<PlatformObject>();
+						seg.platform = plat.GetComponent<PlatformObject>();
 						seg.platform.comesFromCeiling = pl.ComesFromCeiling;
 						seg.platform.comesFromFloor = pl.ComesFromFloor;
 						seg.platform.initiallyExtended = pl.InitiallyExtended;
@@ -708,7 +713,7 @@ public class Map : MonoBehaviour {
 			count++;
 			s.showHide(false);
 			s.checkIfImpossible();
-			s.showHide(true);
+			s.showHide(true, true);
 			if (count % 77 == 0 ){
 				loadingText = load + "\nFinding Impossible Space "+count+"/"+segments.Count;
 				yield return null;
@@ -720,29 +725,29 @@ public class Map : MonoBehaviour {
 		List<List<int>> collisionsList = new List<List<int>>();
 		for(int s = 0; s < segments.Count; s++) {
 			if (segments[s].impossible){
-				impossibleVolume iv = new impossibleVolume();
+				ImpossibleVolume iv = new ImpossibleVolume();
 				iv.parent = segments[s];
 				List<int> connList = iv.getConnectedVolumes(segments[s], true);
-				segments[s].impossibleVolumes = new List<impossibleVolume>();
+				segments[s].ImpossibleVolumes = new List<ImpossibleVolume>();
 				iv.collisionPolygonsSelf = connList;
-				segments[s].impossibleVolumes.Add(iv); 
+				segments[s].ImpossibleVolumes.Add(iv); 
 			}
 		}
 		for(int s = 0; s < segments.Count; s++) {
 			if (segments[s].impossible){
-				segments[s].impossibleVolumes[0].getConnectedVolumes(segments[s], false);
-				for (int imp = 0; imp <  segments[s].impossibleVolumes.Count; imp++) {
-					foreach (int seg in segments[s].impossibleVolumes[imp].collisionPolygonsSelf) {
-						HashSet<int> hsSelf = new HashSet<int>(segments[s].impossibleVolumes[imp].collisionPolygonsOther);
+				segments[s].ImpossibleVolumes[0].getConnectedVolumes(segments[s], false);
+				for (int imp = 0; imp <  segments[s].ImpossibleVolumes.Count; imp++) {
+					foreach (int seg in segments[s].ImpossibleVolumes[imp].collisionPolygonsSelf) {
+						HashSet<int> hsSelf = new HashSet<int>(segments[s].ImpossibleVolumes[imp].collisionPolygonsOther);
 						bool exists = false;
-						foreach (impossibleVolume iv in segments[seg].impossibleVolumes) {
+						foreach (ImpossibleVolume iv in segments[seg].ImpossibleVolumes) {
 							HashSet<int> hsOther = new HashSet<int>(iv.collisionPolygonsOther);
 							if (hsSelf.SetEquals(hsOther)) {
 								exists = true;				
 							}
 						}
 						if (!exists) {
-							segments[seg].impossibleVolumes.Add(segments[s].impossibleVolumes[imp]);
+							segments[seg].ImpossibleVolumes.Add(segments[s].ImpossibleVolumes[imp]);
 						}
 					}
 				}
@@ -751,7 +756,7 @@ public class Map : MonoBehaviour {
 
 		for(int s = 0; s < segments.Count; s++) {
 			if (segments[s].impossible){
-				foreach(impossibleVolume iv in segments[s].impossibleVolumes) {
+				foreach(ImpossibleVolume iv in segments[s].ImpossibleVolumes) {
 					iv.assembleVolumeSides(segments[s], true);
 					iv.assembleVolumeSides(segments[s], false);
 					iv.calculateCollisionPoints();
@@ -761,7 +766,7 @@ public class Map : MonoBehaviour {
 
 		string mapHash = CalculateMD5(GlobalData.mapsFilePath);
 		mapHash = Application.persistentDataPath + "/" + mapHash  + "-" + mapNo + ".cache";
-		if (!File.Exists(mapHash)) {
+		if (!File.Exists(mapHash) || GlobalData.skipOcclusion) {
 			activePolygonList apl = new activePolygonList();
 			apl.activePolygons = new List<bool[]>();
 			for (int i = 0; i < segments.Count; i++) {

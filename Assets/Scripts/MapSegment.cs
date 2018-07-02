@@ -16,7 +16,7 @@ public class MapSegment : MonoBehaviour {
 	public MapSegmentFloorCeiling ceiling = new MapSegmentFloorCeiling();
 	public MapSegmentFloorCeiling floor = new MapSegmentFloorCeiling();
 	
-	public List<impossibleVolume> impossibleVolumes;
+	public List<ImpossibleVolume> ImpossibleVolumes;
 	public Liquid liquid = null;
 	public bool impossible = false;
 	public List<int> collidesWith = new List<int>();
@@ -28,6 +28,8 @@ public class MapSegment : MonoBehaviour {
 	
 	private int activeCount = 0;
 	private	GameObject viscalc;
+
+	private List<int> processeMessages = new List<int>();
 
 
 	public bool itemImpassable = false;
@@ -47,24 +49,35 @@ public class MapSegment : MonoBehaviour {
 	public bool itemTrigger = false;
 	public bool mustBeExplored = false;
 	public int automaticExit = -1;
-	
 	public int damage = 0;
-
 	public bool glue;
 	public bool glueTrigger;
 	public bool superglue;
     
 
+	public class Message {
+		public int id = Random.Range(int.MinValue, int.MaxValue);
+		public int senderID = -1;
+		public int value = -1;
+
+		public bool invisibleMonster = false;
+		public bool	visibleMonster = false;
+		public bool	dualMonster = false;
+		public bool	goal = false;
+		public bool	item = false;
+		public bool	activatePlatform = false;
+		public bool	deActivatePlatform = false;
+		
+	}
 
 
 
 	// Use this for initialization
 	void Start () {
-
-
 	}
 
 	void Update () {
+		processeMessages = new List<int>();
 		if (!hidden) {
 			floor.setLight();
 			ceiling.setLight();
@@ -87,6 +100,41 @@ public class MapSegment : MonoBehaviour {
 		}
 	}
 
+	public void processMessage (Message message) {
+		if (processeMessages.Contains(message.id)) {return;}
+		processeMessages.Add(message.id);
+
+		if (platform != null) {
+			if (message.activatePlatform) {
+				platform.activate(message.senderID);
+			}
+			if (message.activatePlatform) {
+				platform.deActivate(message.senderID);
+			}
+		}
+
+		if (!zoneBorder && !message.activatePlatform && !message.deActivatePlatform) {
+			if (!itemImpassable && message.item) {
+				message.senderID = id;
+				sendMessage(message);
+			}
+		}
+
+	}
+
+	public void sendMessage (Message message, List<int> exclude = null) {
+		if (message.senderID == -1) {
+			message.senderID = id;
+		}
+
+		foreach (MapSegmentSide side in sides) {
+			if (side.connection != null) {
+				if (exclude == null || !exclude.Contains(side.connection.id)) {
+					side.connection.processMessage(message);
+				}
+			}
+		}
+	}
 
 	public void triggerBehaviour() {
 		if (platform != null && !platform.door) {
@@ -211,15 +259,20 @@ public class MapSegment : MonoBehaviour {
 		}
 	}
 
-	public void showHide(bool show = false) {
+	public void showHide(bool show = false, bool noTrans = false) {
 		if ( show == hidden ) {
 			Component[] allChildren = gameObject.GetComponentsInChildren(typeof(Transform), true);
 			foreach (Transform child in allChildren) {
 				// if (child.gameObject.name == "floor" || child.gameObject.name == "ceiling" || child.gameObject.name == "wall" 
 				// 		|| child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
 				if (child.gameObject.name != gameObject.name && child.gameObject.name != "upperPlatform" && child.gameObject.name != "lowerPlatform") {
-					child.gameObject.SetActive(show);
+					if (noTrans && child.gameObject.tag == "transparent") {
+						child.gameObject.SetActive(false);
+					} else {
+						child.gameObject.SetActive(show);
+					}
 				}
+
 				// if (child.gameObject.name == "upperPlatform" || child.gameObject.name == "lowerPlatform") {
 				// 	Component[] platChildren = child.gameObject.GetComponentsInChildren(typeof(Transform), true);
 				// 	foreach (Transform plat in platChildren) {
@@ -384,7 +437,7 @@ public class MapSegment : MonoBehaviour {
 			platform.lowerBottom = new MapSegmentFloorCeiling();
 			platform.lowerTop = new MapSegmentFloorCeiling();
 			platform.lowerPlatform =  new GameObject("lowerPlatform");
-			platform.lowerPlatform.transform.parent = gameObject.transform;
+			platform.lowerPlatform.transform.parent = platform.gameObject.transform;
 			part = makePolygon(true, PlatVertices, pHeight, platform.lowerPlatform, ceiling.upperMaterial, ceiling.upperOffset);
 			if (part != null) {
 				part.name = "platBottom";
@@ -409,7 +462,7 @@ public class MapSegment : MonoBehaviour {
 			platform.upperTop = new MapSegmentFloorCeiling();
 
 			platform.upperPlatform =  new GameObject("upperPlatform");
-			platform.upperPlatform.transform.parent = gameObject.transform;
+			platform.upperPlatform.transform.parent = platform.gameObject.transform;
 
 			part = makePolygon(true, PlatVertices, pHeight, platform.upperPlatform, ceiling.upperMaterial, ceiling.upperOffset);
 			if (part != null) {
@@ -473,20 +526,19 @@ public class MapSegment : MonoBehaviour {
 
 		if (platform.upperPlatform != null) {
 			platform.upperPlatform.transform.position = gameObject.transform.position;
-			platform.upperPlatform.AddComponent<platformController>();
 			generateColliders(platform.upperPlatform);
 		}
 		if (platform.lowerPlatform != null) {
 			platform.lowerPlatform.transform.position = gameObject.transform.position;
-			platform.lowerPlatform.AddComponent<platformController>();
 			generateColliders(platform.lowerPlatform);
 
 		}
-
+		
 		if (split) {
 			platform.upperPlatform.transform.position += splitPoint;
 		}
 
+		platform.init();
 
 	}
 
@@ -626,6 +678,10 @@ public class MapSegment : MonoBehaviour {
 
 	public void makeWall(int side) {
 
+		if (id == 52) {
+			;
+		}
+
 		Vector3 point1, point2;
 		point1 = vertices[side];
 		if (side+1 < vertices.Count) {
@@ -673,9 +729,10 @@ public class MapSegment : MonoBehaviour {
 				wall.lowerLight = wall.upperLight;
 				wall.lowerOffset = wall.upperOffset;
 			}
-
+			bool transparent = false;
 			if (connBottom) {
 				if (wall.solid && wall.lowerMaterial == null ) {
+					transparent = true;
 					wall.lowerMaterial = Resources.Load<Material>("Materials/transparent");
 				}
 				wallHeightLower = new Vector3(height.x, height.y, height.z);
@@ -684,17 +741,13 @@ public class MapSegment : MonoBehaviour {
 				if (wallPart != null) {
 					wallPart.name = "lowerWall";
 					sides[side].lowerMeshItem = wallPart;
-				}
-				if (!GlobalData.skipOcclusion) {
-					if (wall.solid && wall.lowerMaterial.name == "transparent" || 
-							(wall.transparent && connBottom && !connTop)) {
-						if (wallPart != null) {wallPart.SetActive(false);}
-					}
+					if (transparent) {wallPart.tag = "transparent";}
 				}
 			}
-
+			transparent = false;
 			if (connTop) {
 				if (wall.solid && wall.upperMaterial == null ) {
+					transparent = true;
 					wall.upperMaterial = Resources.Load<Material>("Materials/transparent");
 				}
 				wallHeightUpper = new Vector3(height.x, height.y, height.z);
@@ -706,37 +759,27 @@ public class MapSegment : MonoBehaviour {
 				if (wallPart != null) {
 					wallPart.name = "upperWall";
 					sides[side].upperMeshItem = wallPart;
-				
-					if (!GlobalData.skipOcclusion) {
-						if (wall.solid && wall.upperMaterial.name == "transparent" || 
-							(wall.transparent && connTop && !connBottom)) {
-							wallPart.SetActive(false);
-						}
-					}
+					if (transparent) {wallPart.tag = "transparent";}
 				}
 			}
-
+			transparent = false;
 			Vector3 wallHeightMiddle = height - wallHeightLower - wallHeightUpper;
 			if ( wallHeightMiddle.y>0) {
 				if (wall.solid && wall.middeMaterial == null ) {
 					wall.middeMaterial = Resources.Load<Material>("Materials/transparent");
+					transparent = true;
 				}
-
-				wallPart = addWallPart(point1, point2, 
-							wallHeightMiddle,
-							new Vector3(0,wallHeightLower.y,0), 
-							wall.middeMaterial, wall.middleOffset, gameObject);
+				if (wall.solid || wall.middeMaterial != null) {
+					wallPart = addWallPart(point1, point2, 
+								wallHeightMiddle,
+								new Vector3(0,wallHeightLower.y,0), 
+								wall.middeMaterial, wall.middleOffset, gameObject);
 				
-				if (wallPart != null) {
-					wallPart.name = "middleWall";
-					sides[side].middleMeshItem = wallPart;
-				
+					if (wallPart != null) {
+						wallPart.name = "middleWall";
+						sides[side].middleMeshItem = wallPart;
+						if (transparent) {wallPart.tag = "transparent";}
 
-					if (!GlobalData.skipOcclusion) {
-						if (wall.solid && wall.middeMaterial.name == "transparent" || 
-								(wall.transparent && !connTop && !connBottom)) {
-							wallPart.SetActive(false);
-						}
 					}
 				}
 				
@@ -759,7 +802,7 @@ public class MapSegment : MonoBehaviour {
 
 
 	GameObject addWallPart(Vector3 point1, Vector3 point2, Vector3 wallHeight, Vector3 offset, Material material, Vector2 matOffset, GameObject parent){
-		if (material == null) {return null;}
+		// if (material == null) {return null;}
 		GameObject meshItem = Instantiate(Resources.Load<GameObject>("polygonElement"), parent.transform.position, parent.transform.rotation);
 		meshItem.transform.parent = parent.transform;
 		MeshFilter meshfilter = meshItem.GetComponent<MeshFilter>();
@@ -803,9 +846,7 @@ public class MapSegment : MonoBehaviour {
 			meshItem.GetComponent<MeshRenderer>().material.SetTextureOffset("_MainTex", matOffset);
 
 		} else {
-			meshItem.GetComponent<MeshRenderer>().material = Resources.Load<Material>("texture");
-			// meshItem.name = "transparent";
-			//meshItem.GetComponent<MeshRenderer>().enabled = false;
+			meshItem.GetComponent<MeshRenderer>().material = Resources.Load<Material>("Materials/texture");
 		}
 
 		return meshItem;
@@ -830,9 +871,6 @@ public class MapSegment : MonoBehaviour {
 
 
 	public void calculateVisibility() {
-		if (id == 489) {
-			;
-		}
 
 		if (activePolygons.Length == 0) {
 			activePolygons = new bool[GlobalData.map.segments.Count];
@@ -869,7 +907,8 @@ public class MapSegment : MonoBehaviour {
 		float[] distances = new float[GlobalData.map.segments.Count];
 
  
-		activePolygons[id] = true;activeCount++;
+		activePolygons[id] = true;
+		activeCount++;
 		foreach(MapSegmentSide side in GlobalData.map.segments[id].sides) {
 			if (side.connectionID != -1) {
 					activePolygons[side.connectionID] = true;activeCount++;
@@ -881,7 +920,8 @@ public class MapSegment : MonoBehaviour {
 					GlobalData.map.segments[id].viewEdge = 1;
 			}
 		}
-		processedPolys[id] = true;processedCount++;
+		processedPolys[id] = true;
+		processedCount++;
 		
 		while (processedCount < activeCount) {
 			float distance = 7777777;
@@ -898,11 +938,6 @@ public class MapSegment : MonoBehaviour {
 					}
 				}
 			}
-
-		// if (id == 46 && closest == 31) {
-		// 	processedCount = processedCount;
-		// }
-
 
 			if (closest >=0){
 				activeCount += addToPolygonList(closest);
@@ -923,9 +958,7 @@ public class MapSegment : MonoBehaviour {
 		
 		bool isVisible;
 		int addCount = 0;
-		//activePolygons[PolygonID] = true; activePolygons++;
 		int connCount = 0;
-		// if (activePolygons.Count < 100) {
 		MapSegment seg = GlobalData.map.segments[PolygonID];
 		if (seg.viewEdge < 0) {seg.viewEdge = 0;}
 		for( int s = 0; s < seg.sides.Count; s++) {
@@ -948,12 +981,6 @@ public class MapSegment : MonoBehaviour {
 				
 				isVisible = getRectVisibility(point1, point2, seg.height);
 
-				if (id == 489) {
-					if (PolygonID == 465 || seg.id == 467) {
-					;
-					}				
-
-				}
 				if (isVisible) {
 					if (!backlink) {
 						activePolygons[side.connectionID] = true; 
@@ -1033,44 +1060,11 @@ public class MapSegment : MonoBehaviour {
 				crossPoint = ((gameObject.transform.TransformPoint(v)-centerPoint)*((1f/crossCount)*(float)c) + centerPoint);
 				for (int h = 1; h <=heightCount; h++) {
 					checkpoints.Add(crossPoint + ((height*0.95f)*(1f/heightCount))*h);
-
-
-
 				}
 			}
 		}
-		//Color colour = Random.ColorHSV();
-		//if (id > 2) {return false;}
-		// if (id == 489) {
-		// 	float xAmt = Vector3.Distance(points[0], points[1])/GlobalData.occlusionDensity;
-		// 	float yAmt = Vector3.Distance(points[2], points[0])/GlobalData.occlusionDensity;
-
-		// 	GameObject casmPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-		// 	casmPoint.transform.parent = transform;
-		// 	casmPoint.transform.position = midpoint;
-		// 	casmPoint.transform.localScale=new Vector3(0.05f,0.05f,0.05f);
-		// 	for (int x = 0; x <= Vector3.Distance(point1, point2)/GlobalData.occlusionDensity; x++) {
-		// 		for (int y = 0; y <= rectHeight.y/GlobalData.occlusionDensity; y++) {
-		// 			castPoint = (points[0] + 
-		// 			((points[1] - points[0])/xAmt)*x + 
-		// 			((points[2] - points[0])/yAmt)*y);
-		// 			GameObject casPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-		// 			casPoint.transform.parent = transform;
-		// 			casPoint.transform.position = castPoint;
-		// 			casPoint.transform.localScale=new Vector3(0.05f,0.05f,0.05f);
-		// 		}
-		// 	}
-		// }
-
-
 
 		foreach(Vector3 cp in checkpoints) {
-					// if (id == 489) {
-					// 	GameObject dispPoint = GameObject.CreatePrimitive(PrimitiveType.Cube);
-					// 	dispPoint.transform.parent = transform;
-					// 	dispPoint.transform.position = cp;
-					// 	dispPoint.transform.localScale=new Vector3(0.04f,0.04f,0.04f);
-					// }
 			viscalc.transform.position = cp;
 			viscalc.name = "viscalc";
 			isVisible = (Physics.Raycast(midpoint, viscalc.transform.position-midpoint, out hit, 50)) 
@@ -1090,43 +1084,23 @@ public class MapSegment : MonoBehaviour {
 					if (y > yAmt) {ypt = ((points[2] - points[0])/yAmt)*yAmt;}
 					castPoint = points[0] + xpt + ypt;
 
-					if (id == 489){
-					if (castPoint.x > 3 && castPoint.x < 4 &&
-						castPoint.y > -5 && castPoint.y < -4 &&
-						castPoint.z > 8 && castPoint.z < 9) {
-						if (cp.x > 9 && cp.x < 10 )
-							if (cp.y > -6 && cp.y < -5 )
-								if (cp.z > 2 && cp.z < 3
-								) {
-							isVisible = (Physics.Raycast(castPoint, viscalc.transform.position-castPoint, out hit, 50)) 
-								&& hit.collider.gameObject == viscalc ;
-								}
-						}
-					}
-
 					isVisible = (Physics.Raycast(castPoint, viscalc.transform.position-castPoint, out hit, 50)) 
 								&& hit.collider.gameObject == viscalc ;
 
-					if (id == 0 && !isVisible) {
-					Debug.DrawRay(castPoint, viscalc.transform.position-castPoint, Color.blue, 30);
-					}
 					if (isVisible) {
-						if (id == 489) {
-						Debug.DrawRay(castPoint, viscalc.transform.position-castPoint, Color.green ,30);
-						}
 						return true;
 					}
 				}
 			}
 		}
-
 		return isVisible;
-
 	}
 
 }
 
-public class impossibleVolume {
+
+
+public class ImpossibleVolume {
 	public List<Vector3[]> sidesSelf = new List<Vector3[]>();
 	public List<Vector3[]> sidesOther = new List<Vector3[]>();
 	public List<Vector3> collisionPoints = new List<Vector3>();
@@ -1135,10 +1109,7 @@ public class impossibleVolume {
 	public MapSegment parent;
 
 	public void assembleVolumeSides (MapSegment seg, bool self = true) {
-		if (seg.id == 98) {
-			;
-		}
-		foreach (impossibleVolume iv in seg.impossibleVolumes) {
+		foreach (ImpossibleVolume iv in seg.ImpossibleVolumes) {
 			List<int> segList;
 			List<Vector3[]> lineList = new List<Vector3[]>();
 			if (self) {
@@ -1170,10 +1141,6 @@ public class impossibleVolume {
 			} 
 			int count = 0;
 			while ((currentPoints[0] != lineList[0][0] || currentPoints[1] != lineList[0][1]) && count < 666) {
-				if (currentLine[0] == 98 && currentLine[1] == 3)  {
-					;
-				}
-
 				if (!sideValid(currentLine[0], currentLine[1], segList)) {
 					int connID = -1;
 					if (GlobalData.map.segments[currentLine[0]].sides.Count <= currentLine[1]) {
@@ -1210,19 +1177,8 @@ public class impossibleVolume {
 	int getConnectingLine(int segID, int sideNo, int connID) {
 		MapSegment seg = GlobalData.map.segments[segID];
 		MapSegment conn = GlobalData.map.segments[connID];
-
-		if (sideNo < 0 || sideNo >= seg.vertices.Count) {
-			;
-		}
-
-
 		Vector3 point = seg.transform.TransformPoint(seg.vertices[sideNo]);
 		point.y = 0;
-		// if (sideNo < seg.sides.Count-1) {
-		// 	point = seg.transform.TransformPoint(seg.vertices[sideNo+1]);
-		// } else {
-		// 	point = seg.transform.TransformPoint(seg.vertices[0]);
-		// }
 		int matchPoint = -1;
 		for (int s = 0; s < conn.sides.Count; s++) {
 			Vector3 connPoint = conn.transform.TransformPoint(conn.vertices[s]);
@@ -1230,9 +1186,6 @@ public class impossibleVolume {
 			if (connPoint == point) {
 				matchPoint = s;
 			}
-		}
-		if (matchPoint == -1) {
-			;
 		}
 		if (conn.sides[matchPoint].connectionID != segID) {
 			return matchPoint;
@@ -1279,25 +1232,25 @@ public class impossibleVolume {
 		//connected.Sort();
 		} else {
 		// int volCount = 0;
-			seg.impossibleVolumes[0].collisionPolygonsOther = GlobalData.map.segments[seg.collidesWith[0]].impossibleVolumes[0].collisionPolygonsSelf;
+			seg.ImpossibleVolumes[0].collisionPolygonsOther = GlobalData.map.segments[seg.collidesWith[0]].ImpossibleVolumes[0].collisionPolygonsSelf;
 			foreach (int i in seg.collidesWith) {
 				bool match = false;
-				foreach(impossibleVolume iv in seg.impossibleVolumes) {
+				foreach(ImpossibleVolume iv in seg.ImpossibleVolumes) {
 					HashSet<int> hsSelf = new HashSet<int>(iv.collisionPolygonsOther);
-					HashSet<int> hsOther = new HashSet<int>(GlobalData.map.segments[i].impossibleVolumes[0].collisionPolygonsSelf);
+					HashSet<int> hsOther = new HashSet<int>(GlobalData.map.segments[i].ImpossibleVolumes[0].collisionPolygonsSelf);
 					if (hsSelf.SetEquals(hsOther)) {
 						match = true;				
 					}
 				}
 				if (!match) {
-					impossibleVolume iv = new impossibleVolume();
-					iv.collisionPolygonsSelf = seg.impossibleVolumes[0].collisionPolygonsSelf;
-					iv.collisionPolygonsOther = GlobalData.map.segments[i].impossibleVolumes[0].collisionPolygonsSelf;
+					ImpossibleVolume iv = new ImpossibleVolume();
+					iv.collisionPolygonsSelf = seg.ImpossibleVolumes[0].collisionPolygonsSelf;
+					iv.collisionPolygonsOther = GlobalData.map.segments[i].ImpossibleVolumes[0].collisionPolygonsSelf;
 					iv.parent = seg;
-					seg.impossibleVolumes.Add(iv);
+					seg.ImpossibleVolumes.Add(iv);
 				}
 			}
-			connected = seg.impossibleVolumes[0].collisionPolygonsSelf;
+			connected = seg.ImpossibleVolumes[0].collisionPolygonsSelf;
 		}
 		
 		return connected;
