@@ -20,6 +20,13 @@ public class playerController : MonoBehaviour {
 	private	int activeCount = 0;
 	private	int processedCount = 0;
 
+	private float ambientLoopTimer = 0;
+	private AmbientSound ambient = null;
+
+	private float randomSoundTimer = 0;
+	private RandomSound randomSound = null;
+	private float randomSoundNext = 1;
+	private List<GameObject> randomSounds = new List<GameObject>();
 	// Use this for initialization
 	void Start () {
 		transform.Find("playerCamera/touchCollider").gameObject.GetComponent<CapsuleCollider>().isTrigger = true;
@@ -119,7 +126,8 @@ public class playerController : MonoBehaviour {
 				drawActivePolygons();
 				GlobalData.map.segments[currentPolygon].triggerBehaviour();
 			}
-
+			playAmbientSound();
+			playRandomSound();
 			calculateVisibility();
 		}
 		if (Input.GetKey("f")){castRay();}
@@ -148,6 +156,71 @@ public class playerController : MonoBehaviour {
 		}
 
 	}
+
+	void playAmbientSound() {
+		ambient = GlobalData.map.segments[currentPolygon].ambientSound;
+		ambientLoopTimer += Time.deltaTime;
+		AudioSource aud = GetComponent<AudioSource>();
+		if (aud.clip == null || ambientLoopTimer >= aud.clip.length) {
+			if (ambient == null) {
+				aud.Stop();
+			} else {
+				aud.loop = true;
+				aud.volume = ambient.volume;
+				aud.clip = ambient.audio.sounds[Random.Range(0,ambient.audio.sounds.Count)];
+				aud.Play();
+				ambientLoopTimer = 0;
+			}
+		}
+	}
+
+	void playRandomSound() {
+		if (GlobalData.map.segments[currentPolygon].randomSound != randomSound) {
+			randomSound = GlobalData.map.segments[currentPolygon].randomSound;
+			randomSoundTimer = 0;
+			if (randomSound != null) {
+				randomSoundNext = randomSound.period + Random.Range(0-randomSound.periodDelta, randomSound.periodDelta);
+			}
+
+		}
+
+		List<GameObject> rsds = new List<GameObject>();
+		foreach (GameObject rs in randomSounds) {
+			if (!rs.GetComponent<AudioSource>().isPlaying) {
+				Destroy(rs);
+			} else {
+				rsds.Add(rs);
+			}
+		}
+		randomSounds = new List<GameObject>(rsds);
+
+
+		if (randomSound != null) {
+			randomSoundTimer+= Time.deltaTime;
+			if (randomSoundTimer >= randomSoundNext) {
+				randomSoundTimer = 0; 
+				randomSoundNext = randomSound.period + Random.Range(0-randomSound.periodDelta, randomSound.periodDelta);
+				Vector3 pos = transform.position;
+				float dir = 0;
+				if (!randomSound.nonDirectional) {
+					dir = randomSound.direction + Random.Range(0-randomSound.directionDelta, randomSound.directionDelta) + 90;
+				}						
+				Quaternion facing = Quaternion.Euler(0, dir, 0);
+
+				GameObject randomPlayer =  Instantiate(Resources.Load<GameObject>("randomSound"), pos, facing);
+				if (!randomSound.nonDirectional) {
+					randomPlayer.transform.Translate(Vector3.forward * 0.5f);
+				}
+
+				AudioSource aud = randomPlayer.GetComponent<AudioSource>();
+				aud.clip = randomSound.audio.sounds[Random.Range(0,randomSound.audio.sounds.Count)];
+				aud.volume = randomSound.volume + Random.Range(0-randomSound.volumeDelta, randomSound.volumeDelta);
+				aud.pitch = randomSound.pitch + Random.Range(0-randomSound.pitchDelta, randomSound.pitchDelta);
+				aud.Play();
+			}
+		}
+			}
+
 
 	/// <summary>
 	/// OnTriggerEnter is called when the Collider other enters the trigger.

@@ -10,7 +10,8 @@ public class MapSegment : MonoBehaviour {
 	private int[] triangles;
 	public PlatformObject platform = null;
 	public Vector3 centerPoint;
-
+	public AmbientSound ambientSound = null;
+	public RandomSound randomSound = null;
 	public List<MapSegmentSide> sides = new List<MapSegmentSide>();
 
 	public MapSegmentFloorCeiling ceiling = new MapSegmentFloorCeiling();

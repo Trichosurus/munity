@@ -191,6 +191,49 @@ public static class GlobalData
 		0.2f,
 		0.2f		
 	};
+
+	public static List<int> ambientSoundMappings = new List<int> {
+		90,	// Water
+		91,	// Sewage
+		92,	// Lava
+		93,	// Goo
+		94,	// Under Media
+		95,	// Wind
+		96,	// Waterfall
+		97,	// Siren
+		98,	// Fan
+		99,	// S'pht Door
+		100,// S'pht Platform
+		144,// Heavy S'pht Door
+		102,// Heavy S'pht Platform
+		103,// Light Machinery
+		104,// Heavy Machinery
+		105,// Transformer
+		106,// Sparking Transformer
+		169,// Machine Binder
+		170,// Machine Bookpress
+		171,// Machine Puncher
+		172,// Electric Hum
+		173,// Siren
+		174,// Night Wind
+		193,// Pfhor Door
+		189,// Pfhor Platform
+		201,// Pfhor Ship #1
+		202,// Pfhor Ship #2
+		101 // Jjaro
+	};
+
+
+	public static List<int> randomSoundMappings = new List<int> {
+		107,	// dripping water
+		175,	// thunder
+		176,	// explosions
+		29,	// loon
+		4	// jjaro ship
+	};
+
+
+
 }
 
 public class gameController : MonoBehaviour {
@@ -225,7 +268,7 @@ public class gameController : MonoBehaviour {
 	}
 }
 
-public class audioDefinition {
+public class AudioDefinition {
 	public List<AudioClip> sounds;
 	public bool cannotBeRestarted;
 	public bool doesNotSelfAbort;

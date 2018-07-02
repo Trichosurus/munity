@@ -16,8 +16,10 @@ public class Map : MonoBehaviour {
 	public List<MapSegment> segments;
 	public List<mapLight> lights;
 	public List<bool> tags;
-	public List<audioDefinition> audioDefinitions = new List<audioDefinition>();
+	public List<AudioDefinition> audioDefinitions = new List<AudioDefinition>();
 	public List<ControlPanel> controlPanels = new List<ControlPanel>();
+	public List<AmbientSound> ambientSounds = new List<AmbientSound>();
+	public List<RandomSound> randomSounds = new List<RandomSound>();
 
 	private string loadingText = "";
 	public int mapNo = 4;
@@ -36,7 +38,6 @@ public class Map : MonoBehaviour {
 		SoundsFile sounds = new SoundsFile();
 		sounds.Load(GlobalData.soundsFilePath);
 		yield return makeAudioDefinitionsFromSoundsFile(sounds);
-
 		// AudioSource aud = GetComponent<AudioSource>();
 		// aud.clip = audioDefinitions[29].sounds[0];
 		// aud.Play();
@@ -56,10 +57,15 @@ public class Map : MonoBehaviour {
 			}
 	    }
 	    Level Level = new Level();
+		if (mapNo >= mapfile.Directory.Count) {mapNo = 0;}
 		Level.Load(mapfile.Directory[mapNo]);
 		collectionID = GlobalData.mediaCollections[Level.Environment];
 		Debug.Log(Level.Name);
 		Debug.Log(Level.Environment);
+
+		createAmbientSounds(Level);
+		createRandomSounds(Level);
+
 
 		yield return createLightsFromMarathonMap(Level);
 
@@ -83,13 +89,40 @@ public class Map : MonoBehaviour {
 		}
 	}
 
+	void createAmbientSounds(Weland.Level Level) {
+		foreach (Weland.AmbientSound sound in Level.AmbientSounds) {
+			AmbientSound amb = new AmbientSound(); 
+			amb.volume = (float)sound.Volume/100f;
+			amb.audio = audioDefinitions[GlobalData.ambientSoundMappings[sound.SoundIndex]];
+			ambientSounds.Add(amb);
+		}
+	}
+
+	void createRandomSounds(Weland.Level Level) {
+		foreach (Weland.RandomSound sound in Level.RandomSounds) {
+			RandomSound rand = new RandomSound(); 
+			rand.volume = (float)sound.Volume/100f;
+			rand.volumeDelta = (float)sound.DeltaVolume/100f;
+			rand.period = (float)sound.Period/30f;
+			rand.periodDelta = (float)sound.DeltaPeriod/30f;
+			rand.pitch = (float)sound.Pitch;
+			rand.pitchDelta = (float)sound.DeltaPitch;
+			rand.nonDirectional = sound.NonDirectional;
+			rand.direction = (float)sound.Direction;
+			rand.directionDelta = (float)sound.DeltaDirection;
+			rand.audio = audioDefinitions[GlobalData.randomSoundMappings[sound.SoundIndex]];
+			randomSounds.Add(rand);
+		}
+	}
+
+
 	IEnumerator makeAudioDefinitionsFromSoundsFile(SoundsFile sounds) {
 		//Debug.Log(sounds.SourceCount);
 		string load = loadingText;
 		for (int sound = 0; sound < sounds.SoundCount; sound++) {
 
 			SoundDefinition sd = sounds.GetSound(1,sound);
-			audioDefinition ad = new audioDefinition();
+			AudioDefinition ad = new AudioDefinition();
 			ad.sounds = new List<AudioClip>();
 			foreach (Permutation p in sd.permutations) {
 				AudioClip clip = AudioClip.Create("sound", p.Samples.Length, 1, (int)p.SampleRate, false); 
@@ -117,6 +150,8 @@ public class Map : MonoBehaviour {
 		loadingText = load + "Loading Sounds... " + sounds.SoundCount + "/" + sounds.SoundCount;
 
 	}
+
+
 	Texture2D rotateTexture(Texture2D originalTexture, bool clockwise)
 		{
 			Color32[] original = originalTexture.GetPixels32();
@@ -370,6 +405,13 @@ public class Map : MonoBehaviour {
 				}
 			}
 
+			if (Level.Polygons[p].AmbientSound >=0) {
+				seg.ambientSound = ambientSounds[Level.Polygons[p].AmbientSound];
+			}
+
+			if (Level.Polygons[p].RandomSound >=0) {
+				seg.randomSound = randomSounds[Level.Polygons[p].RandomSound];
+			}
 
 			if (Level.Polygons[p].MediaIndex >= 0) {
 				seg.liquid = new Liquid();
@@ -906,7 +948,9 @@ public class Map : MonoBehaviour {
 			}
 
 			if (obj.Type == ObjectType.Sound ) {
-
+						// AudioSource aud = GetComponent<AudioSource>();
+		// aud.clip = audioDefinitions[29].sounds[0];
+		// aud.Play();
 			}
 
 			if (obj.Type == ObjectType.Scenery ) {
@@ -1005,3 +1049,22 @@ public class Map : MonoBehaviour {
 }
 
 
+public class AmbientSound {
+	public int id = -1;
+	public float volume = 1;
+	public AudioDefinition audio = new AudioDefinition();
+}
+
+public class RandomSound {
+	public int id = -1;
+	public float volume = 1;
+	public float volumeDelta = 0;
+	public float period = 0;
+	public float periodDelta = 0;
+	public float pitch = 1;
+	public float pitchDelta = 0;
+	public bool nonDirectional;
+	public float direction = 1;
+	public float directionDelta = 1;
+	public AudioDefinition audio = new AudioDefinition();
+}
