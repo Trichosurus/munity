@@ -27,6 +27,7 @@ public class ControlPanel {
 	public Material inactiveMat = new Material(Shader.Find("Custom/StandardClippableV2"));
 	public GameObject wall = null;
 	public void setDisplay() {
+		if (wall != null) {
 		Vector2 offset = wall.GetComponent<MeshRenderer>().material.mainTextureOffset;
 		if (active) {
 			wall.GetComponent<MeshRenderer>().material = activeMat;
@@ -34,7 +35,7 @@ public class ControlPanel {
 			wall.GetComponent<MeshRenderer>().material = inactiveMat;
 		}
 		wall.GetComponent<MeshRenderer>().material.mainTextureOffset = offset;
-
+		}
 	}
 	private bool toggled = false;
 	public void toggle(bool playerTouched = false) {
