@@ -556,7 +556,7 @@ public class MapSegment : MonoBehaviour {
 
 	public void generateColliders (GameObject obj){
 		foreach(Transform child in obj.transform) {
-			// if (child.gameObject.name == "floor" ||child.gameObject.name == "ceiling" || child.gameObject.name == "wall" || child.gameObject.name == "upperWall" || child.gameObject.name == "lowerWall" || child.gameObject.name == "middleWall" ||
+			// if (child.gameObject.name != "floor" && child.gameObject.name != "ceiling") {
 			// 		child.gameObject.name == "transparent" || child.gameObject.name == "polygonElement(Clone)"){
 			MeshFilter mf = child.GetComponent<MeshFilter>();
 			if (mf != null ) {
@@ -568,6 +568,7 @@ public class MapSegment : MonoBehaviour {
 
 						
 			}
+		// }
 		}
 	}
 

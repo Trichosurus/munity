@@ -22,7 +22,7 @@ public class Map : MonoBehaviour {
 	public List<RandomSound> randomSounds = new List<RandomSound>();
 
 	private string loadingText = "";
-	public int mapNo = 4;
+	public int mapNo = 0;
 
 	BinaryFormatter formatter = new BinaryFormatter();
 
@@ -110,7 +110,11 @@ public class Map : MonoBehaviour {
 			rand.nonDirectional = sound.NonDirectional;
 			rand.direction = (float)sound.Direction;
 			rand.directionDelta = (float)sound.DeltaDirection;
-			rand.audio = audioDefinitions[GlobalData.randomSoundMappings[sound.SoundIndex]];
+			if (sound.SoundIndex >=0 && sound.SoundIndex < GlobalData.randomSoundMappings.Count) {
+				rand.audio = audioDefinitions[GlobalData.randomSoundMappings[sound.SoundIndex]];
+			} else {
+				;
+			}
 			randomSounds.Add(rand);
 		}
 	}

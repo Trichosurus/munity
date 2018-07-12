@@ -23,7 +23,9 @@ public static class GlobalData
 	public static bool playerLight = true;
 	public static int spriteType = 2;
 	public static int landscapeType = 5;
-
+	public static bool alwaysRun = true;
+	public static float graviyScaleFactor = 2f;
+	public static float deBounceFactor = 7f;
 
 
 	//----item definitions -- where are these defined in the data files ??????
@@ -229,10 +231,9 @@ public static class GlobalData
 		175,	// thunder
 		176,	// explosions
 		29,	// loon
-		4	// jjaro ship
+		4,	// jjaro ship
+		176,	// explosions
 	};
-
-
 
 }
 

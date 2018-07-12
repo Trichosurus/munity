@@ -27,9 +27,28 @@ public class playerController : MonoBehaviour {
 	private RandomSound randomSound = null;
 	private float randomSoundNext = 1;
 	private List<GameObject> randomSounds = new List<GameObject>();
+	private Vector3 velocity = new Vector3(0,0,0);
+
+	public playerPhysics running = new playerPhysics();
+	public playerPhysics walking = new playerPhysics();
+	public playerPhysics phys = new playerPhysics();
+	
+
+	private bool airborne = false;
+	private bool climbing = false;
+	private bool vis = false;
+	private GameObject lastTouch = null;
+	private GameObject playerCollider;
+	private GameObject playerLight;
+
+	private List<Collider> floorContacts = new List<Collider>();
+	private List<Vector3> wallNormals = new List<Vector3>();
+
+
+
 	// Use this for initialization
 	void Start () {
-		transform.Find("playerCamera/touchCollider").gameObject.GetComponent<CapsuleCollider>().isTrigger = true;
+		// transform.Find("playerCamera/touchCollider").gameObject.GetComponent<CapsuleCollider>().isTrigger = true;
 		//getCurrentPolygon();
 		// Debug.Log(currentPolygon);
 		// for(int seg = 0; seg < GlobalData.map.segments.Count; seg++) {
@@ -39,83 +58,63 @@ public class playerController : MonoBehaviour {
 		// }
 
 		currentPolygon = -1;
+		playerCollider = transform.Find("playerCollider").gameObject;
+		playerLight = transform.Find("playerLight").gameObject;
 
 		if (!GlobalData.playerLight) {
-			gameObject.GetComponent<Light>().enabled = false;
+			playerLight.GetComponent<Light>().enabled = false;
+
 		}
 
-		//gameObject.GetComponent<CharacterController>().enabled = false;
+	// walking standard physics, remove when physics files get read
+		walking.maxForwardSpeed = 0.0714f;
+		walking.maxBackwardSpeed = 0.0588f;
+		walking.maxPerpSpeed = 0.0500f;
+		walking.acceleration = 0.0050f;
+		walking.climbingAcceleration = 0.0033f;
+
+
 	}
 	
 	// Update is called once per frame
 	void Update () {
 		if (GlobalData.captureMouse) {
-			transform.Find("playerCamera").GetComponent<mouselook>().lockCursor = !Input.GetKey(KeyCode.LeftControl);
+			transform.Find("playerCamera").GetComponent<mouselook>().lockCursor = !Input.GetButton("Menu");
 		} else {
-			transform.Find("playerCamera").GetComponent<mouselook>().lockCursor = Input.GetKey(KeyCode.LeftControl);
-	
+			transform.Find("playerCamera").GetComponent<mouselook>().lockCursor = Input.GetButton("Menu");
 		}
-		CharacterController cc = GetComponent<CharacterController>();
-		
-		if (Input.GetKey("w") || Input.GetKey("s")) {
-			accellAmountZ += accelleration * Time.deltaTime;
+
+		if ((GlobalData.alwaysRun && !Input.GetButton("RunWalk")) || (!GlobalData.alwaysRun && Input.GetButton("RunWalk"))) {
+			phys = running;
 		} else {
-			accellAmountZ -= accelleration * Time.deltaTime;
+			phys = walking;
 		}
+		// airborne = true;
 
-		if (Input.GetKey("a") || Input.GetKey("d")) {
-			accellAmountX += accelleration * Time.deltaTime;
+
+
+		if (Input.GetButton("Action")) {
+			RaycastHit hit;
+			Vector3 cameraPos;
+			cameraPos = transform.Find("playerCamera").transform.position;
+			MapSegment ms = null;
+			if (Physics.Raycast(cameraPos, transform.Find("playerCamera").forward, out hit, 7)) {
+				if (hit.collider.transform.parent.tag == "polygon") {
+					ms = hit.collider.transform.parent.GetComponent<MapSegment>();
+				} else if (hit.collider.transform.parent.name == "upperPlatform" || hit.collider.transform.parent.name == "lowerPlatform") {
+					ms =  hit.collider.transform.parent.parent.parent.GetComponent<MapSegment>();
+				}
+				if (ms != null) {
+					if (hit.collider.gameObject != lastTouch) {
+						touched = ms.playerTouch(hit.collider.gameObject);
+					}
+				}
+				if (touched) {
+					lastTouch = hit.collider.gameObject;
+				}
+			}
 		} else {
-			accellAmountX -= accelleration * Time.deltaTime;
-		}
-
-		if (Input.GetKey("space") || Input.GetKey("space")) {
-			accellAmountY += accelleration * Time.deltaTime;
-		} else {
-			accellAmountY -= accelleration * Time.deltaTime;
-		}
-
-		if (accellAmountZ > 1) {accellAmountZ = 1;}
-		if (accellAmountX > 1) {accellAmountX = 1;}
-		if (accellAmountY > 10) {accellAmountY = 1;}
-		if (accellAmountZ <= 0) {
-			accellAmountZ = 0;
-			z = 0;
-		}
-		if (accellAmountX <= 0) {
-			accellAmountX = 0;
-			x = 0;
-		}
-		if (accellAmountY <= 0) {
-			accellAmountY = 0;
-			y = 0;
-		}
-		// float z = 0;
-		// float x = 0;
-		if (Input.GetKey("w")){z = 1;}
-		if (Input.GetKey("s")){z = -1;}
-		if (Input.GetKey("a")){x = -1;}
-		if (Input.GetKey("d")){x = 1;}
-		if (Input.GetKey("space")){y = 1;}
-
-		Vector3 fwspeed = transform.forward * accelleration * (z*accellAmountZ);
-		Vector3 rtspeed = transform.right * accelleration * (x*accellAmountX);
-
-		Vector3 move = Vector3.ClampMagnitude(fwspeed + rtspeed, maxspeed);
-
-		if (Input.GetKey("space")) {
-			// Debug.Log("upp");
-			cc.Move(new Vector3(0, 0.03f * accelleration * (y*accellAmountY),0));
-		}
-		cc.SimpleMove(move);
-
-		if (Input.GetKey("e")){
-			transform.Find("playerCamera/touchCollider").gameObject.SetActive(true);
-
-
-		} else {
-			transform.Find("playerCamera/touchCollider").gameObject.SetActive(false);
-			touched = false;
+			lastTouch = null;
 		}
 
 		int prevPolygon = currentPolygon;
@@ -128,32 +127,315 @@ public class playerController : MonoBehaviour {
 			}
 			playAmbientSound();
 			playRandomSound();
-			calculateVisibility();
-		}
-		if (Input.GetKey("f")){castRay();}
 
+			vis = true;
+			calculateVisibility();
+			vis = false;
+		}
+		//if (Input.GetKey("f")){castRay();}
+
+	}
+
+	void addInternalForces() {
+		if (!airborne) {
+			if (Input.GetButton("Forwards") && velocity.z < phys.maxForwardSpeed * Time.fixedDeltaTime) {
+				velocity.z += phys.acceleration * Time.fixedDeltaTime;
+				velocity.z += phys.deceleration * Time.fixedDeltaTime;
+				if (velocity.z > phys.maxForwardSpeed * Time.fixedDeltaTime) {velocity.z = phys.maxForwardSpeed * Time.fixedDeltaTime;}
+			}
+			if (Input.GetButton("Backwards") && velocity.z > 0-phys.maxBackwardSpeed * Time.fixedDeltaTime) {
+				velocity.z -= phys.acceleration * Time.fixedDeltaTime;
+				velocity.z -= phys.deceleration * Time.fixedDeltaTime;
+				if (velocity.z < 0-phys.maxBackwardSpeed * Time.fixedDeltaTime) {velocity.z = 0-phys.maxBackwardSpeed * Time.fixedDeltaTime;}
+			}
+			if (Input.GetButton("Left") && velocity.x > 0-phys.maxPerpSpeed * Time.fixedDeltaTime) {
+				velocity.x -= phys.acceleration * Time.fixedDeltaTime;
+				velocity.x -= phys.deceleration * Time.fixedDeltaTime;
+				if (velocity.x < 0-phys.maxPerpSpeed * Time.fixedDeltaTime) {velocity.x = 0-phys.maxPerpSpeed * Time.fixedDeltaTime;}
+			}
+			if (Input.GetButton("Right") && velocity.x < phys.maxPerpSpeed * Time.fixedDeltaTime) {
+				velocity.x += phys.acceleration * Time.fixedDeltaTime;
+				velocity.x += phys.deceleration * Time.fixedDeltaTime;
+				if (velocity.x > phys.maxPerpSpeed * Time.fixedDeltaTime) {velocity.x = phys.maxPerpSpeed * Time.fixedDeltaTime;}
+			}
+		}
+
+	}
+
+
+	void addExternalForces() {
+		
+		if (!airborne) {
+			if (velocity.z > 0) {
+				velocity.z -= phys.deceleration * Time.fixedDeltaTime;
+				if (velocity.z < 0) {velocity.z = 0;}
+			}
+			if (velocity.z < 0) {
+				velocity.z += phys.deceleration * Time.fixedDeltaTime;
+				if (velocity.z > 0) {velocity.z = 0;}
+			}
+
+			if (velocity.x < 0) {
+				velocity.x += phys.deceleration * Time.fixedDeltaTime;
+				if (velocity.x > 0) {velocity.x = 0;}
+			}
+			if (velocity.x > 0) {
+				velocity.x -= phys.deceleration * Time.fixedDeltaTime;
+				if (velocity.x < 0) {velocity.x = 0;}
+			}
+
+			if (climbing) {
+				if (velocity.y < phys.terminalVelocity * Time.fixedDeltaTime) {
+					velocity.y += phys.climbingAcceleration * Time.fixedDeltaTime ;
+					if (velocity.y > phys.terminalVelocity * Time.fixedDeltaTime) {velocity.y = phys.terminalVelocity * Time.fixedDeltaTime;}
+				}
+			}
+
+
+		} else {
+			// if (velocity.z > 0) {
+			// 	velocity.z -= phys.airborneDeceleration * Time.fixedDeltaTime;
+			// 	if (velocity.z < 0) {velocity.z = 0;}
+			// }
+			// if (velocity.z < 0) {
+			// 	velocity.z += phys.airborneDeceleration * Time.fixedDeltaTime;
+			// 	if (velocity.z > 0) {velocity.z = 0;}
+			// }
+
+			// if (velocity.x < 0) {
+			// 	velocity.x += phys.airborneDeceleration * Time.fixedDeltaTime;
+			// 	if (velocity.x > 0) {velocity.x = 0;}
+			// }
+			// if (velocity.x > 0) {
+			// 	velocity.x -= phys.airborneDeceleration * Time.fixedDeltaTime;
+			// 	if (velocity.x < 0) {velocity.x = 0;}
+			// }
+
+
+			if (velocity.y > 0-phys.terminalVelocity * Time.fixedDeltaTime) {
+				velocity.y -= phys.gravity/GlobalData.graviyScaleFactor * Time.fixedDeltaTime;
+				if (velocity.y < 0-phys.terminalVelocity * Time.fixedDeltaTime) {velocity.y = 0-phys.terminalVelocity * Time.deltaTime;}
+			}
+
+
+		}
+
+		foreach (Vector3 normal in wallNormals) {
+
+			Vector3 direction = gameObject.transform.InverseTransformDirection(normal);
+			Vector3 dirRot = Quaternion.Euler(0,90,0) * direction;
+			direction = Quaternion.Euler(0,90,0) * direction;
+			float rotation = Vector3.SignedAngle(dirRot, Vector3.forward, Vector3.up);
+			float velRotation = Vector3.SignedAngle(velocity, Vector3.forward, Vector3.up);
+			
+			Vector3 velRot = Quaternion.Euler(0,velRotation,0) * velocity;
+
+			Vector3 rot = Quaternion.Euler(0,rotation+velRotation,0) * velRot;
+			if (rot.x > 0) {
+				rot.x = 0;
+			}
+			Vector3 newVel = Quaternion.Euler(0,0-(rotation+velRotation),0) * rot;
+			velocity = newVel;
+			// Vector3 vNormal = Vector3.Normalize(velocity);
+			// //direction.x = 0-direction.x;
+			// // Vector3 add = gameObject.transform.Translate(velocity);
+
+			// //0,1 :: 0,-1 = 0,-1 
+			// //0,1 :: 1,0  = 0, 1 
+			// //0,1 ::-0.6,-0.6 = -0.5,-0.5 
+			// //0,1 :: 0.4,0.8 = 0.3,-0.6 
+			// //0,-1 :: 0,1 = 0,1 
+
+			// float zrat = (direction.z/direction.x);
+			// float xrat = (direction.x/direction.z);
+
+			// float vzrat = (velocity.z/velocity.x);
+			// float vxrat = (velocity.x/velocity.z);
+
+			// if ((vNormal.z > direction.z && vNormal.z > 0) 
+			// || (vNormal.z < direction.z && vNormal.z < 0)) {
+			// 	//velocity.x += velocity.z - velocity.z * (direction.z/vNormal.z);
+			// 	velocity.z = velocity.z * direction.z/vNormal.z;
+			// }
+			// if ((vNormal.x > direction.x && vNormal.x > 0) 
+			// || (vNormal.x < direction.x && vNormal.x < 0)) {
+			// 	//velocity.z += velocity.x - velocity.x * (direction.x/vNormal.x);
+			// 	velocity.x = velocity.x * direction.x/vNormal.x;
+			// }
+
+			// float zsplit  = velocity.z/(zrat+1);
+			// float xsplit  = velocity.x/(xrat+1);
+
+			// if (direction.x > 0) { xsplit = 0-xsplit;}
+			// if (direction.z > 0) { zsplit = 0-zsplit;}
+
+			// Vector3 add = new Vector3( (velocity.x - xsplit) + zsplit,
+			//  							0, 
+			//  						(velocity.z - zsplit) + xsplit);
+			// Debug.Log("--------------");
+			// Debug.Log(velocity*100);
+			// Debug.Log(direction);
+			// Debug.Log(add*100);
+			
+			// velocity -= add;
+		}
 
 
 	}
 
-	void getCurrentPolygon() {
+	void applyForces() {
+		gameObject.transform.Translate(velocity);
+	}
 
+
+	// void onCollisionEnter (Collider other) {
+	// 	if (other.transform.parent.tag == "polygon") {
+	// 		if (other.name == "wall" || other.name == "lowerWall" || other.name == "middleWall" || other.name == "upperWall") {
+	// 			;
+	// 		}
+	// 	}
+
+	// }
+
+
+	void OnTriggerEnter(Collider other)
+	{
+		if (!vis) {
+		if (other.transform.parent.tag == "polygon") {
+			if (other.name == "floor" && other.transform.position.y < transform.position.y + phys.maxStepSize) {
+				airborne = false;
+				if (velocity.y < 0) {
+					velocity.y = 0;
+				}
+			}
+
+			if (other.name == "ceiling" ) {
+				if (velocity.y > 0) {
+					velocity.y = 0;
+				}
+			}
+
+			if (other.name == "wall" || other.name == "lowerWall" || other.name == "middleWall" || other.name == "upperWall") {
+				if (other.bounds.center.y + other.bounds.extents.y > phys.maxStepSize + transform.position.y) {
+					Vector3 normal = other.gameObject.GetComponent<MeshFilter>().mesh.normals[0];
+					//other.gameObject.transform.Translate(Vector3.Normalize(normal) * 0.2f);
+					//velocity -= Vector3.Scale(velocity, normal);
+					//normal = transform.InverseTransformDirection(normal);
+					// Vector3 translate = tranforsm.TransformDirection(velocity);
+					// translate = Vector3.Scale(normal, translate);
+					wallNormals.Add(normal);
+					//gameObject.transform.Translate(Vector3.Scale(Vector3.Scale(normal, velocity), new Vector3(-1,-1,-1)));
+					// Vector3 translate = Vector3.Scale(transform.InverseTransformDirection(velocity), normal);
+					// gameObject.transform.Translate(translate, Space.World);
+					// Vector3 direction = gameObject.transform.InverseTransformDirection(normal);
+					// //direction.x = 0-direction.x;
+					// Vector3 add = velocity.magnitude * direction;
+					// //velocity += add;
+					// gameObject.transform.Translate(add);
+				}
+			}
+
+		}
+		}
+	}
+	void OnTriggerStay(Collider other) {
+		if (!vis) {
+			if (other.transform.parent.tag == "polygon") {
+			if (other.name == "floor" && other.transform.position.y < transform.position.y + phys.maxStepSize) {
+				// Debug.Log(other.transform.parent.GetComponent<MapSegment>().id + "::" + floorContacts.Count);
+
+				airborne = false;
+				floorContacts.Add(other);
+				//}
+				if (other.transform.position.y > transform.position.y) {
+					climbing = true;
+				}
+				
+			}
+			if (other.name == "wall" || other.name == "lowerWall" || other.name == "middleWall" || other.name == "upperWall") {
+				if (other.bounds.center.y + other.bounds.extents.y > phys.maxStepSize + transform.position.y) {
+					Vector3 normal = other.gameObject.GetComponent<MeshFilter>().mesh.normals[0];
+					//other.gameObject.transform.Translate(Vector3.Normalize(normal) * 0.2f);
+					//velocity -= Vector3.Scale(velocity, normal);
+					//normal = transform.InverseTransformDirection(normal);
+					// Vector3 translate = transform.TransformDirection(velocity);
+					// translate = Vector3.Scale(normal, translate);
+					wallNormals.Add(normal);
+					//gameObject.transform.Translate(Vector3.Scale(Vector3.Scale(normal, velocity), new Vector3(-1,-1,-1)));
+					// Vector3 translate = Vector3.Scale(transform.InverseTransformDirection(velocity), normal);
+					// gameObject.transform.Translate(translate, Space.World);
+
+				}
+			}
+
+
+		}
+		}
+	}
+
+	void OnTriggerExit(Collider other)
+	{
+		if (!vis) {
+		if (other.transform.parent.tag == "polygon") {
+			if (other.name == "floor") {
+				// Debug.Log(other.transform.parent.GetComponent<MapSegment>().id + "exit");
+				floorContacts.Remove(other);
+				if (floorContacts.Count == 0) {
+					bool higherContact = false;
+					foreach(Collider col in floorContacts) {
+						if (col.transform.position.y > transform.position.y) {
+							higherContact = true;
+						}
+					}
+					if (!higherContact) {
+						if (velocity.y > 0) {velocity.y /= GlobalData.deBounceFactor;}
+						if (velocity.y < phys.airborneDeceleration/GlobalData.deBounceFactor * Time.deltaTime  ) {
+							Debug.Log("setLevel");
+							velocity.y = 0;
+							transform.position = new Vector3 (transform.position.x, other.transform.position.y,transform.position.z);
+							airborne = false;
+						} else {
+							// airborne = true;
+						// 	touching = false;
+						}
+						climbing = false;
+					}
+				}
+			}
+		}
+		}
+	}
+
+
+
+
+	void getCurrentPolygon() {
+		int pol = -1;
 		RaycastHit hit;
 		//GameObject camera = transform.Find("playerCamera").gameObject;
 		if (Physics.Raycast(gameObject.transform.position, Vector3.down, out hit, 50)) {
 			if (hit.collider.transform.parent != null && hit.collider.transform.parent.tag == "polygon") {
-				// if (hit.collider.transform.parent.GetComponent<MapSegment>().id != currentPolygon) {
-				// 	Debug.Log(hit.collider.transform.parent.GetComponent<MapSegment>().id);
-				// }
-				currentPolygon = hit.collider.transform.parent.GetComponent<MapSegment>().id;
+				pol = hit.collider.transform.parent.GetComponent<MapSegment>().id;
 			} else if (hit.collider.transform.parent != null && (hit.collider.transform.parent.name == "upperPlatform" || hit.collider.transform.parent.name == "lowerPlatform")) {
-				// if (hit.collider.transform.parent.GetComponent<MapSegment>().id != currentPolygon) {
-				// 	Debug.Log(hit.collider.transform.parent.GetComponent<MapSegment>().id);
-				// }
-				currentPolygon = hit.collider.transform.parent.parent.GetComponent<PlatformObject>().parent.id;
+				pol = hit.collider.transform.parent.parent.GetComponent<PlatformObject>().parent.id;
 			}
-
 		}
+		if (pol == -1) {
+
+			if (Physics.Raycast(new Vector3(gameObject.transform.position.x, 
+											gameObject.transform.position.y + phys.height, 
+											gameObject.transform.position.z),
+								Vector3.up, out hit, 50)) {
+				if (hit.collider.transform.parent != null && hit.collider.transform.parent.tag == "polygon") {
+					pol = hit.collider.transform.parent.GetComponent<MapSegment>().id;
+				} else if (hit.collider.transform.parent != null && (hit.collider.transform.parent.name == "upperPlatform" || hit.collider.transform.parent.name == "lowerPlatform")) {
+					pol = hit.collider.transform.parent.parent.GetComponent<PlatformObject>().parent.id;
+				}
+			}
+		}
+
+
+		if (pol >= 0) {currentPolygon = pol;}
 
 	}
 
@@ -222,28 +504,6 @@ public class playerController : MonoBehaviour {
 			}
 
 
-	/// <summary>
-	/// OnTriggerEnter is called when the Collider other enters the trigger.
-	/// </summary>
-	/// <param name="other">The other Collider involved in this collision.</param>
-	void OnTriggerEnter(Collider other)
-	{
-		if (!touched){
-			MapSegment ms = null;
-			//if (other.name == "floor" ||other.name == "ceiling" || other.name == "wall" || other.name == "transparent" || other.name == "polygonElement(Clone)"){
-
-				if (other.transform.parent.tag == "polygon") {
-					ms = other.transform.parent.GetComponent<MapSegment>();
-				} else if (other.transform.parent.name == "upperPlatform" || other.transform.parent.name == "lowerPlatform") {
-					ms =  other.transform.parent.parent.parent.GetComponent<MapSegment>();
-				}
-				if (ms != null) {
-					touched = ms.playerTouch(other.gameObject);
-				}
-				// Debug.Log(other.)
-			//}
-		}
-	}
 
 	void drawActivePolygons() {
 		bool[] active = GlobalData.map.segments[currentPolygon].activePolygons;
@@ -538,11 +798,11 @@ public class playerController : MonoBehaviour {
 		if (self) {
 			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[1], clipAngles[3], true, true, iv.collisionPolygonsSelf, ref clippedSegments);
 			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[2], clipAngles[4], true, false, iv.collisionPolygonsOther, ref clippedSegments);
-			Debug.Log("self");
+			//Debug.Log("self");
 		} else {
 			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[1], clipAngles[3], true, true,iv.collisionPolygonsOther, ref clippedSegments);
 			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[2], clipAngles[4], true, false, iv.collisionPolygonsSelf, ref clippedSegments);
-			Debug.Log("other");
+			//Debug.Log("other");
 		}
 
 		Debug.DrawRay(pointSelf,pp-pointSelf,  Color.cyan);
@@ -653,20 +913,19 @@ public class playerController : MonoBehaviour {
 		isVisible = false;
 
 		isVisible = (Physics.Raycast(midpoint, camera.transform.position-midpoint, out hit, 50)) 
-			&& hit.collider.gameObject == camera ;
+			&& hit.collider.gameObject == playerCollider ;
 
 		if (isVisible) {
 			Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.red);
 		} else {
-			//Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.green);
+			Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.green);
 		}
 
-		Color colour  = Random.ColorHSV();
 		for (int i = 1; i <= rayCount && !isVisible; i++) {
 			for (int p = 0; p < points.Count && !isVisible; p++){
 				castPoint = (points[p]-midpoint)*((1f/rayCount)*(float)i) + midpoint;
 				isVisible = (Physics.Raycast(castPoint, camera.transform.position-castPoint, out hit, 50)) 
-							&& hit.collider.gameObject == camera ;
+							&& hit.collider.gameObject == playerCollider ;
 				if (isVisible) {
 					Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.red);
 				} else {
@@ -677,42 +936,57 @@ public class playerController : MonoBehaviour {
 		
 		return isVisible;
 	}
-	void castRay() {
-		RaycastHit hit;
-		Vector3 cameraPos;
-		// cameraPos = transform.Find("playerCamera").position;
-		cameraPos = transform.Find("playerCamera").transform.position;
-
-		if (Physics.Raycast(cameraPos, transform.Find("playerCamera").forward, out hit, 20)) {
-			Debug.Log(hit.collider.name);
-			Debug.DrawRay(cameraPos, transform.Find("playerCamera").forward, Color.yellow, 5f);
-
-		}
-
-	}
 
 	/// <summary>
 	/// This function is called every fixed framerate frame, if the MonoBehaviour is enabled.
 	/// </summary>
 	void FixedUpdate()
 	{
-		//touched = false;
+		addInternalForces();
+		addExternalForces();
+		applyForces();
+		floorContacts = new List<Collider>();
+		wallNormals = new List<Vector3>();
+	
+		airborne = true;
+		climbing = false;
 
-		// Rigidbody rb = GetComponent<Rigidbody>();
+	}
 
+	public class playerPhysics {
+		//these defaults are the standard physics running values
+		public float maxStepSize = 0.3f;
+		public float maxForwardSpeed = 0.125f * 30f;
+		public float maxBackwardSpeed = 0.0833f * 30f;
+		public float maxPerpSpeed = 0.0769f * 30f;
 
-		// float z = 0;
-		// float x = 0;
-		// if (Input.GetKey("w")){z += 1;}
-		// if (Input.GetKey("s")){z -= 1;}
-		// if (Input.GetKey("a")){x -= 1;}
-		// if (Input.GetKey("d")){x += 1;}
+		public float acceleration = 0.0100f * 30f;
+		public float deceleration = 0.0200f * 30f;
+		public float airborneDeceleration = 0.0056f * 30f;
+		public float gravity = 0.0025f * 30f;
+		public float climbingAcceleration = 0.0050f * 30f;
 
-		// Vector3 fwspeed = transform.forward * accelleration * z;
-		// Vector3 rtspeed = transform.right * accelleration * x;
-		// if (rb.velocity.magnitude < maxspeed) {
-		// 	rb.velocity += fwspeed + rtspeed;
-		// }
+		public float terminalVelocity = 0.1429f * 30f;
+		public float externalDeceleration = 0.0050f * 30f;
+
+		public float radius = 0.2500f;
+		public float height = 0.8000f;
+		public float stepDelta = 0.0500f;
+		public float stepAmplitude = 0.1000f;
+		public float cameraOffset = 0.2000f;
+		public float cameraOffsetDead = 0.2500f;
+		public float cameraoffsetSplash = 0.5000f;
+		public float maximumCameraAngle = 42.6667f;
+		public float halfCameraSeparation = 0.0312f;
+
+		public float angularAcceleration = 1.2500f * 30f;
+		public float angularDeceleration = 2.5000f * 30f;
+		public float maxAngularVelocity = 10.0000f * 30f;
+		public float angularRecenterVelocity = 1.5000f * 30f;
+		public float headAngularVelocity = 21.3333f * 30f;
+		public float headAngularMax = 128.0000f * 30f;
+		public float externalAngularDeleceration = 0.3333f * 30f;
 	}
 
 }
+
