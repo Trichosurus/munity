@@ -42,7 +42,8 @@ public class playerController : MonoBehaviour {
 	private GameObject playerLight;
 
 	private List<Collider> floorContacts = new List<Collider>();
-	private List<Vector3> wallNormals = new List<Vector3>();
+	private List<Collider> wallContacts = new List<Collider>();
+	//private List<Vector3> wallNormals = new List<Vector3>();
 
 
 
@@ -72,6 +73,8 @@ public class playerController : MonoBehaviour {
 		walking.maxPerpSpeed = 0.0500f;
 		walking.acceleration = 0.0050f;
 		walking.climbingAcceleration = 0.0033f;
+
+
 
 
 	}
@@ -123,6 +126,7 @@ public class playerController : MonoBehaviour {
 			if (prevPolygon != currentPolygon) {
 				activePolygons = new List<int>(); 
 				drawActivePolygons();
+				setActivePolygonColliders();
 				GlobalData.map.segments[currentPolygon].triggerBehaviour();
 			}
 			playAmbientSound();
@@ -135,6 +139,35 @@ public class playerController : MonoBehaviour {
 		//if (Input.GetKey("f")){castRay();}
 
 	}
+
+	void setActivePolygonColliders(int connections = 1, MapSegment polygon = null) {
+		if (connections < 0) {return;}
+		if (polygon == null) {
+			polygon = GlobalData.map.segments[currentPolygon];
+			wallContacts = new List<Collider>();
+		}
+		foreach (MapSegmentSide side in polygon.sides) {
+			if (side.connection != null) {
+				setActivePolygonColliders(connections-1, side.connection);
+			}
+			if (side.lowerMeshItem != null) {
+				if (!wallContacts.Contains(side.lowerMeshItem.GetComponent<Collider>())) {
+					wallContacts.Add(side.lowerMeshItem.GetComponent<Collider>());
+				}
+			}
+			if (side.middleMeshItem != null) {
+				if (!wallContacts.Contains(side.middleMeshItem.GetComponent<Collider>())) {
+					wallContacts.Add(side.middleMeshItem.GetComponent<Collider>());
+				}
+			}
+			if (side.upperMeshItem != null) {
+				if (!wallContacts.Contains(side.upperMeshItem.GetComponent<Collider>())) {
+					wallContacts.Add(side.upperMeshItem.GetComponent<Collider>());
+				}
+			}
+		}
+	}
+
 
 	void addInternalForces() {
 		if (!airborne) {
@@ -220,82 +253,176 @@ public class playerController : MonoBehaviour {
 
 		}
 
-		foreach (Vector3 normal in wallNormals) {
-
-			Vector3 direction = gameObject.transform.InverseTransformDirection(normal);
-			Vector3 dirRot = Quaternion.Euler(0,90,0) * direction;
-			direction = Quaternion.Euler(0,90,0) * direction;
-			float rotation = Vector3.SignedAngle(dirRot, Vector3.forward, Vector3.up);
-			float velRotation = Vector3.SignedAngle(velocity, Vector3.forward, Vector3.up);
-			
-			Vector3 velRot = Quaternion.Euler(0,velRotation,0) * velocity;
-
-			Vector3 rot = Quaternion.Euler(0,rotation+velRotation,0) * velRot;
-			if (rot.x > 0) {
-				rot.x = 0;
-			}
-			Vector3 newVel = Quaternion.Euler(0,0-(rotation+velRotation),0) * rot;
-			velocity = newVel;
-			// Vector3 vNormal = Vector3.Normalize(velocity);
-			// //direction.x = 0-direction.x;
-			// // Vector3 add = gameObject.transform.Translate(velocity);
-
-			// //0,1 :: 0,-1 = 0,-1 
-			// //0,1 :: 1,0  = 0, 1 
-			// //0,1 ::-0.6,-0.6 = -0.5,-0.5 
-			// //0,1 :: 0.4,0.8 = 0.3,-0.6 
-			// //0,-1 :: 0,1 = 0,1 
-
-			// float zrat = (direction.z/direction.x);
-			// float xrat = (direction.x/direction.z);
-
-			// float vzrat = (velocity.z/velocity.x);
-			// float vxrat = (velocity.x/velocity.z);
-
-			// if ((vNormal.z > direction.z && vNormal.z > 0) 
-			// || (vNormal.z < direction.z && vNormal.z < 0)) {
-			// 	//velocity.x += velocity.z - velocity.z * (direction.z/vNormal.z);
-			// 	velocity.z = velocity.z * direction.z/vNormal.z;
-			// }
-			// if ((vNormal.x > direction.x && vNormal.x > 0) 
-			// || (vNormal.x < direction.x && vNormal.x < 0)) {
-			// 	//velocity.z += velocity.x - velocity.x * (direction.x/vNormal.x);
-			// 	velocity.x = velocity.x * direction.x/vNormal.x;
-			// }
-
-			// float zsplit  = velocity.z/(zrat+1);
-			// float xsplit  = velocity.x/(xrat+1);
-
-			// if (direction.x > 0) { xsplit = 0-xsplit;}
-			// if (direction.z > 0) { zsplit = 0-zsplit;}
-
-			// Vector3 add = new Vector3( (velocity.x - xsplit) + zsplit,
-			//  							0, 
-			//  						(velocity.z - zsplit) + xsplit);
-			// Debug.Log("--------------");
-			// Debug.Log(velocity*100);
-			// Debug.Log(direction);
-			// Debug.Log(add*100);
-			
-			// velocity -= add;
-		}
+		// foreach (Vector3 
 
 
 	}
 
 	void applyForces() {
+		//	Debug.Log(velocity * 10);
 		gameObject.transform.Translate(velocity);
+		// CharacterController controller = GetComponent<CharacterController>();
+		// controller.Move(gameObject.transform.TransformDirection(velocity));
+		// Rigidbody rb = GetComponent<Rigidbody>();
+		// rb.AddRelativeForce(velocity * 10);
+
+		foreach (Collider wall in wallContacts) {	
+			if (wall.bounds.center.y + wall.bounds.extents.y > phys.maxStepSize + transform.position.y)	{	
+			Vector3 local = wall.transform.InverseTransformPoint(transform.position);
+			Mesh mesh = wall.gameObject.GetComponent<MeshCollider>().sharedMesh;
+			Vector3 collPt = wall.transform.TransformPoint(ClosestPointOnMesh(mesh, local));
+			Vector3 delta = transform.position - collPt;
+ 			// Debug.Log("--------------------------");
+			// Debug.Log(collPt);
+			// Debug.Log(delta * 10);
+			// Debug.Log(transform.position);
+			delta = Vector3.ClampMagnitude(delta, Mathf.Clamp(phys.radius - delta.magnitude, 0, phys.radius));
+			delta.y = 0;
+			transform.position += delta;
+
+
+			// Debug.Log(transform.position);
+			// Debug.Log(velocity);
+			}
+		}
+
 	}
 
 
-	// void onCollisionEnter (Collider other) {
-	// 	if (other.transform.parent.tag == "polygon") {
-	// 		if (other.name == "wall" || other.name == "lowerWall" || other.name == "middleWall" || other.name == "upperWall") {
-	// 			;
-	// 		}
-	// 	}
+	void LateUpdate() {
 
-	// }
+	}
+
+    Vector3 ClosestPointOnMesh(Mesh mesh, Vector3 point) {
+        float shortestDistance = float.MaxValue;
+
+        Vector3 closest = Vector3.zero;
+
+        for (int i = 0; i < mesh.triangles.Length; i += 3) {
+            int triangle = i;
+
+            Vector3 p1 = mesh.vertices[mesh.triangles[triangle]];
+            Vector3 p2 = mesh.vertices[mesh.triangles[triangle + 1]];
+            Vector3 p3 = mesh.vertices[mesh.triangles[triangle + 2]];
+
+            Vector3 nearest;
+                
+            ClosestPointOnTriangleToPoint(ref p1, ref p2, ref p3, ref point, out nearest);
+
+            float distance = (point - nearest).sqrMagnitude;
+
+            if (distance <= shortestDistance) {
+                shortestDistance = distance;
+                closest = nearest;
+            }
+        }
+
+        return closest;
+    }
+
+    /// <summary>
+    /// Determines the closest point between a point and a triangle.
+    /// 
+    /// The code in this method is copyrighted by the SlimDX Group under the MIT license:
+    /// 
+    /// Copyright (c) 2007-2010 SlimDX Group
+    /// 
+    /// Permission is hereby granted, free of charge, to any person obtaining a copy
+    /// of this software and associated documentation files (the "Software"), to deal
+    /// in the Software without restriction, including without limitation the rights
+    /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    /// copies of the Software, and to permit persons to whom the Software is
+    /// furnished to do so, subject to the following conditions:
+    /// 
+    /// The above copyright notice and this permission notice shall be included in
+    /// all copies or substantial portions of the Software.
+    /// 
+    /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    /// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    /// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    /// THE SOFTWARE.
+    /// 
+    /// </summary>
+    /// <param name="point">The point to test.</param>
+    /// <param name="vertex1">The first vertex to test.</param>
+    /// <param name="vertex2">The second vertex to test.</param>
+    /// <param name="vertex3">The third vertex to test.</param>
+    /// <param name="result">When the method completes, contains the closest point between the two objects.</param>
+    void ClosestPointOnTriangleToPoint(ref Vector3 vertex1, ref Vector3 vertex2, ref Vector3 vertex3, ref Vector3 point, out Vector3 result)
+    {
+        //Source: Real-Time Collision Detection by Christer Ericson
+        //Reference: Page 136
+
+        //Check if P in vertex region outside A
+        Vector3 ab = vertex2 - vertex1;
+        Vector3 ac = vertex3 - vertex1;
+        Vector3 ap = point - vertex1;
+
+        float d1 = Vector3.Dot(ab, ap);
+        float d2 = Vector3.Dot(ac, ap);
+        if (d1 <= 0.0f && d2 <= 0.0f)
+        {
+            result = vertex1; //Barycentric coordinates (1,0,0)
+            return;
+        }
+
+        //Check if P in vertex region outside B
+        Vector3 bp = point - vertex2;
+        float d3 = Vector3.Dot(ab, bp);
+        float d4 = Vector3.Dot(ac, bp);
+        if (d3 >= 0.0f && d4 <= d3)
+        {
+            result = vertex2; // barycentric coordinates (0,1,0)
+            return;
+        }
+
+        //Check if P in edge region of AB, if so return projection of P onto AB
+        float vc = d1 * d4 - d3 * d2;
+        if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f)
+        {
+            float v = d1 / (d1 - d3);
+            result = vertex1 + v * ab; //Barycentric coordinates (1-v,v,0)
+            return;
+        }
+
+        //Check if P in vertex region outside C
+        Vector3 cp = point - vertex3;
+        float d5 = Vector3.Dot(ab, cp);
+        float d6 = Vector3.Dot(ac, cp);
+        if (d6 >= 0.0f && d5 <= d6)
+        {
+            result = vertex3; //Barycentric coordinates (0,0,1)
+            return;
+        }
+
+        //Check if P in edge region of AC, if so return projection of P onto AC
+        float vb = d5 * d2 - d1 * d6;
+        if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f)
+        {
+            float w = d2 / (d2 - d6);
+            result = vertex1 + w * ac; //Barycentric coordinates (1-w,0,w)
+            return;
+        }
+
+        //Check if P in edge region of BC, if so return projection of P onto BC
+        float va = d3 * d6 - d5 * d4;
+        if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f)
+        {
+            float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+            result = vertex2 + w * (vertex3 - vertex2); //Barycentric coordinates (0,1-w,w)
+            return;
+        }
+
+        //P inside face region. Compute Q through its barycentric coordinates (u,v,w)
+        float denom = 1.0f / (va + vb + vc);
+        float v2 = vb * denom;
+        float w2 = vc * denom;
+        result = vertex1 + ab * v2 + ac * w2; //= u*vertex1 + v*vertex2 + w*vertex3, u = va * denom = 1.0f - v - w
+    }
+
 
 
 	void OnTriggerEnter(Collider other)
@@ -317,21 +444,14 @@ public class playerController : MonoBehaviour {
 
 			if (other.name == "wall" || other.name == "lowerWall" || other.name == "middleWall" || other.name == "upperWall") {
 				if (other.bounds.center.y + other.bounds.extents.y > phys.maxStepSize + transform.position.y) {
-					Vector3 normal = other.gameObject.GetComponent<MeshFilter>().mesh.normals[0];
-					//other.gameObject.transform.Translate(Vector3.Normalize(normal) * 0.2f);
-					//velocity -= Vector3.Scale(velocity, normal);
-					//normal = transform.InverseTransformDirection(normal);
-					// Vector3 translate = tranforsm.TransformDirection(velocity);
-					// translate = Vector3.Scale(normal, translate);
-					wallNormals.Add(normal);
-					//gameObject.transform.Translate(Vector3.Scale(Vector3.Scale(normal, velocity), new Vector3(-1,-1,-1)));
-					// Vector3 translate = Vector3.Scale(transform.InverseTransformDirection(velocity), normal);
-					// gameObject.transform.Translate(translate, Space.World);
-					// Vector3 direction = gameObject.transform.InverseTransformDirection(normal);
-					// //direction.x = 0-direction.x;
-					// Vector3 add = velocity.magnitude * direction;
-					// //velocity += add;
-					// gameObject.transform.Translate(add);
+					// Vector3 normal = other.gameObject.GetComponent<MeshFilter>().mesh.normals[0];
+					// // wallNormals.Add(normal);
+					// Vector3 collPt = other.ClosestPointOnBounds(transform.position);
+					// Vector3 v = transform.position - collPt;
+
+					// transform.position += Vector3.ClampMagnitude(v, Mathf.Clamp(phys.radius - v.magnitude, 0, phys.radius));
+					
+					if (!wallContacts.Contains(other)) {wallContacts.Add(other);}
 				}
 			}
 
@@ -340,7 +460,7 @@ public class playerController : MonoBehaviour {
 	}
 	void OnTriggerStay(Collider other) {
 		if (!vis) {
-			if (other.transform.parent.tag == "polygon") {
+			if (other.gameObject != gameObject && other.transform.parent.tag == "polygon") {
 			if (other.name == "floor" && other.transform.position.y < transform.position.y + phys.maxStepSize) {
 				// Debug.Log(other.transform.parent.GetComponent<MapSegment>().id + "::" + floorContacts.Count);
 
@@ -354,17 +474,7 @@ public class playerController : MonoBehaviour {
 			}
 			if (other.name == "wall" || other.name == "lowerWall" || other.name == "middleWall" || other.name == "upperWall") {
 				if (other.bounds.center.y + other.bounds.extents.y > phys.maxStepSize + transform.position.y) {
-					Vector3 normal = other.gameObject.GetComponent<MeshFilter>().mesh.normals[0];
-					//other.gameObject.transform.Translate(Vector3.Normalize(normal) * 0.2f);
-					//velocity -= Vector3.Scale(velocity, normal);
-					//normal = transform.InverseTransformDirection(normal);
-					// Vector3 translate = transform.TransformDirection(velocity);
-					// translate = Vector3.Scale(normal, translate);
-					wallNormals.Add(normal);
-					//gameObject.transform.Translate(Vector3.Scale(Vector3.Scale(normal, velocity), new Vector3(-1,-1,-1)));
-					// Vector3 translate = Vector3.Scale(transform.InverseTransformDirection(velocity), normal);
-					// gameObject.transform.Translate(translate, Space.World);
-
+					if (!wallContacts.Contains(other)) {wallContacts.Add(other);}
 				}
 			}
 
@@ -390,7 +500,7 @@ public class playerController : MonoBehaviour {
 					if (!higherContact) {
 						if (velocity.y > 0) {velocity.y /= GlobalData.deBounceFactor;}
 						if (velocity.y < phys.airborneDeceleration/GlobalData.deBounceFactor * Time.deltaTime  ) {
-							Debug.Log("setLevel");
+							//Debug.Log("setLevel");
 							velocity.y = 0;
 							transform.position = new Vector3 (transform.position.x, other.transform.position.y,transform.position.z);
 							airborne = false;
@@ -946,7 +1056,8 @@ public class playerController : MonoBehaviour {
 		addExternalForces();
 		applyForces();
 		floorContacts = new List<Collider>();
-		wallNormals = new List<Vector3>();
+		// wallNormals = new List<Vector3>();
+		// wallContacts = new List<Collider>();
 	
 		airborne = true;
 		climbing = false;
