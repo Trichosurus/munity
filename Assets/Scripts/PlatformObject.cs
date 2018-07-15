@@ -127,6 +127,11 @@ public class PlatformObject : MonoBehaviour {
 			if (delayedTime <= delay) {
 				dspeed = 0;
 			}
+			
+			float prevPosU = 0, prevPosL = 0;
+			if (comesFromCeiling) {prevPosU = upperPlatform.transform.localPosition.y;}
+			if (comesFromFloor) {prevPosL = lowerPlatform.transform.localPosition.y;}
+
 
 			if (extending) {
 				if (comesFromCeiling) {
@@ -167,6 +172,20 @@ public class PlatformObject : MonoBehaviour {
 				inTransit = false;
 				hitEnd();
 			}
+			GameObject player = GameObject.Find("player");
+			playerController pc = player.GetComponent<playerController>();
+			if (comesFromCeiling && pc.platContactU == upperPlatform.transform.Find("platBottom").gameObject.GetComponent<Collider>()) {
+				player.transform.position = new Vector3(player.transform.position.x, 
+														player.transform.position.y + (upperPlatform.transform.localPosition.y - prevPosU),
+														player.transform.position.z);
+			}
+
+			if (comesFromFloor && pc.platContactL == lowerPlatform.transform.Find("platTop").gameObject.GetComponent<Collider>()) {
+				player.transform.position = new Vector3(player.transform.position.x, 
+														player.transform.position.y + (lowerPlatform.transform.localPosition.y - prevPosL),
+														player.transform.position.z);
+			}
+
 		}
 
 		if (upperPlatform != null) {

@@ -36,6 +36,7 @@ public class playerController : MonoBehaviour {
 
 	private bool airborne = false;
 	private bool climbing = false;
+	private bool swimming = false;
 	private bool vis = false;
 	private GameObject lastTouch = null;
 	private GameObject playerCollider;
@@ -43,7 +44,8 @@ public class playerController : MonoBehaviour {
 
 	private List<Collider> floorContacts = new List<Collider>();
 	private List<Collider> wallContacts = new List<Collider>();
-	//private List<Vector3> wallNormals = new List<Vector3>();
+	public Collider platContactU = null;
+	public Collider platContactL = null;
 
 
 
@@ -78,6 +80,7 @@ public class playerController : MonoBehaviour {
 
 
 	}
+
 	
 	// Update is called once per frame
 	void Update () {
@@ -170,25 +173,26 @@ public class playerController : MonoBehaviour {
 
 
 	void addInternalForces() {
-		if (!airborne) {
+		swimming = Input.GetButton("Swim");
+		if (!airborne || swimming) {
 			if (Input.GetButton("Forwards") && velocity.z < phys.maxForwardSpeed * Time.fixedDeltaTime) {
-				velocity.z += phys.acceleration * Time.fixedDeltaTime;
-				velocity.z += phys.deceleration * Time.fixedDeltaTime;
+				velocity.z += phys.acceleration/GlobalData.accellerationScaleFactor * Time.fixedDeltaTime;
+				velocity.z += phys.deceleration/GlobalData.decellerationScaleFactor * Time.fixedDeltaTime;
 				if (velocity.z > phys.maxForwardSpeed * Time.fixedDeltaTime) {velocity.z = phys.maxForwardSpeed * Time.fixedDeltaTime;}
 			}
 			if (Input.GetButton("Backwards") && velocity.z > 0-phys.maxBackwardSpeed * Time.fixedDeltaTime) {
-				velocity.z -= phys.acceleration * Time.fixedDeltaTime;
-				velocity.z -= phys.deceleration * Time.fixedDeltaTime;
+				velocity.z -= phys.acceleration/GlobalData.accellerationScaleFactor * Time.fixedDeltaTime;
+				velocity.z -= phys.deceleration/GlobalData.decellerationScaleFactor * Time.fixedDeltaTime;
 				if (velocity.z < 0-phys.maxBackwardSpeed * Time.fixedDeltaTime) {velocity.z = 0-phys.maxBackwardSpeed * Time.fixedDeltaTime;}
 			}
 			if (Input.GetButton("Left") && velocity.x > 0-phys.maxPerpSpeed * Time.fixedDeltaTime) {
-				velocity.x -= phys.acceleration * Time.fixedDeltaTime;
-				velocity.x -= phys.deceleration * Time.fixedDeltaTime;
+				velocity.x -= phys.acceleration/GlobalData.accellerationScaleFactor * Time.fixedDeltaTime;
+				velocity.x -= phys.deceleration/GlobalData.decellerationScaleFactor * Time.fixedDeltaTime;
 				if (velocity.x < 0-phys.maxPerpSpeed * Time.fixedDeltaTime) {velocity.x = 0-phys.maxPerpSpeed * Time.fixedDeltaTime;}
 			}
 			if (Input.GetButton("Right") && velocity.x < phys.maxPerpSpeed * Time.fixedDeltaTime) {
-				velocity.x += phys.acceleration * Time.fixedDeltaTime;
-				velocity.x += phys.deceleration * Time.fixedDeltaTime;
+				velocity.x += phys.acceleration/GlobalData.accellerationScaleFactor * Time.fixedDeltaTime;
+				velocity.x += phys.deceleration/GlobalData.decellerationScaleFactor * Time.fixedDeltaTime;
 				if (velocity.x > phys.maxPerpSpeed * Time.fixedDeltaTime) {velocity.x = phys.maxPerpSpeed * Time.fixedDeltaTime;}
 			}
 		}
@@ -198,28 +202,28 @@ public class playerController : MonoBehaviour {
 
 	void addExternalForces() {
 		
-		if (!airborne) {
+		if (!airborne || swimming) {
 			if (velocity.z > 0) {
-				velocity.z -= phys.deceleration * Time.fixedDeltaTime;
+				velocity.z -= phys.deceleration/GlobalData.decellerationScaleFactor * Time.fixedDeltaTime;
 				if (velocity.z < 0) {velocity.z = 0;}
 			}
 			if (velocity.z < 0) {
-				velocity.z += phys.deceleration * Time.fixedDeltaTime;
+				velocity.z += phys.deceleration/GlobalData.decellerationScaleFactor * Time.fixedDeltaTime;
 				if (velocity.z > 0) {velocity.z = 0;}
 			}
 
 			if (velocity.x < 0) {
-				velocity.x += phys.deceleration * Time.fixedDeltaTime;
+				velocity.x += phys.deceleration/GlobalData.decellerationScaleFactor * Time.fixedDeltaTime;
 				if (velocity.x > 0) {velocity.x = 0;}
 			}
 			if (velocity.x > 0) {
-				velocity.x -= phys.deceleration * Time.fixedDeltaTime;
+				velocity.x -= phys.deceleration/GlobalData.decellerationScaleFactor * Time.fixedDeltaTime;
 				if (velocity.x < 0) {velocity.x = 0;}
 			}
 
-			if (climbing) {
+			if (climbing || swimming) {
 				if (velocity.y < phys.terminalVelocity * Time.fixedDeltaTime) {
-					velocity.y += phys.climbingAcceleration * Time.fixedDeltaTime ;
+					velocity.y += phys.climbingAcceleration/GlobalData.antiGraviyScaleFactor * Time.fixedDeltaTime ;
 					if (velocity.y > phys.terminalVelocity * Time.fixedDeltaTime) {velocity.y = phys.terminalVelocity * Time.fixedDeltaTime;}
 				}
 			}
@@ -261,21 +265,32 @@ public class playerController : MonoBehaviour {
 	void applyForces() {
 		//	Debug.Log(velocity * 10);
 		gameObject.transform.Translate(velocity);
-		// CharacterController controller = GetComponent<CharacterController>();
-		// controller.Move(gameObject.transform.TransformDirection(velocity));
-		// Rigidbody rb = GetComponent<Rigidbody>();
-		// rb.AddRelativeForce(velocity * 10);
 
 		foreach (Collider wall in wallContacts) {	
-			if (wall.bounds.center.y + wall.bounds.extents.y > phys.maxStepSize + transform.position.y)	{	
-			Vector3 local = wall.transform.InverseTransformPoint(transform.position);
+			if ((wall.bounds.center.y + wall.bounds.extents.y > phys.maxStepSize + transform.position.y) 
+			&& wall.bounds.center.y - wall.bounds.extents.y  < transform.position.y + phys.height-0.1)	{	
+				
+			Vector3 local = wall.transform.InverseTransformPoint(new Vector3(transform.position.x, wall.bounds.center.y, transform.position.z));
+
 			Mesh mesh = wall.gameObject.GetComponent<MeshCollider>().sharedMesh;
+
+
 			Vector3 collPt = wall.transform.TransformPoint(ClosestPointOnMesh(mesh, local));
+			Vector3 meshNormal = mesh.normals[0]; //walls are flat, to the normals should be the same for all 
+			meshNormal = transform.InverseTransformDirection(meshNormal);
+			if ((meshNormal.z > 0 == velocity.z > 0) && meshNormal.x > 0 == velocity.x > 0) {
+				continue;
+			}
+			collPt.y = transform.position.y;
 			Vector3 delta = transform.position - collPt;
- 			// Debug.Log("--------------------------");
-			// Debug.Log(collPt);
-			// Debug.Log(delta * 10);
 			// Debug.Log(transform.position);
+			// if (phys.radius - delta.magnitude > 0 || wall.name == "upperWall") {
+			// 	Debug.Log("----------" +wall.name );
+			// 	Debug.Log(collPt);
+			// 	Debug.Log(collPt2);
+			// 	Debug.Log(delta * 10);
+			// 	Debug.Log(delta2 * 10);
+			// }
 			delta = Vector3.ClampMagnitude(delta, Mathf.Clamp(phys.radius - delta.magnitude, 0, phys.radius));
 			delta.y = 0;
 			transform.position += delta;
@@ -295,15 +310,11 @@ public class playerController : MonoBehaviour {
 
     Vector3 ClosestPointOnMesh(Mesh mesh, Vector3 point) {
         float shortestDistance = float.MaxValue;
-
         Vector3 closest = Vector3.zero;
-
         for (int i = 0; i < mesh.triangles.Length; i += 3) {
-            int triangle = i;
-
-            Vector3 p1 = mesh.vertices[mesh.triangles[triangle]];
-            Vector3 p2 = mesh.vertices[mesh.triangles[triangle + 1]];
-            Vector3 p3 = mesh.vertices[mesh.triangles[triangle + 2]];
+            Vector3 p1 = mesh.vertices[mesh.triangles[i]];
+            Vector3 p2 = mesh.vertices[mesh.triangles[i + 1]];
+            Vector3 p3 = mesh.vertices[mesh.triangles[i + 2]];
 
             Vector3 nearest;
                 
@@ -316,7 +327,6 @@ public class playerController : MonoBehaviour {
                 closest = nearest;
             }
         }
-
         return closest;
     }
 
@@ -428,21 +438,48 @@ public class playerController : MonoBehaviour {
 	void OnTriggerEnter(Collider other)
 	{
 		if (!vis) {
-		if (other.transform.parent.tag == "polygon") {
+		//if (other.transform.parent.tag == "polygon") {
 			if (other.name == "floor" && other.transform.position.y < transform.position.y + phys.maxStepSize) {
 				airborne = false;
 				if (velocity.y < 0) {
 					velocity.y = 0;
 				}
 			}
-
+			if (other.transform.parent.name == "lowerPlatform") {
+				if (other.name == "platTop" && other.transform.position.y < transform.position.y + phys.maxStepSize) {
+					airborne = false;
+					if (platContactL == null || other.transform.position.y < platContactL.transform.position.y) {
+					platContactL = other;
+					}
+					floorContacts.Add(other);
+					if (velocity.y < 0) {
+						velocity.y = 0;
+					}
+				}
+			}
+			if (other.transform.parent.name == "upperPlatform") {
+				if (other.name == "platBottom" && other.transform.position.y < transform.position.y + phys.maxStepSize) {
+					airborne = false;
+					if (platContactU == null || other.transform.position.y > platContactU.transform.position.y) {
+					platContactU = other;
+					}
+					if (velocity.y < 0) {
+						velocity.y = 0;
+					}
+				}
+			}
 			if (other.name == "ceiling" ) {
 				if (velocity.y > 0) {
 					velocity.y = 0;
 				}
 			}
 
-			if (other.name == "wall" || other.name == "lowerWall" || other.name == "middleWall" || other.name == "upperWall") {
+			if (other.name == "wall" 
+			|| other.name == "lowerWall" 
+			|| other.name == "middleWall" 
+			|| other.name == "upperWall"
+			|| other.name == "platSide"
+			) {
 				if (other.bounds.center.y + other.bounds.extents.y > phys.maxStepSize + transform.position.y) {
 					// Vector3 normal = other.gameObject.GetComponent<MeshFilter>().mesh.normals[0];
 					// // wallNormals.Add(normal);
@@ -455,31 +492,69 @@ public class playerController : MonoBehaviour {
 				}
 			}
 
-		}
+		//}
 		}
 	}
 	void OnTriggerStay(Collider other) {
 		if (!vis) {
-			if (other.gameObject != gameObject && other.transform.parent.tag == "polygon") {
+			//if (other.gameObject != gameObject && other.transform.parent.tag == "polygon") {
 			if (other.name == "floor" && other.transform.position.y < transform.position.y + phys.maxStepSize) {
 				// Debug.Log(other.transform.parent.GetComponent<MapSegment>().id + "::" + floorContacts.Count);
 
 				airborne = false;
-				floorContacts.Add(other);
+				if (other.transform.parent.gameObject.GetComponent<MapSegment>().platform == null) {
+					floorContacts.Add(other);
+				}
 				//}
 				if (other.transform.position.y > transform.position.y) {
 					climbing = true;
 				}
-				
 			}
-			if (other.name == "wall" || other.name == "lowerWall" || other.name == "middleWall" || other.name == "upperWall") {
+			if (other.transform.parent.name == "lowerPlatform") {
+				if (other.name == "platTop" && other.transform.position.y < transform.position.y + phys.maxStepSize) {
+					airborne = false;
+					if (platContactL == null || other.transform.position.y < platContactL.transform.position.y) {
+					platContactL = other;
+					}
+					floorContacts.Add(other);
+					if (other.transform.position.y > transform.position.y) {
+						climbing = true;
+					}
+					if (velocity.y < 0) {
+						velocity.y = 0;
+					}
+				}
+			}
+			if (other.transform.parent.name == "upperPlatform") {
+				if (other.name == "platBottom" && other.transform.position.y < transform.position.y + phys.maxStepSize) {
+					airborne = false;
+					if (platContactU == null || other.transform.position.y > platContactU.transform.position.y) {
+					platContactU = other;
+					}
+					if (velocity.y < 0) {
+						velocity.y = 0;
+					}
+				}
+			}			if (other.name == "ceiling" ) {
+				if (velocity.y > 0) {
+					velocity.y = 0;
+				}
+			}
+
+
+			if (other.name == "wall" 
+			|| other.name == "lowerWall" 
+			|| other.name == "middleWall" 
+			|| other.name == "upperWall"
+			|| other.name == "platSide"
+			) {
 				if (other.bounds.center.y + other.bounds.extents.y > phys.maxStepSize + transform.position.y) {
 					if (!wallContacts.Contains(other)) {wallContacts.Add(other);}
 				}
 			}
 
 
-		}
+		//}
 		}
 	}
 
@@ -533,7 +608,7 @@ public class playerController : MonoBehaviour {
 		if (pol == -1) {
 
 			if (Physics.Raycast(new Vector3(gameObject.transform.position.x, 
-											gameObject.transform.position.y + phys.height, 
+											gameObject.transform.position.y + phys.height * 0.98f, 
 											gameObject.transform.position.z),
 								Vector3.up, out hit, 50)) {
 				if (hit.collider.transform.parent != null && hit.collider.transform.parent.tag == "polygon") {
@@ -1056,6 +1131,9 @@ public class playerController : MonoBehaviour {
 		addExternalForces();
 		applyForces();
 		floorContacts = new List<Collider>();
+		platContactL = null;
+		platContactU = null;
+		
 		// wallNormals = new List<Vector3>();
 		// wallContacts = new List<Collider>();
 	

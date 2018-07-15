@@ -25,7 +25,10 @@ public static class GlobalData
 	public static int landscapeType = 5;
 	public static bool alwaysRun = true;
 	public static float graviyScaleFactor = 2f;
-	public static float deBounceFactor = 7f;
+	public static float antiGraviyScaleFactor = 1f;
+	public static float accellerationScaleFactor = 2f;
+	public static float decellerationScaleFactor = 2f;
+	public static float deBounceFactor = 4f;
 
 
 	//----item definitions -- where are these defined in the data files ??????
