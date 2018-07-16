@@ -528,7 +528,7 @@ public class playerController : MonoBehaviour {
 			if (other.transform.parent.name == "upperPlatform") {
 				if (other.name == "platBottom" && other.transform.position.y < transform.position.y + phys.maxStepSize) {
 					airborne = false;
-					if (platContactU == null || other.transform.position.y > platContactU.transform.position.y) {
+					if (platContactU == null || other.transform.position.y  > platContactU.transform.position.y) {
 					platContactU = other;
 					}
 					if (velocity.y < 0) {
@@ -561,8 +561,8 @@ public class playerController : MonoBehaviour {
 	void OnTriggerExit(Collider other)
 	{
 		if (!vis) {
-		if (other.transform.parent.tag == "polygon") {
-			if (other.name == "floor") {
+		//if (other.transform.parent.tag == "polygon") {
+			if (other.name == "floor" || other.name == "platTop") {
 				// Debug.Log(other.transform.parent.GetComponent<MapSegment>().id + "exit");
 				floorContacts.Remove(other);
 				if (floorContacts.Count == 0) {
@@ -587,7 +587,7 @@ public class playerController : MonoBehaviour {
 					}
 				}
 			}
-		}
+		//}
 		}
 	}
 

@@ -649,7 +649,6 @@ public class MapSegment : MonoBehaviour {
 		Vector2[] uvs = new Vector2[_vertices.Count];
 		List<int> triangles = new List<int>();
 		for (int i = 0; i < _vertices.Count; i++) {
-			if (!isBase) {_vertices[i] += polHeight;}
 			triangles.Add(0);
 			triangles.Add(i);
 			if (i+1 < _vertices.Count){
@@ -665,7 +664,10 @@ public class MapSegment : MonoBehaviour {
 		mesh.triangles = triangles.ToArray();	
 
 		mesh.RecalculateNormals();
-
+		if (!isBase) {
+			meshItem.transform.position += polHeight;
+		}
+		
 		return meshItem;
 
 	}
