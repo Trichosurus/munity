@@ -155,7 +155,9 @@ public class playerController : MonoBehaviour {
 			}
 			if (side.lowerMeshItem != null) {
 				if (!wallContacts.Contains(side.lowerMeshItem.GetComponent<Collider>())) {
-					wallContacts.Add(side.lowerMeshItem.GetComponent<Collider>());
+					if (side.connection.height.y < phys.height * 0.98f) {
+						wallContacts.Add(side.lowerMeshItem.GetComponent<Collider>());
+					}
 				}
 			}
 			if (side.middleMeshItem != null) {
@@ -222,6 +224,7 @@ public class playerController : MonoBehaviour {
 			}
 
 			if (climbing || swimming) {
+				Debug.Log("climbing");
 				if (velocity.y < phys.terminalVelocity * Time.fixedDeltaTime) {
 					velocity.y += phys.climbingAcceleration/GlobalData.antiGraviyScaleFactor * Time.fixedDeltaTime ;
 					if (velocity.y > phys.terminalVelocity * Time.fixedDeltaTime) {velocity.y = phys.terminalVelocity * Time.fixedDeltaTime;}
@@ -265,40 +268,61 @@ public class playerController : MonoBehaviour {
 	void applyForces() {
 		//	Debug.Log(velocity * 10);
 		gameObject.transform.Translate(velocity);
-
+		bool adjusted = true;
+		while (adjusted) {
+		adjusted = false;
 		foreach (Collider wall in wallContacts) {	
-			if ((wall.bounds.center.y + wall.bounds.extents.y > phys.maxStepSize + transform.position.y) 
-			&& wall.bounds.center.y - wall.bounds.extents.y  < transform.position.y + phys.height-0.1)	{	
-				
-			Vector3 local = wall.transform.InverseTransformPoint(new Vector3(transform.position.x, wall.bounds.center.y, transform.position.z));
-
-			Mesh mesh = wall.gameObject.GetComponent<MeshCollider>().sharedMesh;
-
-
-			Vector3 collPt = wall.transform.TransformPoint(ClosestPointOnMesh(mesh, local));
-			Vector3 meshNormal = mesh.normals[0]; //walls are flat, to the normals should be the same for all 
-			meshNormal = transform.InverseTransformDirection(meshNormal);
-			if ((meshNormal.z > 0 == velocity.z > 0) && meshNormal.x > 0 == velocity.x > 0) {
-				continue;
+			
+			bool gapTooSmall = false;
+			if (wall.transform.parent.tag == "polygon") {
+				MapSegment seg = wall.transform.parent.GetComponent<MapSegment>();
+				foreach (MapSegmentSide side in seg.sides) {
+					if (side.lowerMeshItem == wall.gameObject 
+					|| side.middleMeshItem == wall.gameObject
+					|| side.upperMeshItem == wall.gameObject) {
+						if (side.connection != null && side.connection.height.y < phys.height - 0.02) {
+							gapTooSmall = true;
+							break;
+						}
+					}
+				}
 			}
-			collPt.y = transform.position.y;
-			Vector3 delta = transform.position - collPt;
-			// Debug.Log(transform.position);
-			// if (phys.radius - delta.magnitude > 0 || wall.name == "upperWall") {
-			// 	Debug.Log("----------" +wall.name );
-			// 	Debug.Log(collPt);
-			// 	Debug.Log(collPt2);
-			// 	Debug.Log(delta * 10);
-			// 	Debug.Log(delta2 * 10);
-			// }
-			delta = Vector3.ClampMagnitude(delta, Mathf.Clamp(phys.radius - delta.magnitude, 0, phys.radius));
-			delta.y = 0;
-			transform.position += delta;
 
+			if (gapTooSmall || (wall.bounds.center.y + wall.bounds.extents.y > phys.maxStepSize + transform.position.y 
+			&& wall.bounds.center.y - wall.bounds.extents.y  < transform.position.y + phys.height-0.02))	{	
+				
+				Vector3 local = wall.transform.InverseTransformPoint(new Vector3(transform.position.x, wall.bounds.center.y, transform.position.z));
+
+				Mesh mesh = wall.gameObject.GetComponent<MeshCollider>().sharedMesh;
+
+
+				Vector3 collPt = wall.transform.TransformPoint(ClosestPointOnMesh(mesh, local));
+				Vector3 meshNormal = mesh.normals[0]; //walls are flat, to the normals should be the same for all 
+				//meshNormal = transform.InverseTransformDirection(meshNormal);
+				if ((meshNormal.z > 0 != (transform.position.z - collPt.z) > 0) || (meshNormal.x > 0 != (transform.position.x - collPt.x) > 0)) {
+					continue;
+				}
+				collPt.y = transform.position.y;
+				Vector3 delta = transform.position - collPt;
+				// Debug.Log(transform.position);
+				// if (phys.radius - delta.magnitude > 0 || wall.name == "upperWall") {
+				// 	Debug.Log("----------" +wall.name );
+				// 	Debug.Log(collPt);
+				// 	Debug.Log(collPt2);
+				// 	Debug.Log(delta * 10);
+				// 	Debug.Log(delta2 * 10);
+				// }
+				delta = Vector3.ClampMagnitude(delta, Mathf.Clamp(phys.radius - delta.magnitude, 0, phys.radius));
+				delta.y = 0; 
+				if (delta.magnitude > 0.001f ) {
+					adjusted = true;
+					transform.position += delta;
+				}
 
 			// Debug.Log(transform.position);
 			// Debug.Log(velocity);
 			}
+		}
 		}
 
 	}
@@ -438,12 +462,12 @@ public class playerController : MonoBehaviour {
 	void OnTriggerEnter(Collider other)
 	{
 		if (!vis) {
-		//if (other.transform.parent.tag == "polygon") {
 			if (other.name == "floor" && other.transform.position.y < transform.position.y + phys.maxStepSize) {
 				airborne = false;
-				if (velocity.y < 0) {
-					velocity.y = 0;
-				}
+				floorContacts.Add(other);
+				// if (velocity.y < 0) {
+				// 	velocity.y = 0;
+				// }
 			}
 			if (other.transform.parent.name == "lowerPlatform") {
 				if (other.name == "platTop" && other.transform.position.y < transform.position.y + phys.maxStepSize) {
@@ -452,9 +476,9 @@ public class playerController : MonoBehaviour {
 					platContactL = other;
 					}
 					floorContacts.Add(other);
-					if (velocity.y < 0) {
-						velocity.y = 0;
-					}
+					// if (velocity.y < 0) {
+					// 	velocity.y = 0;
+					// }
 				}
 			}
 			if (other.transform.parent.name == "upperPlatform") {
@@ -481,18 +505,21 @@ public class playerController : MonoBehaviour {
 			|| other.name == "platSide"
 			) {
 				if (other.bounds.center.y + other.bounds.extents.y > phys.maxStepSize + transform.position.y) {
-					// Vector3 normal = other.gameObject.GetComponent<MeshFilter>().mesh.normals[0];
-					// // wallNormals.Add(normal);
-					// Vector3 collPt = other.ClosestPointOnBounds(transform.position);
-					// Vector3 v = transform.position - collPt;
-
-					// transform.position += Vector3.ClampMagnitude(v, Mathf.Clamp(phys.radius - v.magnitude, 0, phys.radius));
-					
-					if (!wallContacts.Contains(other)) {wallContacts.Add(other);}
+					if (!wallContacts.Contains(other)) {wallContacts.Add(other);return;}
+				}
+				if (other.transform.parent.tag == "polygon" && !wallContacts.Contains(other)) {
+					MapSegment seg = other.transform.parent.GetComponent<MapSegment>();
+					foreach (MapSegmentSide side in seg.sides) {
+						if (side.lowerMeshItem == other.gameObject 
+						|| side.middleMeshItem == other.gameObject
+						|| side.upperMeshItem == other.gameObject) {
+							if (side.connection == null || side.connection.height.y < phys.height) {
+								wallContacts.Add(other);return;
+							}
+						}
+					}
 				}
 			}
-
-		//}
 		}
 	}
 	void OnTriggerStay(Collider other) {
@@ -505,7 +532,9 @@ public class playerController : MonoBehaviour {
 				if (other.transform.parent.gameObject.GetComponent<MapSegment>().platform == null) {
 					floorContacts.Add(other);
 				}
-				//}
+				if (velocity.y < 0) {
+					velocity.y = 0;
+				}
 				if (other.transform.position.y > transform.position.y) {
 					climbing = true;
 				}
@@ -551,10 +580,19 @@ public class playerController : MonoBehaviour {
 				if (other.bounds.center.y + other.bounds.extents.y > phys.maxStepSize + transform.position.y) {
 					if (!wallContacts.Contains(other)) {wallContacts.Add(other);}
 				}
+				if (other.transform.parent.tag == "polygon" && !wallContacts.Contains(other)) {
+					MapSegment seg = other.transform.parent.GetComponent<MapSegment>();
+					foreach (MapSegmentSide side in seg.sides) {
+						if (side.lowerMeshItem == other.gameObject 
+						|| side.middleMeshItem == other.gameObject
+						|| side.upperMeshItem == other.gameObject) {
+							if (side.connection == null || side.connection.height.y < phys.height) {
+								wallContacts.Add(other);return;
+							}
+						}
+					}
+				}
 			}
-
-
-		//}
 		}
 	}
 
@@ -577,8 +615,12 @@ public class playerController : MonoBehaviour {
 						if (velocity.y < phys.airborneDeceleration/GlobalData.deBounceFactor * Time.deltaTime  ) {
 							//Debug.Log("setLevel");
 							velocity.y = 0;
-							transform.position = new Vector3 (transform.position.x, other.transform.position.y,transform.position.z);
+							if (other.transform.position.y < transform.position.y + 0.1) {
+								transform.position = new Vector3 (transform.position.x, other.transform.position.y,transform.position.z);
+							}
 							airborne = false;
+
+							Debug.Log(other.transform.parent.name);
 						} else {
 							// airborne = true;
 						// 	touching = false;
