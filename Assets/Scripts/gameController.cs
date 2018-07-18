@@ -238,6 +238,67 @@ public static class GlobalData
 		176,	// explosions
 	};
 
+	public static void writeSettings() {
+		string path = Application.persistentDataPath + "/settings.ini";
+		if (!File.Exists(path)) {
+			File.Create(path);
+		}
+		TextWriter tw = new StreamWriter(path);
+		tw.WriteLine("shapesFilePath=" + GlobalData.shapesFilePath);
+		tw.WriteLine("mapsFilePath=" + GlobalData.mapsFilePath);
+		tw.WriteLine("soundsFilePath=" + GlobalData.soundsFilePath);
+		tw.WriteLine("physicsFilePath=" + GlobalData.physicsFilePath);
+		tw.WriteLine("imagesFilePath=" + GlobalData.imagesFilePath);
+		tw.WriteLine("skipOcclusion=" + GlobalData.skipOcclusion);
+		tw.WriteLine("occlusionOverDraw=" + GlobalData.occlusionOverDraw);
+		tw.WriteLine("occlusionDensity=" + GlobalData.occlusionDensity);
+		tw.WriteLine("captureMouse=" + GlobalData.captureMouse);
+		tw.WriteLine("globalLighting=" + GlobalData.globalLighting);
+		tw.WriteLine("playerLight=" + GlobalData.playerLight);
+		tw.WriteLine("spriteType=" + GlobalData.spriteType);
+		tw.WriteLine("landscapeType=" + GlobalData.landscapeType);
+		tw.WriteLine("alwaysRun=" + GlobalData.alwaysRun);
+		tw.WriteLine("graviyScaleFactor=" + GlobalData.graviyScaleFactor);
+		tw.WriteLine("antiGraviyScaleFactor=" + GlobalData.antiGraviyScaleFactor);
+		tw.WriteLine("accellerationScaleFactor=" + GlobalData.accellerationScaleFactor);
+		tw.WriteLine("decellerationScaleFactor=" + GlobalData.decellerationScaleFactor);
+		tw.WriteLine("deBounceFactor=" + GlobalData.deBounceFactor);
+		tw.Close(); 
+	}
+
+	public static void readSettings() {
+		string path = Application.persistentDataPath + "/settings.ini";
+		if (!File.Exists(path)) {
+			writeSettings();
+			return;
+		}
+		bool b;
+		string[] lines = File.ReadAllLines(path);
+		foreach (string line in lines) {
+			if (line.StartsWith("shapesFilePath=")) {GlobalData.shapesFilePath = line.Replace("shapesFilePath=","").Trim();}
+			if (line.StartsWith("mapsFilePath=")) {GlobalData.mapsFilePath = line.Replace("mapsFilePath=","").Trim();}
+			if (line.StartsWith("soundsFilePath=")) {GlobalData.soundsFilePath = line.Replace("soundsFilePath=","").Trim();}
+			if (line.StartsWith("physicsFilePath=")) {GlobalData.physicsFilePath = line.Replace("physicsFilePath=","").Trim();}
+			if (line.StartsWith("imagesFilePath=")) {GlobalData.imagesFilePath = line.Replace("imagesFilePath=","").Trim();}
+			// should set default values if the try parse fails... later
+			if (line.StartsWith("skipOcclusion=")) {GlobalData.skipOcclusion = line.Replace("skipOcclusion=","").Trim() == "True";}
+			if (line.StartsWith("occlusionOverDraw=")) {b = int.TryParse(line.Replace("occlusionOverDraw=","").Trim(), out GlobalData.occlusionOverDraw);}
+			if (line.StartsWith("occlusionDensity=")) {b = float.TryParse(line.Replace("occlusionDensity=","").Trim(), out GlobalData.occlusionDensity);}
+			if (line.StartsWith("captureMouse=")) {GlobalData.captureMouse = line.Replace("captureMouse=","").Trim() == "True";}
+			if (line.StartsWith("globalLighting=")) {GlobalData.globalLighting = line.Replace("globalLighting=","").Trim() == "True";}
+			if (line.StartsWith("playerLight=")) {GlobalData.playerLight = line.Replace("playerLight=","").Trim() == "True";}
+			if (line.StartsWith("spriteType=")) {b = int.TryParse(line.Replace("spriteType=","").Trim(), out GlobalData.spriteType);}
+			if (line.StartsWith("landscapeType=")) {b = int.TryParse(line.Replace("landscapeType=","").Trim(), out GlobalData.landscapeType);}
+			if (line.StartsWith("alwaysRun=")) {GlobalData.alwaysRun = line.Replace("alwaysRun=","").Trim() == "True";}
+			if (line.StartsWith("graviyScaleFactor=")) {b = float.TryParse(line.Replace("graviyScaleFactor=","").Trim(), out GlobalData.graviyScaleFactor);}
+			if (line.StartsWith("antiGraviyScaleFactor=")) {b = float.TryParse(line.Replace("antiGraviyScaleFactor=","").Trim(), out GlobalData.antiGraviyScaleFactor);}
+			if (line.StartsWith("accellerationScaleFactor=")) {b = float.TryParse(line.Replace("accellerationScaleFactor=","").Trim(), out GlobalData.accellerationScaleFactor);}
+			if (line.StartsWith("decellerationScaleFactor=")) {b = float.TryParse(line.Replace("decellerationScaleFactor=","").Trim(), out GlobalData.decellerationScaleFactor);}
+			if (line.StartsWith("deBounceFactor=")) {b = float.TryParse(line.Replace("deBounceFactor=","").Trim(), out GlobalData.deBounceFactor);}
+		}
+	}
+		
+
 }
 
 public class gameController : MonoBehaviour {
@@ -245,31 +306,13 @@ public class gameController : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 
-		string path = Application.persistentDataPath + "/settings.ini";
-		if (!File.Exists(path)) {
-			File.Create(path);
-			TextWriter tw = new StreamWriter(path);
-			tw.WriteLine("shapesFilePath=" + GlobalData.shapesFilePath);
-			tw.WriteLine("mapsFilePath=" + GlobalData.mapsFilePath);
-			tw.WriteLine("soundsFilePath=" + GlobalData.soundsFilePath);
-			tw.WriteLine("physicsFilePath=" + GlobalData.physicsFilePath);
-			tw.WriteLine("imagesFilePath=" + GlobalData.imagesFilePath);
-			tw.Close(); 
-		} else {
-			string[] lines = File.ReadAllLines(path);
-			foreach (string line in lines) {
-				if (line.StartsWith("shapesFilePath=")) {GlobalData.shapesFilePath = line.Replace("shapesFilePath=","").Trim();}
-				if (line.StartsWith("mapsFilePath=")) {GlobalData.mapsFilePath = line.Replace("mapsFilePath=","").Trim();}
-				if (line.StartsWith("soundsFilePath=")) {GlobalData.soundsFilePath = line.Replace("soundsFilePath=","").Trim();}
-				if (line.StartsWith("physicsFilePath=")) {GlobalData.physicsFilePath = line.Replace("physicsFilePath=","").Trim();}
-				if (line.StartsWith("imagesFilePath=")) {GlobalData.imagesFilePath = line.Replace("imagesFilePath=","").Trim();}
-			}
-		}
+		GlobalData.readSettings();
 	}
 	// Update is called once per frame
 	void Update () {
 		
 	}
+	
 }
 
 public class AudioDefinition {

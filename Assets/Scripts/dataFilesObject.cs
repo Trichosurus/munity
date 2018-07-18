@@ -79,7 +79,8 @@ public class dataFilesObject : MonoBehaviour {
 					GlobalData.imagesFilePath = FileBrowser.Result;
 					break;	
 			}
-			writeSettings();
+			GlobalData.writeSettings();
+			drawString();
 		}
 				settingsScreen.choosingFile = false; 
 
@@ -129,20 +130,4 @@ public class dataFilesObject : MonoBehaviour {
 		
 	}
 
-	void writeSettings() {
-		string path = Application.persistentDataPath + "/settings.ini";
-
-		if (!File.Exists(path)) {
-			File.Create(path);
-		}
-		TextWriter tw = new StreamWriter(path);
-		tw.WriteLine("shapesFilePath=" + GlobalData.shapesFilePath);
-		tw.WriteLine("mapsFilePath=" + GlobalData.mapsFilePath);
-		tw.WriteLine("soundsFilePath=" + GlobalData.soundsFilePath);
-		tw.WriteLine("physicsFilePath=" + GlobalData.physicsFilePath);
-		tw.WriteLine("imagesFilePath=" + GlobalData.imagesFilePath);
-		tw.Close(); 
-		drawString();
-
-	}
 }
