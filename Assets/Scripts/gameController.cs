@@ -15,13 +15,22 @@ public static class GlobalData
 
 	public static Map map = null;
 
+	public static InputController inputController = new InputController();
+
 	public static bool skipOcclusion = false;
 	public static int occlusionOverDraw = 1;
 	public static float occlusionDensity = 0.5f;
 	public static bool captureMouse = true;
 	public static bool globalLighting = true;
+	public static float globalLightingIntensity = 0.15f;
 	public static bool playerLight = true;
+	public static int playerLightType = 0;
+	public static float playerLightIntensity = 0.7f;
+	public static float playerLightRange = 3f;
+	public static int playerLightPosition = 0;
+	public static float playerLightDelay = 0;
 	public static int spriteType = 2;
+	public static bool forceSpriteMultivews = false;
 	public static int landscapeType = 5;
 	public static bool alwaysRun = true;
 	public static float graviyScaleFactor = 2f;
@@ -254,7 +263,13 @@ public static class GlobalData
 		tw.WriteLine("occlusionDensity=" + GlobalData.occlusionDensity);
 		tw.WriteLine("captureMouse=" + GlobalData.captureMouse);
 		tw.WriteLine("globalLighting=" + GlobalData.globalLighting);
+		tw.WriteLine("globalLightingIntensity=" + GlobalData.globalLightingIntensity);
 		tw.WriteLine("playerLight=" + GlobalData.playerLight);
+		tw.WriteLine("playerLightType=" + GlobalData.playerLightType);
+		tw.WriteLine("playerLightIntensity=" + GlobalData.playerLightIntensity);
+		tw.WriteLine("playerLightPosition=" + GlobalData.playerLightPosition);
+		tw.WriteLine("playerLightDelay=" + GlobalData.playerLightDelay);
+		tw.WriteLine("playerLightRange=" + GlobalData.playerLightRange);
 		tw.WriteLine("spriteType=" + GlobalData.spriteType);
 		tw.WriteLine("landscapeType=" + GlobalData.landscapeType);
 		tw.WriteLine("alwaysRun=" + GlobalData.alwaysRun);
@@ -263,6 +278,17 @@ public static class GlobalData
 		tw.WriteLine("accellerationScaleFactor=" + GlobalData.accellerationScaleFactor);
 		tw.WriteLine("decellerationScaleFactor=" + GlobalData.decellerationScaleFactor);
 		tw.WriteLine("deBounceFactor=" + GlobalData.deBounceFactor);
+		tw.WriteLine("forceSpriteMultivews=" + GlobalData.forceSpriteMultivews);
+		tw.Close(); 
+
+
+		path = Application.persistentDataPath + "/input.json";
+		if (!File.Exists(path)) {
+			File.Create(path);
+		} 
+		string json = JsonUtility.ToJson(GlobalData.inputController, true);
+		tw = new StreamWriter(path);
+		tw.Write(json);
 		tw.Close(); 
 	}
 
@@ -286,7 +312,13 @@ public static class GlobalData
 			if (line.StartsWith("occlusionDensity=")) {b = float.TryParse(line.Replace("occlusionDensity=","").Trim(), out GlobalData.occlusionDensity);}
 			if (line.StartsWith("captureMouse=")) {GlobalData.captureMouse = line.Replace("captureMouse=","").Trim() == "True";}
 			if (line.StartsWith("globalLighting=")) {GlobalData.globalLighting = line.Replace("globalLighting=","").Trim() == "True";}
+			if (line.StartsWith("globalLightingIntensity=")) {b = float.TryParse(line.Replace("globalLightingIntensity=","").Trim(), out GlobalData.globalLightingIntensity);}
 			if (line.StartsWith("playerLight=")) {GlobalData.playerLight = line.Replace("playerLight=","").Trim() == "True";}
+			if (line.StartsWith("playerLightIntensity=")) {b = float.TryParse(line.Replace("playerLightIntensity=","").Trim(), out GlobalData.playerLightIntensity);}
+			if (line.StartsWith("playerLightType=")) {b = int.TryParse(line.Replace("playerLightType=","").Trim(), out GlobalData.playerLightType);}
+			if (line.StartsWith("playerLightDelay=")) {b = float.TryParse(line.Replace("playerLightDelay=","").Trim(), out GlobalData.playerLightDelay);}
+			if (line.StartsWith("playerLightPosition=")) {b = int.TryParse(line.Replace("playerLightPosition=","").Trim(), out GlobalData.playerLightPosition);}
+			if (line.StartsWith("playerLightRange=")) {b = float.TryParse(line.Replace("playerLightRange=","").Trim(), out GlobalData.playerLightRange);}
 			if (line.StartsWith("spriteType=")) {b = int.TryParse(line.Replace("spriteType=","").Trim(), out GlobalData.spriteType);}
 			if (line.StartsWith("landscapeType=")) {b = int.TryParse(line.Replace("landscapeType=","").Trim(), out GlobalData.landscapeType);}
 			if (line.StartsWith("alwaysRun=")) {GlobalData.alwaysRun = line.Replace("alwaysRun=","").Trim() == "True";}
@@ -295,7 +327,17 @@ public static class GlobalData
 			if (line.StartsWith("accellerationScaleFactor=")) {b = float.TryParse(line.Replace("accellerationScaleFactor=","").Trim(), out GlobalData.accellerationScaleFactor);}
 			if (line.StartsWith("decellerationScaleFactor=")) {b = float.TryParse(line.Replace("decellerationScaleFactor=","").Trim(), out GlobalData.decellerationScaleFactor);}
 			if (line.StartsWith("deBounceFactor=")) {b = float.TryParse(line.Replace("deBounceFactor=","").Trim(), out GlobalData.deBounceFactor);}
+			if (line.StartsWith("forceSpriteMultivews=")) {GlobalData.forceSpriteMultivews = line.Replace("forceSpriteMultivews=","").Trim() == "True";}
 		}
+
+		path = Application.persistentDataPath + "/input.json";
+		if (!File.Exists(path)) {
+			writeSettings();
+			return;
+		}
+		string json = File.ReadAllText(path);
+
+		JsonUtility.FromJsonOverwrite(json, GlobalData.inputController);
 	}
 		
 
@@ -305,7 +347,8 @@ public class gameController : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-
+		GlobalData.inputController = new InputController();
+		GlobalData.inputController.setDefaultKeys();
 		GlobalData.readSettings();
 	}
 	// Update is called once per frame
@@ -327,6 +370,186 @@ public class AudioDefinition {
 	public double chance;
 	public double lowPitch;
 	public double highPitch;
+
+}
+	
+[System.Serializable]
+public class InputController {
+
+	public List<button> buttons = new List<button>();
+	public List<axis> axes = new List<axis>();
+
+	public void setDefaultKeys() {
+		axes.Add(new axis{
+			axisName = "Mouse X",
+			name = "Mouse X",
+			sensitivity = 1
+		});
+		axes.Add(new axis{
+			axisName = "Mouse Y",
+			name = "Mouse Y",
+			sensitivity = 1
+		});
+
+
+		buttons.Add(new button() {
+			type = "button",
+			keyCode = KeyCode.W,
+			name = "Forwards",
+			buttonName = "W"
+		});
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.S,
+			name = "Backwards",
+			buttonName = "S"
+		});
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.A,
+			name = "Left",
+			buttonName = "A"
+		});
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.D,
+			name = "Right",
+			buttonName = "D"
+		});
+		buttons.Add(new button {
+			type = "axis",
+			name = "Next Weap",
+			axisName = "Mouse ScrollWheel",
+			axisValue = 0.0001f,
+			buttonName = "ScrUp"
+		})	;
+		buttons.Add(new button {
+			type = "axis",
+			name = "Prev Weap",
+			axisName = "Mouse ScrollWheel",
+			axisValue = -0.0001f,
+			buttonName = "ScrDn"
+		});
+
+
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.Mouse0,
+			name = "Trigger1",
+			buttonName = "Mouse0"
+		});
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.Mouse1,
+			name = "Trigger2",
+			buttonName = "Mouse1"
+		});
+
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.Escape,
+			name = "Menu",
+			buttonName = "Escape"
+		});
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.E,
+			name = "Action",
+			buttonName = "E"
+		});
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.Tab,
+			name = "Map",
+			buttonName = "Tab"
+		});
+
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.LeftShift,
+			name = "Run/Walk",
+			buttonName = "LeftShift"
+		});
+
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.R,
+			name = "Swim",
+			buttonName = "R"
+		});
+
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.Tab,
+			name = "Action",
+			buttonName = "Tab"
+		});
+
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.LeftBracket,
+			name = "Prev Inv",
+			buttonName = "LeftBracket"
+		});
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.RightBracket,
+			name = "Next Inv",
+			buttonName = "RightBracket"
+		});
+		buttons.Add(new button {
+			type = "button",
+			keyCode = KeyCode.LeftAlt,
+			name = "Show Cursor",
+			buttonName = "LeftAlt"
+		});
+
+	}
+	
+	public bool getButton(string button) {
+		foreach (button b in buttons) {
+			if (b.name == button) {
+				if (b.type == "button") {
+					if (Input.GetKey(b.keyCode)){
+						return true;
+					}
+				} else if (b.type == "axis") {
+					if (Input.GetAxis(b.axisName) > b.axisValue && b.axisValue > 0) {
+						return true;
+					}
+					if (Input.GetAxis(b.axisName) < b.axisValue && b.axisValue < 0) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	public float getAxis(string axis) {
+		foreach (axis a in axes) {
+			if (a.name == axis) {
+				return Input.GetAxis(a.axisName) * a.sensitivity;
+			}
+		}
+		return 0;
+	}
+
+	[System.Serializable]
+	public struct button {
+		public string type;
+		public KeyCode keyCode;
+		public string buttonName;
+		public string name;
+		public string axisName;
+		public float axisValue;
+	}
+	[System.Serializable]
+	public struct axis {
+		public string axisName;
+		public string name;
+		public float sensitivity;
+	}
+
 
 }
 	

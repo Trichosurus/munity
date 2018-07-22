@@ -6,10 +6,6 @@ public class playerController : MonoBehaviour {
 	public float accelleration = 1;
 	public float maxspeed = 3;
 
-	float accellAmountZ = 0;
-	float accellAmountX = 0;
-	float accellAmountY = 0;
-	float z,x,y = 0;
 	bool touched;
 	public int currentPolygon = -1;
 
@@ -41,7 +37,7 @@ public class playerController : MonoBehaviour {
 	private GameObject lastTouch = null;
 	private GameObject playerCollider;
 	private GameObject playerLight;
-
+	private GameObject playerCamera;
 	private List<Collider> floorContacts = new List<Collider>();
 	private List<Collider> wallContacts = new List<Collider>();
 	public Collider platContactU = null;
@@ -63,11 +59,89 @@ public class playerController : MonoBehaviour {
 		currentPolygon = -1;
 		playerCollider = transform.Find("playerCollider").gameObject;
 		playerLight = transform.Find("playerLight").gameObject;
+		playerCamera = transform.Find("playerCamera").gameObject;
 
-		if (!GlobalData.playerLight) {
-			playerLight.GetComponent<Light>().enabled = false;
 
+		playerLight.GetComponent<Light>().enabled = GlobalData.playerLight;
+		playerLight.GetComponent<Light>().intensity = GlobalData.playerLightIntensity;
+		playerLight.GetComponent<Light>().range = GlobalData.playerLightRange;
+
+
+		switch (GlobalData.playerLightType) {
+			case 0:
+				playerLight.GetComponent<Light>().shadows = LightShadows.None;
+				playerLight.GetComponent<Light>().type = LightType.Point;
+				break;
+			case 1:
+				playerLight.GetComponent<Light>().shadows = LightShadows.Hard;
+				playerLight.GetComponent<Light>().type = LightType.Spot;
+				playerLight.GetComponent<Light>().spotAngle = 15;
+				break;
+			case 2:
+				playerLight.GetComponent<Light>().shadows = LightShadows.Hard;
+				playerLight.GetComponent<Light>().type = LightType.Spot;
+				playerLight.GetComponent<Light>().spotAngle = 30;
+				break;
+			case 3:
+				playerLight.GetComponent<Light>().shadows = LightShadows.Hard;
+				playerLight.GetComponent<Light>().type = LightType.Spot;
+				playerLight.GetComponent<Light>().spotAngle = 45;
+				break;
+			case 4:
+				playerLight.GetComponent<Light>().shadows = LightShadows.Hard;
+				playerLight.GetComponent<Light>().type = LightType.Spot;
+				playerLight.GetComponent<Light>().spotAngle = 60;
+				break;
+			case 5:
+				playerLight.GetComponent<Light>().shadows = LightShadows.Soft;
+				playerLight.GetComponent<Light>().type = LightType.Spot;
+				playerLight.GetComponent<Light>().spotAngle = 15;
+				break;
+			case 6:
+				playerLight.GetComponent<Light>().shadows = LightShadows.Soft;
+				playerLight.GetComponent<Light>().type = LightType.Spot;
+				playerLight.GetComponent<Light>().spotAngle = 30;
+				break;
+			case 7:
+				playerLight.GetComponent<Light>().shadows = LightShadows.Soft;
+				playerLight.GetComponent<Light>().type = LightType.Spot;
+				playerLight.GetComponent<Light>().spotAngle = 45;
+				break;
+			case 8:
+				playerLight.GetComponent<Light>().shadows = LightShadows.Soft;
+				playerLight.GetComponent<Light>().type = LightType.Spot;
+				playerLight.GetComponent<Light>().spotAngle = 60;
+				break;
 		}
+
+
+	switch (GlobalData.playerLightPosition) {
+			case 0:
+				playerLight.transform.position = playerCamera.transform.position;
+				break;
+			case 1:
+				playerLight.transform.position = transform.position;
+				break;
+			case 2:
+				playerLight.transform.position = new Vector3(
+										playerCamera.transform.position.x,
+										playerCamera.transform.position.y + 0.1f,
+										playerCamera.transform.position.z);
+				break;
+			case 3:
+				playerLight.transform.position = new Vector3(
+										playerCamera.transform.position.x + 0.1f,
+										playerCamera.transform.position.y - 0.1f,
+										playerCamera.transform.position.z);
+				break;
+			case 4:
+				playerLight.transform.position = new Vector3(
+										playerCamera.transform.position.x - 0.1f,
+										playerCamera.transform.position.y - 0.1f,
+										playerCamera.transform.position.z);
+				break;
+		}
+
 
 	// walking standard physics, remove when physics files get read
 		walking.maxForwardSpeed = 0.0714f;
@@ -77,20 +151,28 @@ public class playerController : MonoBehaviour {
 		walking.climbingAcceleration = 0.0033f;
 
 
-
+		GameObject.Find("Menu").SetActive(false);
 
 	}
+
+
 
 	
 	// Update is called once per frame
 	void Update () {
-		if (GlobalData.captureMouse) {
-			transform.Find("playerCamera").GetComponent<mouselook>().lockCursor = !Input.GetButton("Menu");
-		} else {
-			transform.Find("playerCamera").GetComponent<mouselook>().lockCursor = Input.GetButton("Menu");
+
+		if (GlobalData.inputController.getButton("Menu")) {
+			GameObject.Find("Menu").SetActive(true);
+			gameObject.SetActive(false);
 		}
 
-		if ((GlobalData.alwaysRun && !Input.GetButton("RunWalk")) || (!GlobalData.alwaysRun && Input.GetButton("RunWalk"))) {
+		if (GlobalData.captureMouse) {
+			playerCamera.GetComponent<mouselook>().lockCursor = !GlobalData.inputController.getButton("Show Cursor");
+		} else {
+			playerCamera.GetComponent<mouselook>().lockCursor = GlobalData.inputController.getButton("Show Cursor");
+		}
+
+		if ((GlobalData.alwaysRun && !GlobalData.inputController.getButton("Run/Walk")) || (!GlobalData.alwaysRun && GlobalData.inputController.getButton("RunWalk"))) {
 			phys = running;
 		} else {
 			phys = walking;
@@ -99,12 +181,12 @@ public class playerController : MonoBehaviour {
 
 
 
-		if (Input.GetButton("Action")) {
+		if (GlobalData.inputController.getButton("Action")) {
 			RaycastHit hit;
 			Vector3 cameraPos;
-			cameraPos = transform.Find("playerCamera").transform.position;
+			cameraPos = playerCamera.transform.position;
 			MapSegment ms = null;
-			if (Physics.Raycast(cameraPos, transform.Find("playerCamera").forward, out hit, 7)) {
+			if (Physics.Raycast(cameraPos, playerCamera.transform.forward, out hit, 7)) {
 				if (hit.collider.transform.parent.tag == "polygon") {
 					ms = hit.collider.transform.parent.GetComponent<MapSegment>();
 				} else if (hit.collider.transform.parent.name == "upperPlatform" || hit.collider.transform.parent.name == "lowerPlatform") {
@@ -175,24 +257,24 @@ public class playerController : MonoBehaviour {
 
 
 	void addInternalForces() {
-		swimming = Input.GetButton("Swim");
+		swimming = GlobalData.inputController.getButton("Swim");
 		if (!airborne || swimming) {
-			if (Input.GetButton("Forwards") && velocity.z < phys.maxForwardSpeed * Time.fixedDeltaTime) {
+			if (GlobalData.inputController.getButton("Forwards") && velocity.z < phys.maxForwardSpeed * Time.fixedDeltaTime) {
 				velocity.z += phys.acceleration/GlobalData.accellerationScaleFactor * Time.fixedDeltaTime;
 				velocity.z += phys.deceleration/GlobalData.decellerationScaleFactor * Time.fixedDeltaTime;
 				if (velocity.z > phys.maxForwardSpeed * Time.fixedDeltaTime) {velocity.z = phys.maxForwardSpeed * Time.fixedDeltaTime;}
 			}
-			if (Input.GetButton("Backwards") && velocity.z > 0-phys.maxBackwardSpeed * Time.fixedDeltaTime) {
+			if (GlobalData.inputController.getButton("Backwards") && velocity.z > 0-phys.maxBackwardSpeed * Time.fixedDeltaTime) {
 				velocity.z -= phys.acceleration/GlobalData.accellerationScaleFactor * Time.fixedDeltaTime;
 				velocity.z -= phys.deceleration/GlobalData.decellerationScaleFactor * Time.fixedDeltaTime;
 				if (velocity.z < 0-phys.maxBackwardSpeed * Time.fixedDeltaTime) {velocity.z = 0-phys.maxBackwardSpeed * Time.fixedDeltaTime;}
 			}
-			if (Input.GetButton("Left") && velocity.x > 0-phys.maxPerpSpeed * Time.fixedDeltaTime) {
+			if (GlobalData.inputController.getButton("Left") && velocity.x > 0-phys.maxPerpSpeed * Time.fixedDeltaTime) {
 				velocity.x -= phys.acceleration/GlobalData.accellerationScaleFactor * Time.fixedDeltaTime;
 				velocity.x -= phys.deceleration/GlobalData.decellerationScaleFactor * Time.fixedDeltaTime;
 				if (velocity.x < 0-phys.maxPerpSpeed * Time.fixedDeltaTime) {velocity.x = 0-phys.maxPerpSpeed * Time.fixedDeltaTime;}
 			}
-			if (Input.GetButton("Right") && velocity.x < phys.maxPerpSpeed * Time.fixedDeltaTime) {
+			if (GlobalData.inputController.getButton("Right") && velocity.x < phys.maxPerpSpeed * Time.fixedDeltaTime) {
 				velocity.x += phys.acceleration/GlobalData.accellerationScaleFactor * Time.fixedDeltaTime;
 				velocity.x += phys.deceleration/GlobalData.decellerationScaleFactor * Time.fixedDeltaTime;
 				if (velocity.x > phys.maxPerpSpeed * Time.fixedDeltaTime) {velocity.x = phys.maxPerpSpeed * Time.fixedDeltaTime;}
@@ -639,7 +721,7 @@ public class playerController : MonoBehaviour {
 	void getCurrentPolygon() {
 		int pol = -1;
 		RaycastHit hit;
-		//GameObject camera = transform.Find("playerCamera").gameObject;
+		//GameObject camera = PlayerCamera.gameObject;
 		if (Physics.Raycast(gameObject.transform.position, Vector3.down, out hit, 50)) {
 			if (hit.collider.transform.parent != null && hit.collider.transform.parent.tag == "polygon") {
 				pol = hit.collider.transform.parent.GetComponent<MapSegment>().id;
@@ -902,7 +984,7 @@ public class playerController : MonoBehaviour {
 	void calculateClipping (List<ImpossibleVolume> ivs, List<float[]> distances, int volSelf, int volOther, ref List<int> clippedSegments) {
 		ImpossibleVolume iv = ivs[(int)distances[volSelf][1]];
 		GameObject camera;
-		camera = transform.Find("playerCamera").gameObject;
+		camera = playerCamera.gameObject;
 		Vector3 pp = camera.transform.position;
 
 		//get clockwise entry point
@@ -1106,8 +1188,6 @@ public class playerController : MonoBehaviour {
 		
 		bool isVisible = false;
 		RaycastHit hit;
-		GameObject camera;
-		camera = transform.Find("playerCamera").gameObject;
 
 		List<Vector3> points = new List<Vector3>();
 		Vector3 p1, p2, p3, h1, h2, h3;
@@ -1129,9 +1209,9 @@ public class playerController : MonoBehaviour {
 		points.Add(p3 + point2 + h1);
 		points.Add(p1 + point2 + h3);
 		points.Add(p2 + point2 + h3);
-		if (camera.transform.position.y > point1.y && camera.transform.position.y < point1.y+height.y ) {
-			points.Add(p3 + point2 + new Vector3(0, camera.transform.position.y - point1.y,0 ));
-			points.Add(p3 + point2 + new Vector3(0, camera.transform.position.y - point1.y + 0.7f, 0));
+		if (playerCamera.transform.position.y > point1.y && playerCamera.transform.position.y < point1.y+height.y ) {
+			points.Add(p3 + point2 + new Vector3(0, playerCamera.transform.position.y - point1.y,0 ));
+			points.Add(p3 + point2 + new Vector3(0, playerCamera.transform.position.y - point1.y + 0.7f, 0));
 		}
 
 
@@ -1139,22 +1219,22 @@ public class playerController : MonoBehaviour {
 		float rayCount = 3f;
 		isVisible = false;
 
-		isVisible = (Physics.Raycast(midpoint, camera.transform.position-midpoint, out hit, 50)) 
+		isVisible = (Physics.Raycast(midpoint, playerCamera.transform.position-midpoint, out hit, 50)) 
 			&& hit.collider.gameObject == playerCollider ;
 
 		if (isVisible) {
-			Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.red);
+			Debug.DrawRay(midpoint, playerCamera.transform.position-midpoint, Color.red);
 		} else {
-			Debug.DrawRay(midpoint, camera.transform.position-midpoint, Color.green);
+			Debug.DrawRay(midpoint, playerCamera.transform.position-midpoint, Color.green);
 		}
 
 		for (int i = 1; i <= rayCount && !isVisible; i++) {
 			for (int p = 0; p < points.Count && !isVisible; p++){
 				castPoint = (points[p]-midpoint)*((1f/rayCount)*(float)i) + midpoint;
-				isVisible = (Physics.Raycast(castPoint, camera.transform.position-castPoint, out hit, 50)) 
+				isVisible = (Physics.Raycast(castPoint, playerCamera.transform.position-castPoint, out hit, 50)) 
 							&& hit.collider.gameObject == playerCollider ;
 				if (isVisible) {
-					Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.red);
+					Debug.DrawRay(castPoint, playerCamera.transform.position-castPoint, Color.red);
 				} else {
 					//Debug.DrawRay(castPoint, camera.transform.position-castPoint, Color.green);
 				}

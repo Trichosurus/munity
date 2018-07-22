@@ -51,11 +51,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\moveCameraUpDown.cs" />
+     <Compile Include="Assets\Scripts\changeBool.cs" />
+     <Compile Include="Assets\Scripts\changeFloatVal.cs" />
+     <Compile Include="Assets\Scripts\changeIntVal.cs" />
+     <Compile Include="Assets\Scripts\changeMouseSpeed.cs" />
      <Compile Include="Assets\Scripts\ClippableObject.cs" />
      <Compile Include="Assets\Scripts\ControlPanel.cs" />
      <Compile Include="Assets\Scripts\dataFilesObject.cs" />
+     <Compile Include="Assets\Scripts\displayValue.cs" />
      <Compile Include="Assets\Scripts\gameController.cs" />
+     <Compile Include="Assets\Scripts\getKey.cs" />
      <Compile Include="Assets\Scripts\itemController.cs" />
      <Compile Include="Assets\Scripts\LightFunction.cs" />
      <Compile Include="Assets\Scripts\Liquid.cs" />
@@ -65,10 +70,13 @@
      <Compile Include="Assets\Scripts\MapSegmentFloorCeiling.cs" />
      <Compile Include="Assets\Scripts\MapSegmentSide.cs" />
      <Compile Include="Assets\Scripts\mouselook.cs" />
+     <Compile Include="Assets\Scripts\moveCameraUpDown.cs" />
      <Compile Include="Assets\Scripts\platformController.cs" />
      <Compile Include="Assets\Scripts\PlatformObject.cs" />
      <Compile Include="Assets\Scripts\playerController.cs" />
+     <Compile Include="Assets\Scripts\returnToGame.cs" />
      <Compile Include="Assets\Scripts\settingsScreen.cs" />
+     <Compile Include="Assets\Scripts\showMouseSensitivity.cs" />
      <Compile Include="Assets\Scripts\spriteController.cs" />
      <Compile Include="Assets\Scripts\startGame.cs" />
      <Compile Include="Assets\Scripts\Weland\BinaryReaderBE.cs" />

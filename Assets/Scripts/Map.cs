@@ -79,6 +79,8 @@ public class Map : MonoBehaviour {
 
 		
 		GameObject.Find("worldLight").SetActive(GlobalData.globalLighting);
+		GameObject.Find("worldLight").GetComponent<UnityEngine.Light>().intensity = GlobalData.globalLightingIntensity;
+
 		
 	}
 

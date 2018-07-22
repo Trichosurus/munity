@@ -9,18 +9,18 @@ public class moveCameraUpDown : MonoBehaviour {
 	bool active;
 	// Use this for initialization
 	void Start () {
-		startPos = GameObject.Find("Main Camera").transform.position;
+		startPos = GameObject.Find("MenuCamera").transform.position;
 	}
 	
 	// Update is called once per frame
 	void Update () {
 		if (!active) {return;}
 		Vector3 move = new Vector3(0,(amount * Time.deltaTime)/travelTime);
-		GameObject.Find("Main Camera").transform.position += move;
+		GameObject.Find("MenuCamera").transform.position += move;
 
-		if ((GameObject.Find("Main Camera").transform.position.y > startPos.y + amount  && amount > 0)
-		||(GameObject.Find("Main Camera").transform.position.y < startPos.y + amount  && amount <= 0)) {
-			GameObject.Find("Main Camera").transform.position = new Vector3(startPos.x, startPos.y + amount, startPos.z);
+		if ((GameObject.Find("MenuCamera").transform.position.y > startPos.y + amount  && amount > 0)
+		||(GameObject.Find("MenuCamera").transform.position.y < startPos.y + amount  && amount <= 0)) {
+			GameObject.Find("MenuCamera").transform.position = new Vector3(startPos.x, startPos.y + amount, startPos.z);
 			active = false;
 		}
 
@@ -29,7 +29,7 @@ public class moveCameraUpDown : MonoBehaviour {
 
 	void OnMouseUp()
 	{
-		startPos = GameObject.Find("Main Camera").transform.position;
+		startPos = GameObject.Find("MenuCamera").transform.position;
 		active = true;
 	}
 
