@@ -151,7 +151,6 @@ public class playerController : MonoBehaviour {
 		walking.climbingAcceleration = 0.0033f;
 
 
-		GameObject.Find("Menu").SetActive(false);
 
 	}
 
@@ -162,11 +161,12 @@ public class playerController : MonoBehaviour {
 	void Update () {
 
 		if (GlobalData.inputController.getButton("Menu")) {
-			GameObject.Find("Menu").SetActive(true);
+			GlobalData.map.menu.SetActive(true);
+			playerCamera.GetComponent<mouselook>().lockCursor = false;
 			gameObject.SetActive(false);
 		}
 
-		if (GlobalData.captureMouse) {
+		if (GlobalData.captureMouse || GlobalData.map.menu.active) {
 			playerCamera.GetComponent<mouselook>().lockCursor = !GlobalData.inputController.getButton("Show Cursor");
 		} else {
 			playerCamera.GetComponent<mouselook>().lockCursor = GlobalData.inputController.getButton("Show Cursor");

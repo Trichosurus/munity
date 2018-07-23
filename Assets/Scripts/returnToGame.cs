@@ -10,8 +10,8 @@ public class returnToGame : MonoBehaviour {
 	}
 	
 	void OnMouseUp () {
-		GameObject.Find("Menu").SetActive(false);
-		GameObject.Find("player").SetActive(true);
+		GlobalData.map.menu.SetActive(false);
+		GlobalData.map.player.SetActive(true);
 
 	}
 }

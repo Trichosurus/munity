@@ -401,6 +401,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   polygon: {fileID: 1851021861423652, guid: 375153c574b0f45f097160fe61399d9a, type: 2}
+  player: {fileID: 0}
+  menu: {fileID: 0}
   materials: []
   segments: []
   lights: []
@@ -731,7 +733,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 1515273905866176, guid: 77978494363654738970b7d1047c57b8, type: 2}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1515273905866176, guid: 77978494363654738970b7d1047c57b8, type: 2}
       propertyPath: m_StaticEditorFlags

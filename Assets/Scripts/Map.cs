@@ -9,6 +9,8 @@ using System.Security.Cryptography;
 using System.Runtime.Serialization.Formatters.Binary;
 public class Map : MonoBehaviour {
 	public GameObject polygon;
+	public GameObject player;
+	public GameObject menu;
 	List<int> collectionMapping = new List<int>{};
 	// List<int> transferModeMapping = new List<int> {0, 4, 5, 6, 9, 15, 16, 17, 18, 19, 20};
 	int collectionID = -1;
@@ -28,7 +30,8 @@ public class Map : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		
+		menu = GameObject.Find("Menu");
+		menu.SetActive(false);
 		StartCoroutine(loadData());
 	}
 	IEnumerator loadData() {
@@ -940,7 +943,7 @@ public class Map : MonoBehaviour {
 			if (obj.Type == ObjectType.Player && !playerSpawned) {
 				playerSpawned = true;
 
-				GameObject player = Instantiate(Resources.Load<GameObject>("player"), pos, facing);
+				player = Instantiate(Resources.Load<GameObject>("player"), pos, facing);
 				player.gameObject.name = "player";
 				player.GetComponent<playerController>().currentPolygon = obj.PolygonIndex;
 			}
