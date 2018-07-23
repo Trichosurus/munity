@@ -62,6 +62,22 @@ public class playerController : MonoBehaviour {
 		playerCamera = transform.Find("playerCamera").gameObject;
 
 
+
+
+
+	// walking standard physics, remove when physics files get read
+		walking.maxForwardSpeed = 0.0714f * 30f;
+		walking.maxBackwardSpeed = 0.0588f * 30f;
+		walking.maxPerpSpeed = 0.0500f * 30f;
+		walking.acceleration = 0.0050f * 30f;
+		walking.climbingAcceleration = 0.0033f * 30f;
+
+		updatePlayerSettings();
+
+	}
+
+
+	public void updatePlayerSettings() {
 		playerLight.GetComponent<Light>().enabled = GlobalData.playerLight;
 		playerLight.GetComponent<Light>().intensity = GlobalData.playerLightIntensity;
 		playerLight.GetComponent<Light>().range = GlobalData.playerLightRange;
@@ -115,7 +131,7 @@ public class playerController : MonoBehaviour {
 		}
 
 
-	switch (GlobalData.playerLightPosition) {
+		switch (GlobalData.playerLightPosition) {
 			case 0:
 				playerLight.transform.position = playerCamera.transform.position;
 				break;
@@ -140,36 +156,39 @@ public class playerController : MonoBehaviour {
 										playerCamera.transform.position.y - 0.1f,
 										playerCamera.transform.position.z);
 				break;
+			case 5:
+				playerLight.transform.position = new Vector3(
+										playerCamera.transform.position.x - 0.15f,
+										playerCamera.transform.position.y - 0.2f,
+										playerCamera.transform.position.z);
+				break;
+			case 6:
+				playerLight.transform.position = new Vector3(
+										playerCamera.transform.position.x + 0.15f,
+										playerCamera.transform.position.y - 0.2f,
+										playerCamera.transform.position.z);
+				break;
 		}
 
-
-	// walking standard physics, remove when physics files get read
-		walking.maxForwardSpeed = 0.0714f;
-		walking.maxBackwardSpeed = 0.0588f;
-		walking.maxPerpSpeed = 0.0500f;
-		walking.acceleration = 0.0050f;
-		walking.climbingAcceleration = 0.0033f;
-
-
-
+		playerCamera.GetComponent<Camera>().fieldOfView = GlobalData.playerFOV;
 	}
-
-
-
 	
 	// Update is called once per frame
 	void Update () {
 
-		if (GlobalData.inputController.getButton("Menu")) {
-			GlobalData.map.menu.SetActive(true);
-			playerCamera.GetComponent<mouselook>().lockCursor = false;
-			gameObject.SetActive(false);
-		}
 
-		if (GlobalData.captureMouse || GlobalData.map.menu.active) {
+
+		if (GlobalData.captureMouse) {
 			playerCamera.GetComponent<mouselook>().lockCursor = !GlobalData.inputController.getButton("Show Cursor");
 		} else {
 			playerCamera.GetComponent<mouselook>().lockCursor = GlobalData.inputController.getButton("Show Cursor");
+		}
+
+		if (GlobalData.inputController.getButton("Menu")) {
+			GlobalData.map.menu.SetActive(true);
+			playerCamera.GetComponent<mouselook>().lockCursor = false;
+			Cursor.lockState = CursorLockMode.None;
+			gameObject.SetActive(false);
 		}
 
 		if ((GlobalData.alwaysRun && !GlobalData.inputController.getButton("Run/Walk")) || (!GlobalData.alwaysRun && GlobalData.inputController.getButton("RunWalk"))) {

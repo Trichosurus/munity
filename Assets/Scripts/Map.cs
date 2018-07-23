@@ -9,7 +9,7 @@ using System.Security.Cryptography;
 using System.Runtime.Serialization.Formatters.Binary;
 public class Map : MonoBehaviour {
 	public GameObject polygon;
-	public GameObject player;
+	public GameObject player = null;
 	public GameObject menu;
 	List<int> collectionMapping = new List<int>{};
 	// List<int> transferModeMapping = new List<int> {0, 4, 5, 6, 9, 15, 16, 17, 18, 19, 20};
@@ -60,6 +60,7 @@ public class Map : MonoBehaviour {
 			}
 	    }
 	    Level Level = new Level();
+		mapNo = GlobalData.mapToLoad;
 		if (mapNo >= mapfile.Directory.Count) {mapNo = 0;}
 		Level.Load(mapfile.Directory[mapNo]);
 		collectionID = GlobalData.mediaCollections[Level.Environment];

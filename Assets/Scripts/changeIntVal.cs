@@ -39,6 +39,7 @@ public class changeIntVal : MonoBehaviour {
 		if (varName == "playerLightPosition") { GlobalData.playerLightPosition += amount;}
 		if (varName == "spriteType") { GlobalData.spriteType += amount;}
 		if (varName == "landscapeType") { GlobalData.landscapeType += amount;}
+		if (varName == "mapToLoad") { GlobalData.mapToLoad += amount;}
 
 	}
 }

@@ -29,6 +29,7 @@ public static class GlobalData
 	public static float playerLightRange = 3f;
 	public static int playerLightPosition = 0;
 	public static float playerLightDelay = 0;
+	public static float playerFOV = 60f;
 	public static int spriteType = 2;
 	public static bool forceSpriteMultivews = false;
 	public static int landscapeType = 5;
@@ -38,6 +39,7 @@ public static class GlobalData
 	public static float accellerationScaleFactor = 2f;
 	public static float decellerationScaleFactor = 2f;
 	public static float deBounceFactor = 4f;
+	public static int mapToLoad = 0;
 
 
 	//----item definitions -- where are these defined in the data files ??????
@@ -279,6 +281,7 @@ public static class GlobalData
 		tw.WriteLine("decellerationScaleFactor=" + GlobalData.decellerationScaleFactor);
 		tw.WriteLine("deBounceFactor=" + GlobalData.deBounceFactor);
 		tw.WriteLine("forceSpriteMultivews=" + GlobalData.forceSpriteMultivews);
+		tw.WriteLine("playerFOV=" + GlobalData.playerFOV);
 		tw.Close(); 
 
 
@@ -328,6 +331,7 @@ public static class GlobalData
 			if (line.StartsWith("decellerationScaleFactor=")) {b = float.TryParse(line.Replace("decellerationScaleFactor=","").Trim(), out GlobalData.decellerationScaleFactor);}
 			if (line.StartsWith("deBounceFactor=")) {b = float.TryParse(line.Replace("deBounceFactor=","").Trim(), out GlobalData.deBounceFactor);}
 			if (line.StartsWith("forceSpriteMultivews=")) {GlobalData.forceSpriteMultivews = line.Replace("forceSpriteMultivews=","").Trim() == "True";}
+			if (line.StartsWith("playerFOV=")) {b = float.TryParse(line.Replace("playerFOV=","").Trim(), out GlobalData.playerFOV);}
 		}
 
 		path = Application.persistentDataPath + "/input.json";

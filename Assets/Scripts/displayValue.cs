@@ -42,6 +42,8 @@ public class displayValue : MonoBehaviour {
 		if (varName == "decellerationScaleFactor") { displayValue = GlobalData.decellerationScaleFactor.ToString("0.00");}
 		if (varName == "deBounceFactor") { displayValue = GlobalData.deBounceFactor.ToString("0.00");}
 		if (varName == "forceSpriteMultivews") { displayValue = GlobalData.forceSpriteMultivews.ToString();}
+		if (varName == "playerFOV") { displayValue = GlobalData.playerFOV.ToString();}
+		if (varName == "mapToLoad") { displayValue = GlobalData.mapToLoad.ToString();}
 
 		displayValue = displayValue.Replace("True", "Y");
 		displayValue = displayValue.Replace("False", "N");

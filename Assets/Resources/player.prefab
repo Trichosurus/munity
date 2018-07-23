@@ -409,7 +409,7 @@ MonoBehaviour:
   clampInDegrees: {x: 360, y: 180}
   lockCursor: 0
   sensitivity: {x: 2, y: 2}
-  smoothing: {x: 1, y: 1}
+  smoothing: {x: 0.5, y: 0.5}
   targetDirection: {x: 0, y: 0}
   targetCharacterDirection: {x: 0, y: 0}
   characterBody: {fileID: 1543341758591716}

@@ -94,16 +94,15 @@ public class spriteController : MonoBehaviour {
 
 
 					if (type == 1 || type == 2) {
-						//GameObject camera;
-						//Quaternion q = GameObject.Find("playerCamera").transform.rotation;
-						//GameObject player = GameObject.Find("player/playerCamera");
-						Quaternion cameraQ = GameObject.Find("player/playerCamera").transform.rotation;
+						if (GlobalData.map.player != null) {
+							Quaternion cameraQ = GlobalData.map.player.transform.rotation;
 
-						//camera = GameObject.Find("playerCamera");
-						if (type == 1) {
-							sides[s].transform.rotation = Quaternion.Euler(cameraQ.eulerAngles.x, cameraQ.eulerAngles.y , cameraQ.eulerAngles.z);
-						} else {
-							sides[s].transform.rotation = Quaternion.Euler(0, cameraQ.eulerAngles.y, 0);
+							//camera = GameObject.Find("playerCamera");
+							if (type == 1) {
+								sides[s].transform.rotation = Quaternion.Euler(cameraQ.eulerAngles.x, cameraQ.eulerAngles.y , cameraQ.eulerAngles.z);
+							} else {
+								sides[s].transform.rotation = Quaternion.Euler(0, cameraQ.eulerAngles.y, 0);
+							}
 						}
 					}
 

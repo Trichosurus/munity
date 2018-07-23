@@ -23,7 +23,7 @@ public class moveCameraUpDown : MonoBehaviour {
 			GameObject.Find("MenuCamera").transform.position = new Vector3(startPos.x, startPos.y + amount, startPos.z);
 			active = false;
 		}
-
+		Cursor.lockState = CursorLockMode.None;
 	}
 
 

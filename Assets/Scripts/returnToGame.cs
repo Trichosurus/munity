@@ -5,13 +5,20 @@ using UnityEngine;
 public class returnToGame : MonoBehaviour {
 
 	// Use this for initialization
-	void Start () {
-		
+	void Update () {
+		if (Input.GetKey("escape")) {
+			goToGame();
+		}
 	}
 	
+
 	void OnMouseUp () {
+		goToGame();
+	}
+
+	void goToGame() {
 		GlobalData.map.menu.SetActive(false);
 		GlobalData.map.player.SetActive(true);
-
+		GlobalData.map.player.GetComponent<playerController>().updatePlayerSettings();
 	}
 }
