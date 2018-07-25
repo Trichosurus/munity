@@ -13,7 +13,8 @@ public class quitButton : MonoBehaviour {
 	void Update () {
 		
 	}
-	void onMouseUp() {
+	void OnMouseUp() {
+
 		Application.Quit();
 	}
 }

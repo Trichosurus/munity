@@ -188,6 +188,7 @@ public class playerController : MonoBehaviour {
 			GlobalData.map.menu.SetActive(true);
 			playerCamera.GetComponent<mouselook>().lockCursor = false;
 			Cursor.lockState = CursorLockMode.None;
+			Cursor.visible = true;
 			gameObject.SetActive(false);
 		}
 

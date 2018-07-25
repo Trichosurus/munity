@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class returnToGame : MonoBehaviour {
-
 	// Use this for initialization
 	void Update () {
-		if (Input.GetKey("escape")) {
+		if (Input.GetKey("return")) {
 			goToGame();
 		}
 	}

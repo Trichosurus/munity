@@ -52,29 +52,29 @@
 		if (_planesAdditive > 0) {
 			clip(float3(
 					greater(normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld),
-									normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
-									normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
+							normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
+							normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
 					),
 					greater(normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld),
-									normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
-									normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
+							normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
+							normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
 					),
 					greater(normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld),
-									normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
-									normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
+							normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
+							normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
 					)
 			));
 		} else {
 			clip(float3(
 					greater(normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld),
-									normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
+							normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
 					),
 					greater(normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
-									normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
+							normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
 					),
 					greater(normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld),
-									normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
-									normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
+							normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
+							normalDotDirection(_planePos3.xyz, _planeNorm3.xyz, posWorld)
 					)
 
 				// normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld),
@@ -90,7 +90,7 @@
 						normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld)
 				),
 				greater(normalDotDirection(_planePos2.xyz, _planeNorm2.xyz, posWorld),
-					normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld)
+						normalDotDirection(_planePos.xyz, _planeNorm.xyz, posWorld)
 				)
 			));
 		} else {

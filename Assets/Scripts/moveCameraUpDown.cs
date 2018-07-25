@@ -24,6 +24,7 @@ public class moveCameraUpDown : MonoBehaviour {
 			active = false;
 		}
 		Cursor.lockState = CursorLockMode.None;
+		Cursor.visible = true;
 	}
 
 
