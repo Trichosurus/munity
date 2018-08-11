@@ -871,10 +871,12 @@ public class Map : MonoBehaviour {
 					yield return null;
 				}
 			}
-			BinaryFormatter bf = new BinaryFormatter();
-			FileStream fs = File.Open(mapHash, FileMode.Create);
-			bf.Serialize(fs, apl);
-			fs.Close();
+			if (!GlobalData.skipOcclusion) {
+				BinaryFormatter bf = new BinaryFormatter();
+				FileStream fs = File.Open(mapHash, FileMode.Create);
+				bf.Serialize(fs, apl);
+				fs.Close();
+			}
 		} else {
 			
 			FileStream fs = File.Open(mapHash, FileMode.Open);

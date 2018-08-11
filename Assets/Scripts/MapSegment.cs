@@ -317,8 +317,8 @@ public class MapSegment : MonoBehaviour {
 				}
 				if (planes.Count == 2) { 
 					mat.EnableKeyword("CLIP_ONE");
-					mat.DisableKeyword("CLIP_TWO");
-					mat.DisableKeyword("CLIP_THREE");
+					//mat.DisableKeyword("CLIP_TWO");
+					//mat.DisableKeyword("CLIP_THREE");
 				
 					mat.SetVector("_planePos", plane1Position);
 					mat.SetVector("_planeNorm", Quaternion.Euler(plane1Rotation) * Vector3.up);
@@ -327,7 +327,7 @@ public class MapSegment : MonoBehaviour {
 				if (planes.Count == 4) { 
 					mat.DisableKeyword("CLIP_ONE");
 					mat.EnableKeyword("CLIP_TWO");
-					mat.DisableKeyword("CLIP_THREE");
+					//mat.DisableKeyword("CLIP_THREE");
 
 					mat.SetVector("_planePos", plane1Position);
 					mat.SetVector("_planeNorm", Quaternion.Euler(plane1Rotation) * Vector3.up);
@@ -1273,12 +1273,12 @@ public class ImpossibleVolume {
 			float c1 = a1*self[0].x + b1*self[0].z;
 			collisions = new List<Vector3>();
 			foreach (Vector3[] other in sidesOther) {
-
 				float a2 = other[0].z - other[1].z;
 				float b2 = other[1].x - other[0].x;
 				float c2 = a2*other[1].x + b2*other[1].z;
 
 				float delta = a1*b2 - a2*b1;
+
 				if(delta != 0) {
 					Vector2 intersect = new Vector2((b2*c1 - b1*c2)/delta, (a1*c2 - a2*c1)/delta);
 					
@@ -1296,7 +1296,17 @@ public class ImpossibleVolume {
 						 && d4 + d5 - 0.001 < d6 + 0.001 && d4 + d5 + 0.001 > d6 - 0.001) {
 						collisions.Add(new Vector3(intersect.x, parent.centerPoint.y, intersect.y));
 					}					
-				}			
+				} else { //lines are parrallel, but may be on top of eachother
+					
+					if ((self[1] - self[0]).normalized == (other[1] - self[0]).normalized) {
+						collisions.Add(other[1]);
+					}
+					if ((self[1] - self[0]).normalized == (other[0] - self[0]).normalized) {
+						collisions.Add(other[0]);
+					}
+
+				}
+						
 			}
 			// get points in clockwise order for use later on
 			float distance = 777777f;

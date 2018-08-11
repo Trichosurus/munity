@@ -906,7 +906,7 @@ public class playerController : MonoBehaviour {
 						float d = Vector3.Distance(closestPoint,gameObject.transform.position);
 						// if (d < distance){
 							// distance = d;
-							distances.Add(new [] {d, i, pol, s});
+						distances.Add(new [] {d, i, pol, s});
 						// }
 					}
 				}
@@ -1017,8 +1017,8 @@ public class playerController : MonoBehaviour {
 		List<Vector3> points = new List<Vector3>();
 		Vector3 pointSelf = new Vector3(0,0,0);
 		Vector3	pointOther = new Vector3(0,0,0);
-		// Vector3 pointSelfFar = new Vector3(0,0,0);
-		// Vector3	pointOtherFar = new Vector3(0,0,0);
+		Vector3 pointSelfFar = new Vector3(0,0,0);
+		Vector3	pointOtherFar = new Vector3(0,0,0);
 
 
 		//Debug.Log(clipAngles[0] +"::"+ clipAngles[1] +"::"+ clipAngles[2]);
@@ -1041,21 +1041,20 @@ public class playerController : MonoBehaviour {
 		points[1] = GlobalData.map.segments[(int)distances[volSelf][2]].transform.TransformPoint(points[1]);
 		points[2] = GlobalData.map.segments[(int)distances[volOther][2]].transform.TransformPoint(points[2]);
 		points[3] = GlobalData.map.segments[(int)distances[volOther][2]].transform.TransformPoint(points[3]);
-		if (iv.collisionPolygonsSelf[0] == 43) {
-			;
-		}
 		for (int point = 0; point < 2; point++) {
 			for (int p = 2; p < 4; p++) {
 				float d = Vector3.Distance(points[point],points[p]);
 				if (d > 0 && d < distance) {
 					pointSelf = points[point];
-					// pointSelfFar = points[Mathf.Abs(1-point)];
+					pointSelfFar = points[Mathf.Abs(1-point)];
 					pointOther = points[p];
-					// pointOtherFar = points[Mathf.Abs(1-(p-2))+2];
+					pointOtherFar = points[Mathf.Abs(1-(p-2))+2];
 					distance = d;
 				}
 			}
 		}
+
+
 
 		distance = 7777777;
 		int closest = 0;
@@ -1073,65 +1072,57 @@ public class playerController : MonoBehaviour {
 		if (counterClockwise < 0) {counterClockwise = iv.collisionPoints.Count-1;}
 
 		clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[closest].x, pp.z-iv.collisionPoints[closest].z) * Mathf.Rad2Deg);
-		clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[clockwise].x, pp.z-iv.collisionPoints[clockwise].z) * Mathf.Rad2Deg);
-		clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[counterClockwise].x, pp.z-iv.collisionPoints[counterClockwise].z) * Mathf.Rad2Deg);
-		// clipAngles.Add(Mathf.Atan2(pp.x-pointOtherFar.x, pp.z-pointOtherFar.z) * Mathf.Rad2Deg);
-		// clipAngles.Add(Mathf.Atan2(pp.x-pointSelfFar.x, pp.z-pointSelfFar.z) * Mathf.Rad2Deg);
-		clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-iv.collisionPoints[clockwise].x, iv.collisionPoints[closest].z-iv.collisionPoints[clockwise].z) * Mathf.Rad2Deg);
-		clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-iv.collisionPoints[counterClockwise].x, iv.collisionPoints[closest].z-iv.collisionPoints[counterClockwise].z) * Mathf.Rad2Deg);
+		// clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[clockwise].x, pp.z-iv.collisionPoints[clockwise].z) * Mathf.Rad2Deg);
+		// clipAngles.Add(Mathf.Atan2(pp.x-iv.collisionPoints[counterClockwise].x, pp.z-iv.collisionPoints[counterClockwise].z) * Mathf.Rad2Deg);
+		clipAngles.Add(Mathf.Atan2(pointSelf.x-pointSelfFar.x, pointSelf.z-pointSelfFar.z) * Mathf.Rad2Deg);
+		clipAngles.Add(Mathf.Atan2(pointOther.x-pointOtherFar.x, pointOther.z-pointOtherFar.z) * Mathf.Rad2Deg);
+		// clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-iv.collisionPoints[clockwise].x, iv.collisionPoints[closest].z-iv.collisionPoints[clockwise].z) * Mathf.Rad2Deg);
+		// clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-iv.collisionPoints[counterClockwise].x, iv.collisionPoints[closest].z-iv.collisionPoints[counterClockwise].z) * Mathf.Rad2Deg);
+		clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-pointSelfFar.x, iv.collisionPoints[closest].z-pointSelfFar.z) * Mathf.Rad2Deg);
+		clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-pointOtherFar.x, iv.collisionPoints[closest].z-pointOtherFar.z) * Mathf.Rad2Deg);
 		// clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-pointOther.x, iv.collisionPoints[closest].z-pointOther.z) * Mathf.Rad2Deg);
 		// clipAngles.Add(Mathf.Atan2(iv.collisionPoints[closest].x-pointSelf.x, iv.collisionPoints[closest].z-pointSelf.z) * Mathf.Rad2Deg);
+		//clipAngles.Add(Mathf.Atan2(iv.collisionPoints[clockwise].x-iv.collisionPoints[counterClockwise].x, iv.collisionPoints[clockwise].z-iv.collisionPoints[counterClockwise].z) * Mathf.Rad2Deg);
+		clipAngles.Add(Mathf.Atan2(pp.x-pointSelfFar.x, pp.z-pointSelfFar.z) * Mathf.Rad2Deg);
+		clipAngles.Add(Mathf.Atan2(pp.x-pointOtherFar.x, pp.z-pointOtherFar.z) * Mathf.Rad2Deg);
 
 		
 
 		sideAngles.Add(Mathf.Atan2(pp.x-pointSelf.x, pp.z-pointSelf.z) * Mathf.Rad2Deg);
 		sideAngles.Add(Mathf.Atan2(pp.x-pointOther.x, pp.z-pointOther.z) * Mathf.Rad2Deg);
-		sideAngles.Add(Mathf.Atan2(pointSelf.x-pointOther.x, pointSelf.z-pointOther.z) * Mathf.Rad2Deg);
+		//sideAngles.Add(Mathf.Atan2(pointSelf.x-pointOther.x, pointSelf.z-pointOther.z) * Mathf.Rad2Deg);
+		sideAngles.Add(Mathf.Atan2(pointOther.x-pointSelf.x, pointOther.z-pointSelf.z) * Mathf.Rad2Deg);
 
-		if (iv.collisionPolygonsOther.Contains(58) || iv.collisionPolygonsSelf.Contains(58)) {
-			Debug.Log(pointSelf + "::" + pointOther);
-			Debug.Log(iv.collisionPolygonsSelf[0]);
-			Debug.Log(sideAngles[0] + "::" + sideAngles[1]);
-			Debug.Log(sideAngles[2]);
-			Debug.Log(clipAngles[0] + "::" + clipAngles[1] + "::" + clipAngles[2]);
-			Debug.Log(clipAngles[3] + "::" + clipAngles[4]);
-			Debug.Log(clipAngles[4]); 
-			
-			Debug.Log(sideAngles[1] - sideAngles[0]);
-			Debug.Log(angleDifference(sideAngles[0], clipAngles[1]));
-			Debug.Log(angleDifference(sideAngles[0], clipAngles[2]));
-			Debug.Log(angleDifference(sideAngles[0], sideAngles[1]));
-			Debug.Log(angleDifference(clipAngles[1], clipAngles[2]));
-			Debug.Log(angleDifference(sideAngles[2], clipAngles[1]));
-		}
-			
-		bool self = (angleDifference(sideAngles[0], sideAngles[1]) < 0) != (angleDifference(sideAngles[2], clipAngles[1]) < 0);
-		if (self) {
-			if (angleDifference(sideAngles[0], sideAngles[1]) > 0) {
-				self = false;
-			}
-		} else {
-			if (!self && angleDifference(sideAngles[0], sideAngles[1]) > 0) {
-				self = true;
+		bool selfIsClockwise = (angleDifference(sideAngles[0], sideAngles[1]) < 0);
+		bool inside = (angleDifference(clipAngles[0], sideAngles[0]) < 0) != (angleDifference(clipAngles[0], sideAngles[1]) < 0);
+		if (!inside) {
+			if (angleDifference(sideAngles[0], sideAngles[2]) < 0 != angleDifference(clipAngles[0], sideAngles[0]) < 0){
+				// Debug.Log("bad?");
+				selfIsClockwise = !selfIsClockwise;
 			}
 		}
-	 
-	 	Vector3 point3 = pp;
-	 	if ((angleDifference(clipAngles[0], sideAngles[0]) < 0) == (angleDifference(clipAngles[0], sideAngles[1]) < 0)) {
-			point3 = iv.collisionPoints[closest];
-		// 	Debug.Log("out");
-		// } else {
-		// 	Debug.Log("in");
-		}
 
-		if (self) {
-			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[1], clipAngles[3], true, true, iv.collisionPolygonsSelf, ref clippedSegments);
-			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[2], clipAngles[4], true, false, iv.collisionPolygonsOther, ref clippedSegments);
-			//Debug.Log("self");
+		float a = 180f * (Input.GetKey("7") ? 1 :0);//s
+		float b = 180f * (Input.GetKey("8") ? 1 :0);
+		float c = 180f * (Input.GetKey("9") ? 1 :0);
+		float dd = 180f * (Input.GetKey("u") ? 1 :0);
+		float e = 180f * (Input.GetKey("i") ? 1 :0);
+		float f = 180f * (Input.GetKey("o") ? 1 :0);
+		float g = 180f * (Input.GetKey("j") ? 1 :0);
+		float h = 180f * (Input.GetKey("k") ? 1 :0);//o
+		float ii = 180f * (Input.GetKey("l") ? 1 :0);//o
+		float j = 180f * (Input.GetKey("n") ? 1 :0);//o
+		float k = 180f * (Input.GetKey("m") ? 1 :0);
+		float l = 180f * (Input.GetKey(",") ? 1 :0);
+
+		if (selfIsClockwise) {
+			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0]+180+a, clipAngles[5]+b, clipAngles[1]+c, true, iv.collisionPolygonsSelf, ref clippedSegments);
+			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0]+dd, clipAngles[6]+180+e, clipAngles[2]+180+f, true, iv.collisionPolygonsOther, ref clippedSegments);
+			Debug.Log("self");
 		} else {
-			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[1], clipAngles[3], true, true,iv.collisionPolygonsOther, ref clippedSegments);
-			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0], clipAngles[2], clipAngles[4], true, false, iv.collisionPolygonsSelf, ref clippedSegments);
-			//Debug.Log("other");
+			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0]+g, clipAngles[5]+180+h, clipAngles[1]+180+ii, true, iv.collisionPolygonsSelf, ref clippedSegments);
+			clipPlanes(pp,pp,iv.collisionPoints[closest],clipAngles[0]+180+j, clipAngles[6]+k, clipAngles[2]+l, true,iv.collisionPolygonsOther, ref clippedSegments);
+			Debug.Log("other");
 		}
 
 		Debug.DrawRay(pointSelf,pp-pointSelf,  Color.cyan);
@@ -1141,8 +1132,8 @@ public class playerController : MonoBehaviour {
 		Debug.DrawRay(iv.collisionPoints[clockwise],pp-iv.collisionPoints[clockwise],  Color.yellow);
 		Debug.DrawRay(iv.collisionPoints[counterClockwise],pp-iv.collisionPoints[counterClockwise],  Color.green);
 		
-		// Debug.DrawRay(iv.collisionPoints[closest],iv.collisionPoints[closest]-pointSelfFar,  Color.magenta);
-		// Debug.DrawRay(iv.collisionPoints[closest],iv.collisionPoints[closest]-pointOtherFar,  Color.grey);
+		Debug.DrawRay(pointSelfFar,pp-pointSelfFar,  Color.magenta);
+		Debug.DrawRay(pointOtherFar,pp-pointOtherFar,  Color.gray);
 	}
 
 	float angleDifference (float angle1, float angle2, bool halfPositive = true) {
@@ -1169,16 +1160,14 @@ public class playerController : MonoBehaviour {
 
 
 
-	void clipPlanes (Vector3 p1, Vector3 p2, Vector3 p3, float a1, float a2, float a3, bool additive, bool inverse, List<int> segments, ref List<int> clippedSegments) {
-		float angle = 0f;
-		if (inverse) {angle = 180f;}
+	void clipPlanes (Vector3 p1, Vector3 p2, Vector3 p3, float a1, float a2, float a3, bool additive, List<int> segments, ref List<int> clippedSegments) {
 		List<Vector3> planes = new List<Vector3>();
 		planes.Add(p1);
-		planes.Add(new Vector3(90, 180-angle, 90-a1));
-		planes.Add(p1);
-		planes.Add(new Vector3(90, 0+angle, 90-a2));
+		planes.Add(new Vector3(90, 180f, 90f-a1));
+		planes.Add(p2);
+		planes.Add(new Vector3(90, 0, 90f-a2));
 		planes.Add(new Vector3(p3.x, p1.y, p3.z));
-		planes.Add(new Vector3(90, 0+angle, 90-a3));
+		planes.Add(new Vector3(90, 0, 90f-a3));
 		foreach(int pol in segments) {
 			if (pol == currentPolygon) {
 				GlobalData.map.segments[pol].setClippingPlanes(new List<Vector3>());//dont clip the poly we are in
