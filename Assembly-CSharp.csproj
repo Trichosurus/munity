@@ -78,9 +78,11 @@
      <Compile Include="Assets\Scripts\PlatformObject.cs" />
      <Compile Include="Assets\Scripts\playerController.cs" />
      <Compile Include="Assets\Scripts\quitButton.cs" />
+     <Compile Include="Assets\Scripts\ResetConfig.cs" />
      <Compile Include="Assets\Scripts\returnToGame.cs" />
      <Compile Include="Assets\Scripts\settingsScreen.cs" />
      <Compile Include="Assets\Scripts\showMouseSensitivity.cs" />
+     <Compile Include="Assets\Scripts\ShowMouseSmooth.cs" />
      <Compile Include="Assets\Scripts\spriteController.cs" />
      <Compile Include="Assets\Scripts\startGame.cs" />
      <Compile Include="Assets\Scripts\Weland\BinaryReaderBE.cs" />

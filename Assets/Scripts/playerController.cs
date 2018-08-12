@@ -58,7 +58,7 @@ public class playerController : MonoBehaviour {
 
 		currentPolygon = -1;
 		playerCollider = transform.Find("playerCollider").gameObject;
-		playerLight = transform.Find("playerLight").gameObject;
+		playerLight = transform.Find("playerCamera/playerLight").gameObject;
 		playerCamera = transform.Find("playerCamera").gameObject;
 
 
@@ -82,6 +82,7 @@ public class playerController : MonoBehaviour {
 		playerLight.GetComponent<Light>().intensity = GlobalData.playerLightIntensity;
 		playerLight.GetComponent<Light>().range = GlobalData.playerLightRange;
 
+		playerCamera.GetComponent<mouselook>().smoothing = new Vector2(GlobalData.mouseSmooth, GlobalData.mouseSmooth);
 
 		switch (GlobalData.playerLightType) {
 			case 0:
@@ -242,7 +243,7 @@ public class playerController : MonoBehaviour {
 			vis = false;
 		}
 		//if (Input.GetKey("f")){castRay();}
-
+		collideWithWalls();
 	}
 
 	void setActivePolygonColliders(int connections = 1, MapSegment polygon = null) {
@@ -370,7 +371,12 @@ public class playerController : MonoBehaviour {
 	void applyForces() {
 		//	Debug.Log(velocity * 10);
 		gameObject.transform.Translate(velocity);
-		bool adjusted = true;
+		collideWithWalls();
+
+	}
+
+	void collideWithWalls() {
+				bool adjusted = true;
 		while (adjusted) {
 		adjusted = false;
 		foreach (Collider wall in wallContacts) {	
@@ -426,7 +432,6 @@ public class playerController : MonoBehaviour {
 			}
 		}
 		}
-
 	}
 
 
@@ -742,7 +747,10 @@ public class playerController : MonoBehaviour {
 		int pol = -1;
 		RaycastHit hit;
 		//GameObject camera = PlayerCamera.gameObject;
-		if (Physics.Raycast(gameObject.transform.position, Vector3.down, out hit, 50)) {
+		if (Physics.Raycast(new Vector3(gameObject.transform.position.x, 
+											gameObject.transform.position.y + phys.height * 0.98f, 
+											gameObject.transform.position.z),
+							 Vector3.up, out hit, 50)) {
 			if (hit.collider.transform.parent != null && hit.collider.transform.parent.tag == "polygon") {
 				pol = hit.collider.transform.parent.GetComponent<MapSegment>().id;
 			} else if (hit.collider.transform.parent != null && (hit.collider.transform.parent.name == "upperPlatform" || hit.collider.transform.parent.name == "lowerPlatform")) {
@@ -751,10 +759,7 @@ public class playerController : MonoBehaviour {
 		}
 		if (pol == -1) {
 
-			if (Physics.Raycast(new Vector3(gameObject.transform.position.x, 
-											gameObject.transform.position.y + phys.height * 0.98f, 
-											gameObject.transform.position.z),
-								Vector3.up, out hit, 50)) {
+			if (Physics.Raycast(gameObject.transform.position, Vector3.down, out hit, 50)) {
 				if (hit.collider.transform.parent != null && hit.collider.transform.parent.tag == "polygon") {
 					pol = hit.collider.transform.parent.GetComponent<MapSegment>().id;
 				} else if (hit.collider.transform.parent != null && (hit.collider.transform.parent.name == "upperPlatform" || hit.collider.transform.parent.name == "lowerPlatform")) {

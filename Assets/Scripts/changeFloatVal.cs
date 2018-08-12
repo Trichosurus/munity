@@ -47,6 +47,7 @@ public class changeFloatVal : MonoBehaviour {
 		if (varName == "decellerationScaleFactor") { GlobalData.decellerationScaleFactor += amount;}
 		if (varName == "deBounceFactor") { GlobalData.deBounceFactor += amount;}
 		if (varName == "playerFOV") { GlobalData.playerFOV += amount;}
+		if (varName == "mouseSmooth") { GlobalData.mouseSmooth += amount;}
 
 	}
 

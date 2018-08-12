@@ -17,7 +17,7 @@ public static class GlobalData
 
 	public static InputController inputController = new InputController();
 
-	public static bool skipOcclusion = false;
+	public static bool skipOcclusion = true;
 	public static int occlusionOverDraw = 1;
 	public static float occlusionDensity = 0.5f;
 	public static bool captureMouse = true;
@@ -35,11 +35,12 @@ public static class GlobalData
 	public static int landscapeType = 5;
 	public static bool alwaysRun = true;
 	public static float graviyScaleFactor = 2f;
-	public static float antiGraviyScaleFactor = 1f;
+	public static float antiGraviyScaleFactor = 0.7f;
 	public static float accellerationScaleFactor = 2f;
 	public static float decellerationScaleFactor = 2f;
 	public static float deBounceFactor = 4f;
 	public static int mapToLoad = 0;
+	public static float mouseSmooth = 0.05f;
 
 
 	//----item definitions -- where are these defined in the data files ??????
@@ -529,10 +530,14 @@ public class InputController {
 		}
 		return false;
 	}
-	public float getAxis(string axis) {
+	public float getAxis(string axis, bool raw = false) {
 		foreach (axis a in axes) {
 			if (a.name == axis) {
-				return Input.GetAxis(a.axisName) * a.sensitivity;
+				if (raw) {
+					return Input.GetAxisRaw(a.axisName) * a.sensitivity;
+				} else {
+					return Input.GetAxis(a.axisName) * a.sensitivity;
+				}
 			}
 		}
 		return 0;

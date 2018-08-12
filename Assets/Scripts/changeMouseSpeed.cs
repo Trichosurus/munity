@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class changeMouseSpeed : MonoBehaviour {
 	public float amount = 1;
+	private float prevMousePos = -1;
 	// Use this for initialization
 	void Start () {
 		
@@ -16,6 +17,25 @@ public class changeMouseSpeed : MonoBehaviour {
 
 
 	void OnMouseUp()
+	{
+		changeVal(amount);
+		GlobalData.writeSettings();
+	}
+
+	void OnMouseDrag() {
+		if (prevMousePos > 0) {
+			if (Input.mousePosition.y > prevMousePos) {
+				changeVal(Mathf.Abs(amount));
+			} else if (Input.mousePosition.y < prevMousePos){
+				changeVal(0-Mathf.Abs(amount));
+			}
+		}
+		prevMousePos = Input.mousePosition.y;
+	}
+
+
+
+	void changeVal(float amount)
 	{
 		float sensitivity = 1;
 		foreach (InputController.axis a in GlobalData.inputController.axes) {

@@ -2,7 +2,7 @@
     {
         SubShader
         {
-            Tags {"Queue" = "2501" }
+            Tags {"Queue" = "2450" }
             Lighting Off
             Pass
             {
