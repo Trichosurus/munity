@@ -173,17 +173,19 @@ public class PlatformObject : MonoBehaviour {
 				hitEnd();
 			}
 			GameObject player = GameObject.Find("player");
-			playerController pc = player.GetComponent<playerController>();
-			if (comesFromCeiling && pc.platContactU == upperPlatform.transform.Find("platBottom").gameObject.GetComponent<Collider>()) {
-				player.transform.position = new Vector3(player.transform.position.x, 
-														player.transform.position.y + (upperPlatform.transform.localPosition.y - prevPosU),
-														player.transform.position.z);
-			}
+			if (player != null) {
+				playerController pc = player.GetComponent<playerController>();
+				if (comesFromCeiling && pc.platContactU == upperPlatform.transform.Find("platBottom").gameObject.GetComponent<Collider>()) {
+					player.transform.position = new Vector3(player.transform.position.x, 
+															player.transform.position.y + (upperPlatform.transform.localPosition.y - prevPosU),
+															player.transform.position.z);
+				}
 
-			if (comesFromFloor && pc.platContactL == lowerPlatform.transform.Find("platTop").gameObject.GetComponent<Collider>()) {
-				player.transform.position = new Vector3(player.transform.position.x, 
-														player.transform.position.y + (lowerPlatform.transform.localPosition.y - prevPosL),
-														player.transform.position.z);
+				if (comesFromFloor && pc.platContactL == lowerPlatform.transform.Find("platTop").gameObject.GetComponent<Collider>()) {
+					player.transform.position = new Vector3(player.transform.position.x, 
+															player.transform.position.y + (lowerPlatform.transform.localPosition.y - prevPosL),
+															player.transform.position.z);
+				}
 			}
 
 		}

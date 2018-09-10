@@ -303,6 +303,11 @@ namespace Weland {
 	    }
 	}
 
+
+    public static uint FourCharsToInt(char a, char b, char c, char d) {
+		return (uint) ((a << 24) | (b << 16) | (c << 8) | d);
+	}
+
 	static public void Main(string[] args) {
 	    if (args.Length == 2) {
 		Wadfile wadfile = new Wadfile();

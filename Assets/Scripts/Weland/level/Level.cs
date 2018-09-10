@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Weland {
     public partial class Level {
@@ -18,6 +19,7 @@ namespace Weland {
 	public List<Media> Medias = new List<Media>();
 	public List<AmbientSound> AmbientSounds = new List<AmbientSound>();
 	public List<RandomSound> RandomSounds = new List<RandomSound>();
+	public List<Terminal> Terminals = new List<Terminal>();
 
 	MapInfo mapInfo = new MapInfo();
 
@@ -46,6 +48,7 @@ namespace Weland {
 	    Wadfile.Chunk("weap"),
 	    Wadfile.Chunk("cint"),
 	    Wadfile.Chunk("slua"),
+	    Wadfile.Chunk("term"),
 
 	    // embedded physics
 	    Wadfile.Chunk("MNpx"),
@@ -101,12 +104,17 @@ namespace Weland {
 	
 	public void Load(Wadfile.DirectoryEntry wad) {
 	    Chunks = wad.Chunks;
-	    
+
 	    if (wad.Chunks.ContainsKey(MapInfo.Tag)) {
 		LoadChunk(mapInfo, wad.Chunks[MapInfo.Tag]);
 	    } else {
 		throw new Wadfile.BadMapException("Incomplete level: missing map info chunk");
 	    }
+
+		if (wad.Chunks.ContainsKey(Terminal.Tag)) {
+			LoadChunkList<Terminal>(Terminals, wad.Chunks[Terminal.Tag]);
+		}
+					
 
 	    if (wad.Chunks.ContainsKey(Point.Tag)) {
 		LoadChunkList<Point>(Endpoints, wad.Chunks[Point.Tag]);

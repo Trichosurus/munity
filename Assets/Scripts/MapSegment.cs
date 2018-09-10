@@ -261,16 +261,12 @@ public class MapSegment : MonoBehaviour {
 		}
 	}
 
-	public void showHide(bool show = false, bool noTrans = false) {
+	public void showHide(bool show = false) {
 		if ( show == hidden ) {
 			Component[] allChildren = gameObject.GetComponentsInChildren(typeof(Transform), true);
 			foreach (Transform child in allChildren) {
 				if (child.gameObject.name != gameObject.name && child.gameObject.name != "Platform") {
-					if (noTrans && child.gameObject.tag == "transparent") {
-						child.gameObject.SetActive(false);
-					} else {
-						child.gameObject.SetActive(show);
-					}
+					child.gameObject.SetActive(show);
 				}
 			} 
 			hidden = !show;
@@ -735,7 +731,7 @@ public class MapSegment : MonoBehaviour {
 				if (wallPart != null) {
 					wallPart.name = "lowerWall";
 					sides[side].lowerMeshItem = wallPart;
-					if (transparent) {wallPart.tag = "transparent";}
+					if (transparent) {wallPart.tag = "transparent"; wallPart.layer = 2;}
 					if (sides[side].controlPanel != null && sides[side].controlPanel.sidePart == 1) {
 						sides[side].controlPanel.wall = wallPart;
 					}

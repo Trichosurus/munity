@@ -357,7 +357,14 @@ public class Map : MonoBehaviour {
 		string load = loadingText;
 		//marathon maps have y +/- directions swapped so fix that
 		for (int i = 0; i < Level.Endpoints.Count; i++) {
-			Level.Endpoints[i] = new Point(Level.Endpoints[i].X, (short)(0-Level.Endpoints[i].Y));
+			short hackx = Convert.ToInt16(i%2+1);
+			short hacky = Convert.ToInt16((i+1)%2+1);
+			if (i%3 == 0) {hackx = (short)(0-hackx);}
+			if (i%3 == 1) {hacky = (short)(0-hacky);}
+			if (i%3 == 2) {hackx = (short)(0-hackx); hacky = (short)(0-hacky);}
+
+			Level.Endpoints[i] = new Point((short)(Level.Endpoints[i].X+hackx) , (short)(0-Level.Endpoints[i].Y+hacky));
+
 		}
 		//now we can generate mapsegment objects from each map polygon
 		for (int p = 0; p < Level.Polygons.Count; p++) {
@@ -804,7 +811,7 @@ public class Map : MonoBehaviour {
 			count++;
 			s.showHide(false);
 			s.checkIfImpossible();
-			s.showHide(true, true);
+			s.showHide(true);
 			if (count % 77 == 0 ){
 				loadingText = load + "\nFinding Impossible Space "+count+"/"+segments.Count;
 				yield return null;

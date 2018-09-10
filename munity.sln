@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "munity", "Assembly-CSharp.csproj", "{2DF6BA8F-18DD-9B2C-D73B-D8FF588CD9A0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp", "Assembly-CSharp.csproj", "{2DF6BA8F-18DD-9B2C-D73B-D8FF588CD9A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "munity", "Assembly-CSharp-firstpass.csproj", "{7982EAA1-6174-B28D-ECF6-9D30976B7464}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-firstpass", "Assembly-CSharp-firstpass.csproj", "{7982EAA1-6174-B28D-ECF6-9D30976B7464}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -31,11 +31,11 @@ public class playerController : MonoBehaviour {
 	
 
 	private bool airborne = false;
-	private bool climbing = false;
+	private int climbing = 0;
 	private bool swimming = false;
 	private bool vis = false;
 	private GameObject lastTouch = null;
-	private GameObject playerCollider;
+	private GameObject playerVis;
 	private GameObject playerLight;
 	private GameObject playerCamera;
 	private List<Collider> floorContacts = new List<Collider>();
@@ -57,7 +57,8 @@ public class playerController : MonoBehaviour {
 		// }
 
 		currentPolygon = -1;
-		playerCollider = transform.Find("playerCollider").gameObject;
+		// playerCollider = transform.Find("playerCollider").gameObject;
+		playerVis = transform.Find("playerVis").gameObject;
 		playerLight = transform.Find("playerCamera/playerLight").gameObject;
 		playerCamera = transform.Find("playerCamera").gameObject;
 
@@ -225,25 +226,10 @@ public class playerController : MonoBehaviour {
 		} else {
 			lastTouch = null;
 		}
-
-		int prevPolygon = currentPolygon;
-		getCurrentPolygon();
-		if (currentPolygon >= 0) {
-			if (prevPolygon != currentPolygon) {
-				activePolygons = new List<int>(); 
-				drawActivePolygons();
-				setActivePolygonColliders();
-				GlobalData.map.segments[currentPolygon].triggerBehaviour();
-			}
-			playAmbientSound();
-			playRandomSound();
-
-			vis = true;
-			calculateVisibility();
-			vis = false;
-		}
-		//if (Input.GetKey("f")){castRay();}
 		collideWithWalls();
+
+		//if (Input.GetKey("f")){castRay();}
+		//collideWithWalls();
 	}
 
 	void setActivePolygonColliders(int connections = 1, MapSegment polygon = null) {
@@ -307,7 +293,7 @@ public class playerController : MonoBehaviour {
 
 	void addExternalForces() {
 		
-		if (!airborne || swimming) {
+		if (!airborne  || swimming) {
 			if (velocity.z > 0) {
 				velocity.z -= phys.deceleration/GlobalData.decellerationScaleFactor * Time.fixedDeltaTime;
 				if (velocity.z < 0) {velocity.z = 0;}
@@ -326,12 +312,21 @@ public class playerController : MonoBehaviour {
 				if (velocity.x < 0) {velocity.x = 0;}
 			}
 
-			if (climbing || swimming) {
-				Debug.Log("climbing");
+			if (climbing > 0) {
+				Debug.Log("climbing" + climbing);
 				if (velocity.y < phys.terminalVelocity * Time.fixedDeltaTime) {
-					velocity.y += phys.climbingAcceleration/GlobalData.antiGraviyScaleFactor * Time.fixedDeltaTime ;
+					velocity.y += (phys.climbingAcceleration * climbing * ((climbing > 1) ? 2 : 1))/GlobalData.antiGraviyScaleFactor * Time.fixedDeltaTime ;
 					if (velocity.y > phys.terminalVelocity * Time.fixedDeltaTime) {velocity.y = phys.terminalVelocity * Time.fixedDeltaTime;}
 				}
+			}
+
+			if (swimming) {
+				if (velocity.y < phys.terminalVelocity * Time.fixedDeltaTime) {
+					velocity.y += phys.gravity/GlobalData.graviyScaleFactor * Time.fixedDeltaTime;
+					velocity.y += phys.gravity/GlobalData.graviyScaleFactor * Time.fixedDeltaTime;
+					if (velocity.y > phys.terminalVelocity * Time.fixedDeltaTime) {velocity.y = phys.terminalVelocity * Time.fixedDeltaTime;}
+				}
+
 			}
 
 
@@ -371,73 +366,70 @@ public class playerController : MonoBehaviour {
 	void applyForces() {
 		//	Debug.Log(velocity * 10);
 		gameObject.transform.Translate(velocity);
-		collideWithWalls();
+		// collideWithWalls();
 
 	}
 
 	void collideWithWalls() {
-				bool adjusted = true;
-		while (adjusted) {
-		adjusted = false;
-		foreach (Collider wall in wallContacts) {	
-			
-			bool gapTooSmall = false;
-			if (wall.transform.parent.tag == "polygon") {
-				MapSegment seg = wall.transform.parent.GetComponent<MapSegment>();
-				foreach (MapSegmentSide side in seg.sides) {
-					if (side.lowerMeshItem == wall.gameObject 
-					|| side.middleMeshItem == wall.gameObject
-					|| side.upperMeshItem == wall.gameObject) {
-						if (side.connection != null && side.connection.height.y < phys.height - 0.02) {
-							gapTooSmall = true;
-							break;
+		int adjusted = 1;
+		while (adjusted > 0 && adjusted < 20) {
+			adjusted --;
+			foreach (Collider wall in wallContacts) {	
+				
+				bool gapTooSmall = false;
+				if (wall.transform.parent.tag == "polygon") {
+					MapSegment seg = wall.transform.parent.GetComponent<MapSegment>();
+					foreach (MapSegmentSide side in seg.sides) {
+						if (side.lowerMeshItem == wall.gameObject 
+						|| side.middleMeshItem == wall.gameObject
+						|| side.upperMeshItem == wall.gameObject) {
+							if (side.connection != null && side.connection.height.y < phys.height - 0.02) {
+								gapTooSmall = true;
+								break;
+							}
 						}
 					}
 				}
-			}
 
-			if (gapTooSmall || (wall.bounds.center.y + wall.bounds.extents.y > phys.maxStepSize + transform.position.y 
-			&& wall.bounds.center.y - wall.bounds.extents.y  < transform.position.y + phys.height-0.02))	{	
-				
-				Vector3 local = wall.transform.InverseTransformPoint(new Vector3(transform.position.x, wall.bounds.center.y, transform.position.z));
+				if (gapTooSmall || (wall.bounds.center.y + wall.bounds.extents.y > phys.maxStepSize + transform.position.y 
+				&& wall.bounds.center.y - wall.bounds.extents.y  < transform.position.y + phys.height-0.02))	{	
+					
+					Vector3 local = wall.transform.InverseTransformPoint(new Vector3(transform.position.x, wall.bounds.center.y, transform.position.z));
 
-				Mesh mesh = wall.gameObject.GetComponent<MeshCollider>().sharedMesh;
+					Mesh mesh = wall.gameObject.GetComponent<MeshCollider>().sharedMesh;
 
 
-				Vector3 collPt = wall.transform.TransformPoint(ClosestPointOnMesh(mesh, local));
-				Vector3 meshNormal = mesh.normals[0]; //walls are flat, to the normals should be the same for all 
-				//meshNormal = transform.InverseTransformDirection(meshNormal);
-				if ((meshNormal.z > 0 != (transform.position.z - collPt.z) > 0) || (meshNormal.x > 0 != (transform.position.x - collPt.x) > 0)) {
-					continue;
-				}
-				collPt.y = transform.position.y;
-				Vector3 delta = transform.position - collPt;
+					Vector3 collPt = wall.transform.TransformPoint(ClosestPointOnMesh(mesh, local));
+					Vector3 meshNormal = mesh.normals[0]; //walls are flat, to the normals should be the same for all 
+					//meshNormal = transform.InverseTransformDirection(meshNormal);
+					if ((meshNormal.z > 0 != (transform.position.z - collPt.z) > 0) || (meshNormal.x > 0 != (transform.position.x - collPt.x) > 0)) {
+						continue;
+					}
+					collPt.y = transform.position.y;
+					Vector3 delta = transform.position - collPt;
+					// Debug.Log(transform.position);
+					// if (phys.radius - delta.magnitude > 0 || wall.name == "upperWall") {
+					// 	Debug.Log("----------" +wall.name );
+					// 	Debug.Log(collPt);
+					// 	Debug.Log(collPt2);
+					// 	Debug.Log(delta * 10);
+					// 	Debug.Log(delta2 * 10);
+					// }
+					delta = Vector3.ClampMagnitude(delta, Mathf.Clamp(phys.radius - delta.magnitude, 0, phys.radius));
+					delta.y = 0; 
+					if (delta.magnitude > 0.001f ) {
+						adjusted ++;
+						transform.position += delta;
+					}
+
 				// Debug.Log(transform.position);
-				// if (phys.radius - delta.magnitude > 0 || wall.name == "upperWall") {
-				// 	Debug.Log("----------" +wall.name );
-				// 	Debug.Log(collPt);
-				// 	Debug.Log(collPt2);
-				// 	Debug.Log(delta * 10);
-				// 	Debug.Log(delta2 * 10);
-				// }
-				delta = Vector3.ClampMagnitude(delta, Mathf.Clamp(phys.radius - delta.magnitude, 0, phys.radius));
-				delta.y = 0; 
-				if (delta.magnitude > 0.001f ) {
-					adjusted = true;
-					transform.position += delta;
+				// Debug.Log(velocity);
 				}
-
-			// Debug.Log(transform.position);
-			// Debug.Log(velocity);
 			}
 		}
-		}
 	}
 
 
-	void LateUpdate() {
-
-	}
 
     Vector3 ClosestPointOnMesh(Mesh mesh, Vector3 point) {
         float shortestDistance = float.MaxValue;
@@ -643,7 +635,7 @@ public class playerController : MonoBehaviour {
 					velocity.y = 0;
 				}
 				if (other.transform.position.y > transform.position.y) {
-					climbing = true;
+					climbing ++;
 				}
 			}
 			if (other.transform.parent.name == "lowerPlatform") {
@@ -654,7 +646,7 @@ public class playerController : MonoBehaviour {
 					}
 					floorContacts.Add(other);
 					if (other.transform.position.y > transform.position.y) {
-						climbing = true;
+						climbing ++;
 					}
 					if (velocity.y < 0) {
 						velocity.y = 0;
@@ -732,7 +724,7 @@ public class playerController : MonoBehaviour {
 							// airborne = true;
 						// 	touching = false;
 						}
-						climbing = false;
+						//climbing--;
 					}
 				}
 			}
@@ -768,8 +760,9 @@ public class playerController : MonoBehaviour {
 			}
 		}
 
-
-		if (pol >= 0) {currentPolygon = pol;}
+		if (pol >= 0) {
+			currentPolygon = pol;
+		}
 
 	}
 
@@ -1000,11 +993,26 @@ public class playerController : MonoBehaviour {
 			GlobalData.map.segments[currentPolygon].collidesWith.Contains(pol) &&
 			iv.collisionPolygonsSelf.Contains(currentPolygon)) || clippedSegments.Contains(pol)) {
 				GlobalData.map.segments[pol].showHide(false);
+				//showHideRaycast(GlobalData.map.segments[pol], false);
 			} else {
 				GlobalData.map.segments[pol].showHide(show);
+				//showHideRaycast(GlobalData.map.segments[pol], show);
 			}
 		}
 	}
+
+
+	public void showHideRaycast(MapSegment m, bool show = false) {
+		int layer = 0;
+		if ( !show ) {layer = 2;}
+		Component[] allChildren = m.gameObject.GetComponentsInChildren(typeof(Transform), true);
+		foreach (Transform child in allChildren) {
+			if (child.gameObject.name != m.gameObject.name && child.gameObject.tag != "transparent") {
+				child.gameObject.layer = layer;
+			}
+		} 
+	}
+
 
 	void calculateClipping (List<ImpossibleVolume> ivs, List<float[]> distances, int volSelf, int volOther, ref List<int> clippedSegments) {
 		ImpossibleVolume iv = ivs[(int)distances[volSelf][1]];
@@ -1234,7 +1242,7 @@ public class playerController : MonoBehaviour {
 		isVisible = false;
 
 		isVisible = (Physics.Raycast(midpoint, playerCamera.transform.position-midpoint, out hit, 50)) 
-			&& hit.collider.gameObject == playerCollider ;
+			&& hit.collider.gameObject == playerVis ;
 
 		if (isVisible) {
 			Debug.DrawRay(midpoint, playerCamera.transform.position-midpoint, Color.red);
@@ -1246,7 +1254,7 @@ public class playerController : MonoBehaviour {
 			for (int p = 0; p < points.Count && !isVisible; p++){
 				castPoint = (points[p]-midpoint)*((1f/rayCount)*(float)i) + midpoint;
 				isVisible = (Physics.Raycast(castPoint, playerCamera.transform.position-castPoint, out hit, 50)) 
-							&& hit.collider.gameObject == playerCollider ;
+							&& hit.collider.gameObject == playerVis ;
 				if (isVisible) {
 					Debug.DrawRay(castPoint, playerCamera.transform.position-castPoint, Color.red);
 				} else {
@@ -1263,9 +1271,14 @@ public class playerController : MonoBehaviour {
 	/// </summary>
 	void FixedUpdate()
 	{
+
+
 		addInternalForces();
 		addExternalForces();
 		applyForces();
+		// collideWithWalls();
+
+
 		floorContacts = new List<Collider>();
 		platContactL = null;
 		platContactU = null;
@@ -1274,9 +1287,31 @@ public class playerController : MonoBehaviour {
 		// wallContacts = new List<Collider>();
 	
 		airborne = true;
-		climbing = false;
+		climbing = 0;
 
 	}
+
+	void LateUpdate() {
+		int prevPolygon = currentPolygon;
+		getCurrentPolygon();
+		if (currentPolygon >= 0) {
+			if (prevPolygon != currentPolygon) {
+				activePolygons = new List<int>(); 
+				drawActivePolygons();
+				setActivePolygonColliders();
+				GlobalData.map.segments[currentPolygon].triggerBehaviour();
+			}
+			playAmbientSound();
+			playRandomSound();
+
+			vis = true;
+			calculateVisibility();
+			vis = false;
+		}
+	}
+
+
+
 
 	public class playerPhysics {
 		//these defaults are the standard physics running values
