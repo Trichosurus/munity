@@ -1,29 +1,29 @@
 using System.Collections.Generic;
 using System.IO;
-
+using UnityEngine;
 namespace Weland {
     public class MapFile : Wadfile {
         public class Overlay {
             public MissionFlags MissionFlags;
-	    public EnvironmentFlags EnvironmentFlags;
-	    public EntryPointFlags EntryPointFlags;
-	    public string LevelName;
+            public EnvironmentFlags EnvironmentFlags;
+            public EntryPointFlags EntryPointFlags;
+            public string LevelName;
 
-            internal const short DataSize = 74;
+                internal const short DataSize = 74;
 
             internal void LoadData(BinaryReaderBE reader) {
-		MissionFlags = (MissionFlags) reader.ReadInt16();
-		EnvironmentFlags = (EnvironmentFlags) reader.ReadInt16();
-		EntryPointFlags = (EntryPointFlags) reader.ReadInt32();
-		LevelName = reader.ReadMacString(MapInfo.LevelNameLength);
-	    }
+                MissionFlags = (MissionFlags) reader.ReadInt16();
+                EnvironmentFlags = (EnvironmentFlags) reader.ReadInt16();
+                EntryPointFlags = (EntryPointFlags) reader.ReadInt32();
+                LevelName = reader.ReadMacString(MapInfo.LevelNameLength);
+            }
 
             internal void SaveData(BinaryWriterBE writer) {
-		writer.Write((short) MissionFlags);
-		writer.Write((short) EnvironmentFlags);
-		writer.Write((int) EntryPointFlags);
-		writer.WriteMacString(LevelName, MapInfo.LevelNameLength);
-	    }
+                writer.Write((short) MissionFlags);
+                writer.Write((short) EnvironmentFlags);
+                writer.Write((int) EntryPointFlags);
+                writer.WriteMacString(LevelName, MapInfo.LevelNameLength);
+            }
         }
 
         public SortedDictionary<int, Overlay> Overlays = new SortedDictionary<int, Overlay>();
@@ -62,6 +62,9 @@ namespace Weland {
             if (DataVersion < 1) {
                 throw new BadMapException("Only Marathon 2 and higher maps are supported");
             }
+                    Debug.Log("here?");
+
+
 
             if (applicationSpecificDirectoryDataSize != Overlay.DataSize) {
                 foreach(var kvp in Directory) {

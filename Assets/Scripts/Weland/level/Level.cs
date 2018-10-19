@@ -20,6 +20,8 @@ namespace Weland {
 	public List<AmbientSound> AmbientSounds = new List<AmbientSound>();
 	public List<RandomSound> RandomSounds = new List<RandomSound>();
 	public List<Terminal> Terminals = new List<Terminal>();
+	public List<Pict> Picts = new List<Pict>();
+	public List<MapScript.Script> Scripts = new List<MapScript.Script>();
 
 	MapInfo mapInfo = new MapInfo();
 
@@ -49,6 +51,7 @@ namespace Weland {
 	    Wadfile.Chunk("cint"),
 	    Wadfile.Chunk("slua"),
 	    Wadfile.Chunk("term"),
+	    Wadfile.Chunk("pict"),
 
 	    // embedded physics
 	    Wadfile.Chunk("MNpx"),
@@ -111,10 +114,33 @@ namespace Weland {
 		throw new Wadfile.BadMapException("Incomplete level: missing map info chunk");
 	    }
 
+		if (wad.Chunks.ContainsKey(Pict.Tag)) {
+			Debug.Log("pict??");
+			LoadChunkList<Pict>(Picts, wad.Chunks[Pict.Tag]);
+		}
+
+
 		if (wad.Chunks.ContainsKey(Terminal.Tag)) {
 			LoadChunkList<Terminal>(Terminals, wad.Chunks[Terminal.Tag]);
 		}
-					
+
+				
+		if (wad.Chunks.ContainsKey(MapScript.Tag) | wad.Chunks.ContainsKey(MapScript.Tag2)) {
+			List<MapScript> ms = new List<MapScript>();
+			LoadChunkList<MapScript>(ms, wad.Chunks[MapScript.Tag]);
+			foreach (MapScript m in ms) {
+				foreach (MapScript.Script s in m.Scripts) {
+					Scripts.Add(s);
+				}
+			}
+			LoadChunkList<MapScript>(ms, wad.Chunks[MapScript.Tag2]);
+			foreach (MapScript m in ms) {
+				foreach (MapScript.Script s in m.Scripts) {
+					Scripts.Add(s);
+				}
+			}
+
+		}
 
 	    if (wad.Chunks.ContainsKey(Point.Tag)) {
 		LoadChunkList<Point>(Endpoints, wad.Chunks[Point.Tag]);

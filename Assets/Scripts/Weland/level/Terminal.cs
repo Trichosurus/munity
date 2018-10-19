@@ -1,13 +1,11 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Text;
 
 namespace Weland {
-    public class Terminal : ISerializableBE {
+public class Terminal : ISerializableBE {
 	public static readonly uint Tag = Wadfile.Chunk("term");
-
 	public short TotalLength;
 	public short GroupingCount;
 	public short Flags;
@@ -73,8 +71,6 @@ namespace Weland {
 			FontChange fontChange = new FontChange();
 			fontChange.Load(reader);
 			FontChanges.Add(fontChange);
-					Debug.Log(fontChange.Index);
-
 		}
 
 
@@ -85,8 +81,7 @@ namespace Weland {
 		if (Flags == 1) {
 
 		//decode text
-			for (int i = 0; i < textBytes.Length; ++i)
-			{
+			for (int i = 0; i < textBytes.Length; ++i) {
 				i++;
 				if (textBytes.Length > ++i) {
 					textBytes[i] ^= 0xfe;
@@ -94,23 +89,17 @@ namespace Weland {
 				if (textBytes.Length > ++i) {	
 					textBytes[i] ^= 0xed;
 				}
-		}
+			}
 
-			// for (int i = 0; i < textBytes.Length % 4; ++i)
-			// {
-			// 	textBytes[i++] ^= 0xfe;
-			// }
 		}
 
 
 		
 		Encoding macRoman = Encoding.GetEncoding(10000);
 		Texts = macRoman.GetString(textBytes).Split('\0');
-		Debug.Log(Texts[1]);
-		Debug.Log(Texts[2]);
 	}
 	public void Save(BinaryWriterBE writer) {
 	}
 
-    }
+}
 }

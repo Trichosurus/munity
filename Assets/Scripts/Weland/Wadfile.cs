@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using System.IO;
 using System.Collections.Generic;
-
+using UnityEngine;
 namespace Weland {
     enum WadfileVersion {
 	PreEntryPoint,
@@ -51,6 +51,10 @@ namespace Weland {
 	short entryHeaderSize;
 	short directoryEntryBaseSize;
 	public uint ParentChecksum;
+	public List<Pict> pictResources = new List<Pict>();
+	public List<Clut> clutResources = new List<Clut>();
+	public List<SoundResource> soundResources = new List<SoundResource>();
+	public List<TextResource> textResources = new List<TextResource>();
 	
 	public class BadMapException : Exception {
 	    public BadMapException()
@@ -84,9 +88,9 @@ namespace Weland {
 	    }
 
  	    internal void LoadEntry(BinaryReaderBE reader) {
-		Offset = reader.ReadInt32();
-		reader.ReadInt32(); // size
-		Index = reader.ReadInt16();
+			Offset = reader.ReadInt32();
+			reader.ReadInt32(); // size
+			Index = reader.ReadInt16();
 	    }
 	    
 	    internal void LoadChunks(BinaryReaderBE reader) {
@@ -97,6 +101,7 @@ namespace Weland {
 		    nextOffset = reader.ReadInt32();
 		    int length = reader.ReadInt32();
 		    reader.ReadInt32(); // offset
+
 					
 		    Chunks[tag] = reader.ReadBytes(length);
 					
@@ -156,9 +161,9 @@ namespace Weland {
 	    }
 	}
 
-	bool MacBinaryHeader(byte[] header) {
+	int MacBinaryHeader(byte[] header) {
 	    if (header[0] != 0 || header[1] > 64 || header[74] != 0 || header[123] > 0x81)
-		return false;
+		return 0;
 
 	    ushort crc = 0;
 	    for (int i = 0; i < 124; ++i) {
@@ -172,10 +177,14 @@ namespace Weland {
 		}
 	    }
 
-	    if (crc != ((header[124] << 8) | header[125]))
-		return false;
+		int data_length = (header[83] << 24) | (header[84] << 16) | (header[85] << 8) | header[86];
+		int resource_length = (header[87] << 24) | (header[88] << 16) | (header[89] << 8) | header[90];
+		int resourceOffset = 128 + ((data_length + 0x7f) & ~0x7f);
 
-	    return true;
+	    if (crc != ((header[124] << 8) | header[125]))
+		return 0;
+
+	    return data_length;
 	}
 
 	public SortedDictionary<int, DirectoryEntry> Directory = new SortedDictionary<int, DirectoryEntry> ();
@@ -201,8 +210,10 @@ namespace Weland {
 	    try {
 		// is it MacBinary?
 		int fork_start = 0;
-		if (MacBinaryHeader(reader.ReadBytes(128))) {
+		int resourceOffset = MacBinaryHeader(reader.ReadBytes(128));
+		if (resourceOffset > 0) {
 		    fork_start = 128;
+			resourceOffset = 128 + ((resourceOffset + 0x7f) & ~0x7f);
 		}
 		reader.BaseStream.Seek(fork_start, SeekOrigin.Begin);
 		
@@ -233,7 +244,7 @@ namespace Weland {
 		    entry.LoadEntry(reader);
 		    Directory[entry.Index] = entry;
 
-                    LoadApplicationSpecificDirectoryData(reader, entry.Index);
+            LoadApplicationSpecificDirectoryData(reader, entry.Index);
 		}
 		
 		// load all the wads(!)
@@ -241,9 +252,141 @@ namespace Weland {
 		    reader.BaseStream.Seek(kvp.Value.Offset + fork_start, SeekOrigin.Begin);
 		    kvp.Value.LoadChunks(reader);
 		}
+
+		if (resourceOffset > 0) {
+			reader.BaseStream.Seek(resourceOffset, SeekOrigin.Begin);
+			UInt32 dataOffset = reader.ReadUInt32();
+			UInt32 mapOffset = reader.ReadUInt32();
+			UInt32 dataLength = reader.ReadUInt32();
+			UInt32 mapLength = reader.ReadUInt32();
+			Debug.Log(resourceOffset);
+
+			Debug.Log(dataOffset);
+			Debug.Log(mapOffset);
+			Debug.Log(dataLength);
+			Debug.Log(mapLength);
+
+			dataOffset += (UInt32)resourceOffset;
+			mapOffset += (UInt32)resourceOffset;
+
+
+			ResourceMap resourceMap = new ResourceMap();
+			resourceMap.load(ref reader, mapOffset);
+
+			for (int i = 0; i < resourceMap.refs.Count; i++) {
+				string name = "";
+				if (resourceMap.refs[i].nameListOffset > 0){
+					reader.BaseStream.Seek(resourceMap.refs[i].nameListOffset + resourceMap.nameListOffset + mapOffset, SeekOrigin.Begin );
+					int nameLength = reader.ReadByte();
+					name = reader.ReadMacString(nameLength);
+				}
+				if (resourceMap.refs[i].type == Pict.Tag || resourceMap.refs[i].type == Pict.Tag2) {
+					Pict pict = new Pict();
+					reader.BaseStream.Seek(resourceMap.refs[i].dataOffset + dataOffset, SeekOrigin.Begin );
+					pict.LoadWithName(reader, name);
+					pictResources.Add(pict);
+				}
+				if (resourceMap.refs[i].type == Clut.Tag) {
+					Clut clut = new Clut();
+					reader.BaseStream.Seek(resourceMap.refs[i].dataOffset + dataOffset, SeekOrigin.Begin );
+					clut.Load(reader);
+					clutResources.Add(clut);
+				}
+				if (resourceMap.refs[i].type == SoundResource.Tag) {
+					SoundResource snd = new SoundResource();
+					reader.BaseStream.Seek(resourceMap.refs[i].dataOffset + dataOffset, SeekOrigin.Begin );
+					snd.Load(reader);
+					soundResources.Add(snd);
+				}
+				if (resourceMap.refs[i].type == TextResource.Tag || resourceMap.refs[i].type == TextResource.Tag2) {
+					TextResource txt = new TextResource();
+					reader.BaseStream.Seek(resourceMap.refs[i].dataOffset + dataOffset, SeekOrigin.Begin );
+					txt.Load(reader);
+					textResources.Add(txt);
+				}
+
+
+			}
+
+		}
+
+
 	    } finally {
 		reader.Close();
 	    }
+	}
+
+	class ResourceMap {
+		public Int16 typeListOffset;
+		public Int16 nameListOffset;
+		public Int16 numTypes;
+		public List<Type> types = new List<Type>();
+		public List<ResRef> refs = new List<ResRef>();
+
+		public void load (ref BinaryReaderBE reader, UInt32 mapOffset) {
+
+			reader.BaseStream.Seek(mapOffset + 24, SeekOrigin.Begin);		
+
+			typeListOffset = reader.ReadInt16();
+			nameListOffset = reader.ReadInt16();
+			numTypes = reader.ReadInt16();
+
+
+			for (int i = 0; i <= numTypes; i++) {
+				Type type = new Type();
+				type.load(ref reader);
+				types.Add(type);
+			}
+
+			for (int t = 0; t < types.Count; t ++) {
+				for (int r = 0; r < types[t].numRefs; r ++) {
+					ResRef resref = new ResRef();
+					
+					resref.load(ref reader);
+					resref.type = types[t].type;
+					refs.Add(resref);
+
+				}
+			}
+
+		}
+
+		public class Type {
+			public UInt32 type;
+			public Int16 numRefs;
+			public Int16 refListOffset;
+
+			public void load(ref BinaryReaderBE reader) {
+				type = reader.ReadUInt32();
+				numRefs = reader.ReadInt16();
+				numRefs++;
+				refListOffset = reader.ReadInt16();
+
+				Debug.Log(type);
+				Debug.Log(numRefs);
+				Debug.Log(refListOffset);
+			}
+		}
+
+		public class ResRef {
+			public Int16 id;
+			public Int16 nameListOffset;
+			public UInt32 dataOffset;
+			public UInt32 type;
+			public void load(ref BinaryReaderBE reader) {
+					id = reader.ReadInt16();
+					nameListOffset = reader.ReadInt16();
+					dataOffset = reader.ReadUInt32();
+					dataOffset &= 0x00ffffff; //ignore attribures data
+	    			reader.BaseStream.Seek(4, SeekOrigin.Current);
+
+					Debug.Log(id);
+					Debug.Log(nameListOffset);
+					Debug.Log(dataOffset);
+							
+			}
+		}
+	
 	}
 
 	public void Save(string filename) {
